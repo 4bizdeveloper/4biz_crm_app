@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LogOut, Users, DollarSign, ShieldAlert } from 'lucide-react';
+import { LogOut, Users, DollarSign, ShieldAlert, FolderKanban, Ticket } from 'lucide-react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -15,18 +15,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   const navItems = [
-    { href: '/dashboard/sales', label: 'Sales & Pipeline', icon: DollarSign },
-    { href: '/dashboard/hr', label: 'HR & Employees', icon: Users },
+    { href: '/dashboard/sales', label: 'Sales & Leads', icon: DollarSign },
+    { href: '/dashboard/projects', label: 'Projects & Ops', icon: FolderKanban },
+    { href: '/dashboard/tickets', label: 'IT Support Tickets', icon: Ticket },
+    { href: '/dashboard/hr', label: 'HR Directory', icon: Users },
   ];
 
   return (
     <div className="min-h-screen flex bg-slate-50 text-slate-900">
-      {/* Sidebar */}
       <aside className="w-64 bg-slate-950 text-white flex flex-col justify-between p-4 border-r border-slate-800">
         <div>
           <div className="flex items-center gap-2 mb-8 px-2 pt-2 text-blue-400 font-bold text-xl">
             <ShieldAlert className="w-6 h-6 text-blue-500" />
-            <span>IT Ops CRM</span>
+            <span>4Biz IT CRM</span>
           </div>
 
           <nav className="space-y-1">
@@ -51,11 +52,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </nav>
         </div>
 
-        {/* User Profile & Logout Section */}
         <div className="border-t border-slate-800 pt-4 space-y-3">
           <div className="px-2">
             <p className="text-xs text-slate-400 font-medium">Logged in as</p>
-            <p className="text-sm font-semibold text-slate-200 truncate">Administrator</p>
+            <p className="text-sm font-semibold text-slate-200 truncate">Admin User</p>
           </div>
           <button
             onClick={handleLogout}
@@ -67,7 +67,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </aside>
 
-      {/* Main Content Container */}
       <main className="flex-1 p-8 overflow-y-auto">{children}</main>
     </div>
   );
