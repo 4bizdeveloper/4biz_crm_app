@@ -4,15 +4,8 @@ import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import {
   Plus, Download, Calendar, CheckCircle2, FileText,
-  Bot, UserCheck, Trash2, PhoneCall, Sparkles, FileCode, X
+  Bot, UserCheck, Trash2, PhoneCall, Sparkles, FileCode, X, Edit
 } from 'lucide-react';
-
-interface Employee {
-  id: string;
-  full_name: string;
-  role?: string;
-  department?: string;
-}
 
 interface Lead {
   id: string;
@@ -26,7 +19,7 @@ interface Lead {
   requirements?: string;
   status: string;
   value: number;
-  assigned_to?: string;
+  assigned_to?: string | null;
   notes?: string;
   created_at: string;
 }
@@ -34,10 +27,10 @@ interface Lead {
 export default function LeadsModule() {
   const [activeTab, setActiveTab] = useState<'details' | 'pipeline' | 'automation'>('details');
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState<'all' | 'daily' | 'weekly' | 'monthly'>('all');
   const [showModal, setShowModal] = useState(false);
+  const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
   const [formData, setFormData] = useState({
@@ -49,15 +42,11 @@ export default function LeadsModule() {
     requirements: '',
     value: 0,
     status: 'New',
-    assigned_to: '',
+    assigned_to: 'Not assigned to sales',
     notes: ''
   });
 
   const leadFlow = ['New', 'Assigned', 'Contacted', 'Follow-up', 'Qualified', 'Converted', 'Disqualified'];
-
-  const salesReps = useMemo(() => {
-    return employees;
-  }, [employees]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -66,20 +55,7 @@ export default function LeadsModule() {
       .select('*')
       .order('created_at', { ascending: false });
 
-    let { data: empData } = await supabase
-      .from('employees')
-      .select('id, full_name, role, department')
-      .eq('status', 'Active');
-
-    if (!empData || empData.length === 0) {
-      const { data: allEmp } = await supabase
-        .from('employees')
-        .select('id, full_name, role, department');
-      empData = allEmp;
-    }
-
     if (leadsData) setLeads(leadsData);
-    if (empData) setEmployees(empData);
     setLoading(false);
   };
 
@@ -108,7 +84,7 @@ export default function LeadsModule() {
     });
   }, [leads, dateRange]);
 
-  const createLead = async (e: React.FormEvent) => {
+  const saveLead = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const payload: Record<string, any> = {
@@ -121,28 +97,71 @@ export default function LeadsModule() {
       company: formData.company || null,
       source: formData.source || 'Website',
       value: Number(formData.value) || 0,
-      status: formData.assigned_to ? 'Assigned' : 'New',
+      status: formData.status,
+      assigned_to: formData.assigned_to === 'Assigned to sales' ? 'assigned' : null,
       notes: formData.notes || null,
       campaign_name: formData.campaign_name || null,
       requirements: formData.requirements || null
     };
 
-    if (formData.assigned_to && formData.assigned_to.trim() !== '') {
-      payload.assigned_to = formData.assigned_to;
-    }
+    if (editingLead) {
+      const { data, error } = await supabase
+        .from('leads')
+        .update(payload)
+        .eq('id', editingLead.id)
+        .select();
 
-    const { data, error } = await supabase.from('leads').insert([payload]).select();
+      if (error) {
+        alert(`Could not update lead: ${error.message}`);
+        return;
+      }
 
-    if (error) {
-      alert(`Could not save lead: ${error.message}`);
-      return;
-    }
+      if (data && data.length > 0) {
+        setLeads(leads.map((l) => (l.id === editingLead.id ? data[0] : l)));
+        closeModal();
+      }
+    } else {
+      const { data, error } = await supabase.from('leads').insert([payload]).select();
 
-    if (data && data.length > 0) {
-      setLeads([data[0], ...leads]);
-      setShowModal(false);
-      resetForm();
+      if (error) {
+        alert(`Could not save lead: ${error.message}`);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        setLeads([data[0], ...leads]);
+        closeModal();
+      }
     }
+  };
+
+  const openCreateModal = () => {
+    setEditingLead(null);
+    resetForm();
+    setShowModal(true);
+  };
+
+  const openEditModal = (lead: Lead) => {
+    setEditingLead(lead);
+    setFormData({
+      name: lead.name || '',
+      contact_info: lead.contact_info || lead.phone || lead.email || '',
+      company: lead.company || '',
+      source: lead.source || 'Website',
+      campaign_name: lead.campaign_name || '',
+      requirements: lead.requirements || '',
+      value: lead.value || 0,
+      status: lead.status || 'New',
+      assigned_to: lead.assigned_to ? 'Assigned to sales' : 'Not assigned to sales',
+      notes: lead.notes || ''
+    });
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setEditingLead(null);
+    resetForm();
   };
 
   const resetForm = () => {
@@ -155,7 +174,7 @@ export default function LeadsModule() {
       requirements: '',
       value: 0,
       status: 'New',
-      assigned_to: '',
+      assigned_to: 'Not assigned to sales',
       notes: ''
     });
   };
@@ -169,8 +188,8 @@ export default function LeadsModule() {
     setLeads(leads.map((l) => (l.id === id ? { ...l, status } : l)));
   };
 
-  const updateAssignment = async (id: string, assigned_to: string) => {
-    const assignedVal = assigned_to === '' ? null : assigned_to;
+  const updateAssignment = async (id: string, assignmentStatus: string) => {
+    const assignedVal = assignmentStatus === 'Assigned to sales' ? 'assigned' : null;
 
     const { error } = await supabase
       .from('leads')
@@ -182,10 +201,11 @@ export default function LeadsModule() {
       return;
     }
 
-    setLeads(leads.map((l) => (l.id === id ? { ...l, assigned_to: assignedVal ?? undefined } : l)));
+    setLeads(leads.map((l) => (l.id === id ? { ...l, assigned_to: assignedVal } : l)));
   };
 
   const deleteLead = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this lead?')) return;
     const { error } = await supabase.from('leads').delete().eq('id', id);
     if (error) {
       alert(`Delete failed: ${error.message}`);
@@ -198,11 +218,11 @@ export default function LeadsModule() {
     const headers = ['Name,Contact Details,Company,Source,Campaign,Requirements,Status,Value,Sales Assigned,Date Created\n'];
     const rows = filteredLeads
       .map((l) => {
-        const emp = salesReps.find((e) => e.id === l.assigned_to)?.full_name || 'Unassigned';
+        const assignmentLabel = l.assigned_to ? 'Assigned to sales' : 'Not assigned to sales';
         const formattedDate = new Date(l.created_at).toLocaleDateString();
         const cleanReq = (l.requirements || '').replace(/"/g, '""');
         const cleanContact = (l.contact_info || l.phone || l.email || '').replace(/"/g, '""').replace(/\n/g, ' ');
-        return `"${l.name}","${cleanContact}","${l.company || ''}","${l.source || ''}","${l.campaign_name || ''}","${cleanReq}","${l.status}",${l.value},"${emp}","${formattedDate}"`;
+        return `"${l.name}","${cleanContact}","${l.company || ''}","${l.source || ''}","${l.campaign_name || ''}","${cleanReq}","${l.status}",${l.value},"${assignmentLabel}","${formattedDate}"`;
       })
       .join('\n');
 
@@ -228,7 +248,7 @@ export default function LeadsModule() {
           </p>
         </div>
         <button
-          onClick={() => setShowModal(true)}
+          onClick={openCreateModal}
           className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 text-sm transition-all shadow-md shadow-blue-500/20 shrink-0 cursor-pointer"
         >
           <Plus className="w-4 h-4" /> Add New Lead
@@ -303,10 +323,18 @@ export default function LeadsModule() {
                   ) : (
                     stageLeads.map((lead) => (
                       <div key={lead.id} className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-2">
-                        <div className="font-bold text-slate-900 text-sm">{lead.name}</div>
+                        <div className="font-bold text-slate-900 text-sm flex items-center justify-between">
+                          <span>{lead.name}</span>
+                          <button
+                            onClick={() => openEditModal(lead)}
+                            className="text-slate-400 hover:text-blue-600 p-1"
+                            title="Edit Lead"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                         <div className="text-xs text-slate-500 whitespace-pre-line">{lead.contact_info || lead.phone || lead.email}</div>
                         
-                        {/* Requirements snippet in Pipeline View */}
                         {lead.requirements && (
                           <div className="text-xs bg-slate-50 border border-slate-100 p-2 rounded-md text-slate-600 mt-1 line-clamp-2">
                             <span className="font-semibold text-slate-700">Req: </span>
@@ -354,7 +382,7 @@ export default function LeadsModule() {
                 <div>
                   <div className="font-bold text-slate-800 text-sm">{lead.name}</div>
                   <div className="text-xs text-slate-500 flex items-center gap-2">
-                    <span>Source: {lead.source}</span> • <span>Assigned Rep: {salesReps.find(e => e.id === lead.assigned_to)?.full_name || 'Unassigned'}</span>
+                    <span>Source: {lead.source}</span> • <span>Sales Status: {lead.assigned_to ? 'Assigned to sales' : 'Not assigned to sales'}</span>
                   </div>
                   {lead.requirements && (
                     <div className="text-xs text-slate-600 mt-1">
@@ -430,26 +458,31 @@ export default function LeadsModule() {
                       </td>
                       <td className="p-4 align-top">
                         <select
-                          value={lead.assigned_to || ''}
+                          value={lead.assigned_to ? 'Assigned to sales' : 'Not assigned to sales'}
                           onChange={(e) => updateAssignment(lead.id, e.target.value)}
                           className="bg-white border border-slate-200 rounded-lg text-xs font-medium px-2.5 py-1.5 focus:ring-1 focus:ring-blue-600 text-slate-800"
                         >
-                          <option value="">Unassigned</option>
-                          {salesReps.map((emp) => (
-                            <option key={emp.id} value={emp.id}>
-                              {emp.full_name}
-                            </option>
-                          ))}
+                          <option value="Not assigned to sales">Not assigned to sales</option>
+                          <option value="Assigned to sales">Assigned to sales</option>
                         </select>
                       </td>
                       <td className="p-4 align-top text-right">
-                        <button
-                          onClick={() => deleteLead(lead.id)}
-                          className="text-slate-400 hover:text-red-600 p-1.5 rounded-md transition-colors cursor-pointer"
-                          title="Delete Lead"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => openEditModal(lead)}
+                            className="text-slate-400 hover:text-blue-600 p-1.5 rounded-md transition-colors cursor-pointer"
+                            title="Edit Lead"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => deleteLead(lead.id)}
+                            className="text-slate-400 hover:text-red-600 p-1.5 rounded-md transition-colors cursor-pointer"
+                            title="Delete Lead"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -471,7 +504,7 @@ export default function LeadsModule() {
               </h2>
               <button 
                 onClick={() => setSelectedLead(null)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -489,7 +522,7 @@ export default function LeadsModule() {
             <div className="flex justify-end pt-2">
               <button
                 onClick={() => setSelectedLead(null)}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-lg transition-colors"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-lg transition-colors cursor-pointer"
               >
                 Close
               </button>
@@ -498,11 +531,13 @@ export default function LeadsModule() {
         </div>
       )}
 
-      {/* Create Lead Modal */}
+      {/* Create / Edit Lead Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <form onSubmit={createLead} className="bg-white rounded-2xl p-6 w-full max-w-lg space-y-4 shadow-2xl my-auto border border-slate-100">
-            <h2 className="text-lg font-bold text-slate-900 border-b pb-3">Add New Lead Contact</h2>
+          <form onSubmit={saveLead} className="bg-white rounded-2xl p-6 w-full max-w-lg space-y-4 shadow-2xl my-auto border border-slate-100">
+            <h2 className="text-lg font-bold text-slate-900 border-b pb-3">
+              {editingLead ? 'Edit Lead Details' : 'Add New Lead Contact'}
+            </h2>
 
             <div>
               <label className="text-xs font-semibold text-slate-600 block mb-1">Full Name</label>
@@ -546,12 +581,8 @@ export default function LeadsModule() {
                   onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
                   className="w-full p-2.5 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:ring-2 focus:ring-blue-600"
                 >
-                  <option value="">Unassigned</option>
-                  {salesReps.map((emp) => (
-                    <option key={emp.id} value={emp.id}>
-                      {emp.full_name}
-                    </option>
-                  ))}
+                  <option value="Not assigned to sales">Not assigned to sales</option>
+                  <option value="Assigned to sales">Assigned to sales</option>
                 </select>
               </div>
             </div>
@@ -597,13 +628,13 @@ export default function LeadsModule() {
             <div className="flex justify-end gap-2 pt-4 border-t">
               <button
                 type="button"
-                onClick={() => setShowModal(false)}
+                onClick={closeModal}
                 className="px-4 py-2 border rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
               >
                 Cancel
               </button>
               <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 shadow-md cursor-pointer">
-                Save Lead
+                {editingLead ? 'Update Lead' : 'Save Lead'}
               </button>
             </div>
           </form>
