@@ -57,13 +57,18 @@ src/
     dashboard/
       hr/
         page.tsx
+      projects/
+        page.tsx
       sales/
+        page.tsx
+      tickets/
         page.tsx
       layout.tsx
     login/
       page.tsx
-    favicon.ico
+    apple-icon.png
     globals.css
+    icon.png
     layout.tsx
     page.tsx
   lib/
@@ -137,163 +142,272 @@ export async function POST() {
 }
 </file>
 
-<file path="src/app/dashboard/hr/page.tsx">
+<file path="src/app/dashboard/projects/page.tsx">
 'use client';
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { Plus, Trash2, FolderKanban } from 'lucide-react';
+
+interface Project {
+  id: string;
+  project_name: string;
+  client_name: string;
+  budget: number;
+  status: string;
+  assigned_employee_id?: string;
+}
 
 interface Employee {
   id: string;
   full_name: string;
-  email: string;
-  role: string;
-  department: string;
-  status: string;
 }
 
-export default function HRPage() {
+export default function ProjectsPage() {
+  const [projects, setProjects] = useState<Project[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
-
-  useEffect(() => {
-    const fetchEmployees = async () => {
-      const { data } = await supabase.from('employees').select('*');
-      if (data) setEmployees(data);
-    };
-    fetchEmployees();
-  }, []);
-
-  return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Human Resources Directory</h1>
-        <p className="text-sm text-slate-500">Manage internal IT personnel and team allocations</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {employees.map((emp) => (
-          <div
-            key={emp.id}
-            className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between space-y-4"
-          >
-            <div>
-              <h3 className="font-bold text-base text-slate-900">{emp.full_name}</h3>
-              <p className="text-sm text-slate-600 font-medium">{emp.role}</p>
-              <p className="text-xs text-slate-400">{emp.email}</p>
-            </div>
-            <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs">
-              <span className="text-slate-600">
-                Department: <strong className="text-slate-800 font-semibold">{emp.department}</strong>
-              </span>
-              <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-medium">
-                {emp.status}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-</file>
-
-<file path="src/app/dashboard/sales/page.tsx">
-'use client';
-
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-
-interface Lead {
-  id: string;
-  name: string;
-  email: string;
-  company: string;
-  status: string;
-  value: number;
-}
-
-export default function SalesPage() {
-  const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [formData, setFormData] = useState({
+    project_name: '',
+    client_name: '',
+    budget: 0,
+    status: 'Planning',
+    assigned_employee_id: '',
+  });
 
-  const fetchLeads = async () => {
-    const { data, error } = await supabase.from('leads').select('*').order('created_at', { ascending: false });
-    if (!error && data) setLeads(data);
+  const fetchData = async () => {
+    const { data: projData } = await supabase
+      .from('projects')
+      .select('*')
+      .order('created_at', { ascending: false });
+    const { data: empData } = await supabase.from('employees').select('id, full_name');
+
+    if (projData) setProjects(projData);
+    if (empData) setEmployees(empData);
     setLoading(false);
   };
 
   useEffect(() => {
-    fetchLeads();
+    fetchData();
   }, []);
 
-  const updateLeadStatus = async (id: string, newStatus: string) => {
-    const { error } = await supabase.from('leads').update({ status: newStatus }).eq('id', id);
-    if (!error) {
-      setLeads((prev) =>
-        prev.map((lead) => (lead.id === id ? { ...lead, status: newStatus } : lead))
-      );
+  const createProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const payload = {
+      ...formData,
+      assigned_employee_id: formData.assigned_employee_id || null,
+    };
+    const { data, error } = await supabase.from('projects').insert([payload]).select();
+    if (!error && data) {
+      setProjects([data[0], ...projects]);
+      setShowModal(false);
+      setFormData({
+        project_name: '',
+        client_name: '',
+        budget: 0,
+        status: 'Planning',
+        assigned_employee_id: '',
+      });
     }
+  };
+
+  const updateProjectStatus = async (id: string, status: string) => {
+    await supabase.from('projects').update({ status }).eq('id', id);
+    setProjects(projects.map((p) => (p.id === id ? { ...p, status } : p)));
+  };
+
+  const deleteProject = async (id: string) => {
+    await supabase.from('projects').delete().eq('id', id);
+    setProjects(projects.filter((p) => p.id !== id));
   };
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Sales Operations</h1>
-          <p className="text-sm text-slate-500">Track deals, software services, and lead status</p>
+          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+            <FolderKanban className="w-6 h-6 text-blue-600" />
+            Projects & Operations
+          </h1>
+          <p className="text-sm text-slate-500">
+            Track client deliverables, tech stacks, budgets, and staff allocations
+          </p>
         </div>
+        <button
+          onClick={() => setShowModal(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg flex items-center gap-2 text-sm shadow-xs transition-colors"
+        >
+          <Plus className="w-4 h-4" /> Create Project
+        </button>
       </div>
 
+      {showModal && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
+          <form
+            onSubmit={createProject}
+            className="bg-white rounded-xl p-6 w-full max-w-md space-y-4 shadow-xl"
+          >
+            <h2 className="text-lg font-bold text-slate-900">Add New IT Project</h2>
+            <div>
+              <label className="text-xs font-semibold text-slate-600">Project Name</label>
+              <input
+                type="text"
+                placeholder="e.g. Infrastructure Upgrade"
+                required
+                className="w-full mt-1 p-2 border rounded-lg text-sm text-slate-900 bg-white"
+                value={formData.project_name}
+                onChange={(e) => setFormData({ ...formData, project_name: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-slate-600">Client Organization</label>
+              <input
+                type="text"
+                placeholder="e.g. Acme Enterprise"
+                required
+                className="w-full mt-1 p-2 border rounded-lg text-sm text-slate-900 bg-white"
+                value={formData.client_name}
+                onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-slate-600">Budget ($)</label>
+                <input
+                  type="number"
+                  placeholder="25000"
+                  required
+                  className="w-full mt-1 p-2 border rounded-lg text-sm text-slate-900 bg-white"
+                  value={formData.budget || ''}
+                  onChange={(e) => setFormData({ ...formData, budget: Number(e.target.value) })}
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-600">Initial Status</label>
+                <select
+                  className="w-full mt-1 p-2 border rounded-lg text-sm bg-white text-slate-900"
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                >
+                  <option value="Planning">Planning</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Testing">Testing</option>
+                  <option value="Completed">Completed</option>
+                  <option value="On Hold">On Hold</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-slate-600">Assigned Tech Lead</label>
+              <select
+                className="w-full mt-1 p-2 border rounded-lg text-sm bg-white text-slate-900"
+                value={formData.assigned_employee_id}
+                onChange={(e) =>
+                  setFormData({ ...formData, assigned_employee_id: e.target.value })
+                }
+              >
+                <option value="">Unassigned</option>
+                {employees.map((emp) => (
+                  <option key={emp.id} value={emp.id}>
+                    {emp.full_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 border rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+              >
+                Save Project
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {loading ? (
-        <div className="p-8 bg-white rounded-xl shadow-sm border border-slate-200 text-center text-slate-500">
-          Loading sales records...
+        <div className="p-8 bg-white rounded-xl border border-slate-200 text-center text-slate-500">
+          Loading project data...
+        </div>
+      ) : projects.length === 0 ? (
+        <div className="p-12 bg-white rounded-xl border border-slate-200 text-center space-y-3">
+          <FolderKanban className="w-12 h-12 text-slate-300 mx-auto" />
+          <h3 className="font-semibold text-slate-700">No active projects found</h3>
+          <p className="text-sm text-slate-500">
+            Click "Create Project" above to add your first IT delivery engagement.
+          </p>
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <table className="w-full text-left border-collapse">
-            <thead className="bg-slate-100/75 border-b border-slate-200 text-slate-700 font-semibold uppercase text-xs">
+            <thead className="bg-slate-100 border-b border-slate-200 text-slate-700 font-semibold uppercase text-xs">
               <tr>
-                <th className="p-4">Contact</th>
-                <th className="p-4">Company</th>
-                <th className="p-4">Estimated Value</th>
-                <th className="p-4">Stage</th>
-                <th className="p-4">Action</th>
+                <th className="p-4">Project Name</th>
+                <th className="p-4">Client</th>
+                <th className="p-4">Assigned Tech Lead</th>
+                <th className="p-4">Budget</th>
+                <th className="p-4">Status</th>
+                <th className="p-4">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-sm font-normal text-slate-800">
-              {leads.map((lead) => (
-                <tr key={lead.id} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="p-4">
-                    <div className="font-semibold text-slate-900">{lead.name}</div>
-                    <div className="text-xs text-slate-500 font-normal">{lead.email}</div>
-                  </td>
-                  <td className="p-4 font-medium text-slate-700">{lead.company}</td>
-                  <td className="p-4 font-semibold text-slate-900">${lead.value?.toLocaleString()}</td>
-                  <td className="p-4">
-                    <span
-                      className={`px-2.5 py-1 rounded-full text-xs font-semibold inline-block ${
-                        lead.status === 'Converted'
-                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                          : 'bg-blue-100 text-blue-800 border border-blue-200'
-                      }`}
-                    >
-                      {lead.status}
-                    </span>
-                  </td>
-                  <td className="p-4">
-                    {lead.status !== 'Converted' ? (
-                      <button
-                        onClick={() => updateLeadStatus(lead.id, 'Converted')}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-3 py-1.5 rounded-lg text-xs transition-colors shadow-xs"
+            <tbody className="divide-y divide-slate-100 text-sm">
+              {projects.map((project) => {
+                const assignedStaff = employees.find(
+                  (e) => e.id === project.assigned_employee_id
+                );
+                return (
+                  <tr key={project.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="p-4 font-bold text-slate-900">{project.project_name}</td>
+                    <td className="p-4 text-slate-700 font-medium">{project.client_name}</td>
+                    <td className="p-4 text-slate-600">
+                      {assignedStaff ? (
+                        <span className="font-medium text-slate-800">{assignedStaff.full_name}</span>
+                      ) : (
+                        <span className="text-xs text-slate-400 italic">Unassigned</span>
+                      )}
+                    </td>
+                    <td className="p-4 font-semibold text-slate-900">
+                      ${project.budget?.toLocaleString()}
+                    </td>
+                    <td className="p-4">
+                      <select
+                        value={project.status}
+                        onChange={(e) => updateProjectStatus(project.id, e.target.value)}
+                        className="p-1.5 border rounded-lg text-xs font-semibold bg-slate-50 border-slate-200 text-slate-800"
                       >
-                        Convert to Client
+                        <option value="Planning">Planning</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Testing">Testing</option>
+                        <option value="Completed">Completed</option>
+                        <option value="On Hold">On Hold</option>
+                      </select>
+                    </td>
+                    <td className="p-4">
+                      <button
+                        onClick={() => deleteProject(project.id)}
+                        className="text-slate-400 hover:text-red-500 transition-colors"
+                        title="Delete project"
+                      >
+                        <Trash2 className="w-4 h-4" />
                       </button>
-                    ) : (
-                      <span className="text-xs font-medium text-slate-400">Converted</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -303,144 +417,140 @@ export default function SalesPage() {
 }
 </file>
 
-<file path="src/app/dashboard/layout.tsx">
+<file path="src/app/dashboard/tickets/page.tsx">
 'use client';
 
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { LogOut, Users, DollarSign, ShieldAlert } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { Plus } from 'lucide-react';
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const router = useRouter();
+interface Ticket {
+  id: string;
+  title: string;
+  client_name: string;
+  priority: string;
+  status: string;
+}
 
-  const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    router.push('/login');
-    router.refresh();
+export default function TicketsPage() {
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [showModal, setShowModal] = useState(false);
+  const [formData, setFormData] = useState({ title: '', client_name: '', priority: 'Medium', status: 'Open' });
+
+  const fetchTickets = async () => {
+    const { data } = await supabase.from('tickets').select('*').order('created_at', { ascending: false });
+    if (data) setTickets(data);
   };
 
-  const navItems = [
-    { href: '/dashboard/sales', label: 'Sales & Pipeline', icon: DollarSign },
-    { href: '/dashboard/hr', label: 'HR & Employees', icon: Users },
-  ];
+  useEffect(() => {
+    fetchTickets();
+  }, []);
 
-  return (
-    <div className="min-h-screen flex bg-slate-50 text-slate-900">
-      {/* Sidebar */}
-      <aside className="w-64 bg-slate-950 text-white flex flex-col justify-between p-4 border-r border-slate-800">
-        <div>
-          <div className="flex items-center gap-2 mb-8 px-2 pt-2 text-blue-400 font-bold text-xl">
-            <ShieldAlert className="w-6 h-6 text-blue-500" />
-            <span>IT Ops CRM</span>
-          </div>
-
-          <nav className="space-y-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-
-        {/* User Profile & Logout Section */}
-        <div className="border-t border-slate-800 pt-4 space-y-3">
-          <div className="px-2">
-            <p className="text-xs text-slate-400 font-medium">Logged in as</p>
-            <p className="text-sm font-semibold text-slate-200 truncate">Administrator</p>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 py-2 px-3 rounded-lg text-sm font-semibold transition-colors"
-          >
-            <LogOut className="w-4 h-4" />
-            Sign Out
-          </button>
-        </div>
-      </aside>
-
-      {/* Main Content Container */}
-      <main className="flex-1 p-8 overflow-y-auto">{children}</main>
-    </div>
-  );
-}
-</file>
-
-<file path="src/app/login/page.tsx">
-'use client';
-
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-
-export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const router = useRouter();
-
-  const handleLogin = async (e: React.FormEvent) => {
+  const createTicket = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-
-    if (res.ok) {
-      router.push('/dashboard/sales');
-    } else {
-      setError('Invalid admin email or password.');
+    const { data, error } = await supabase.from('tickets').insert([formData]).select();
+    if (!error && data) {
+      setTickets([data[0], ...tickets]);
+      setShowModal(false);
+      setFormData({ title: '', client_name: '', priority: 'Medium', status: 'Open' });
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <form onSubmit={handleLogin} className="p-8 bg-white rounded-lg shadow-md w-96 space-y-4">
-        <h1 className="text-2xl font-bold text-gray-800 text-center">IT CRM Login</h1>
-        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+    <div className="max-w-6xl mx-auto space-y-6">
+      <div className="flex items-center justify-between">
         <div>
-          <label className="block text-sm font-medium text-gray-700">Admin Email</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="w-full mt-1 p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Password</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="w-full mt-1 p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
-          />
+          <h1 className="text-2xl font-bold text-slate-900">IT Service Desk & Helpdesk</h1>
+          <p className="text-sm text-slate-500">Track client support tickets and incident resolutions</p>
         </div>
         <button
-          type="submit"
-          className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded"
+          onClick={() => setShowModal(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg flex items-center gap-2 text-sm"
         >
-          Sign In
+          <Plus className="w-4 h-4" /> Create Incident Ticket
         </button>
-      </form>
+      </div>
+
+      {showModal && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
+          <form onSubmit={createTicket} className="bg-white rounded-xl p-6 w-full max-w-md space-y-4 shadow-xl">
+            <h2 className="text-lg font-bold text-slate-900">New Incident Ticket</h2>
+            <input
+              type="text"
+              placeholder="Ticket Title / Issue Description"
+              required
+              className="w-full p-2 border rounded-lg text-sm"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            />
+            <input
+              type="text"
+              placeholder="Client Company Name"
+              required
+              className="w-full p-2 border rounded-lg text-sm"
+              value={formData.client_name}
+              onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
+            />
+            <select
+              className="w-full p-2 border rounded-lg text-sm"
+              value={formData.priority}
+              onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+            >
+              <option value="Low">Low Priority</option>
+              <option value="Medium">Medium Priority</option>
+              <option value="High">High Priority</option>
+              <option value="Urgent">Urgent Priority</option>
+            </select>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 border rounded-lg text-sm font-medium text-slate-600"
+              >
+                Cancel
+              </button>
+              <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">
+                Submit Ticket
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <table className="w-full text-left border-collapse">
+          <thead className="bg-slate-100 border-b border-slate-200 text-slate-700 font-semibold uppercase text-xs">
+            <tr>
+              <th className="p-4">Ticket</th>
+              <th className="p-4">Client</th>
+              <th className="p-4">Priority</th>
+              <th className="p-4">Status</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 text-sm">
+            {tickets.map((t) => (
+              <tr key={t.id} className="hover:bg-slate-50">
+                <td className="p-4 font-semibold text-slate-900">{t.title}</td>
+                <td className="p-4 text-slate-700">{t.client_name}</td>
+                <td className="p-4">
+                  <span
+                    className={`px-2 py-1 rounded text-xs font-semibold ${
+                      t.priority === 'Urgent'
+                        ? 'bg-red-100 text-red-800'
+                        : t.priority === 'High'
+                        ? 'bg-orange-100 text-orange-800'
+                        : 'bg-slate-100 text-slate-800'
+                    }`}
+                  >
+                    {t.priority}
+                  </span>
+                </td>
+                <td className="p-4 font-medium text-slate-700">{t.status}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -685,6 +795,578 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
     "**/*.mts"
   ],
   "exclude": ["node_modules"]
+}
+</file>
+
+<file path="src/app/dashboard/hr/page.tsx">
+'use client';
+
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { Plus, Trash2 } from 'lucide-react';
+
+interface Employee {
+  id: string;
+  full_name: string;
+  email: string;
+  role: string;
+  department: string;
+  status: string;
+}
+
+export default function HRPage() {
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [showModal, setShowModal] = useState(false);
+  const [formData, setFormData] = useState({
+    full_name: '',
+    email: '',
+    role: '',
+    department: 'Engineering',
+    status: 'Active',
+  });
+
+  const fetchEmployees = async () => {
+    const { data } = await supabase.from('employees').select('*').order('joined_date', { ascending: false });
+    if (data) setEmployees(data);
+  };
+
+  useEffect(() => {
+    fetchEmployees();
+  }, []);
+
+  const createEmployee = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const { data, error } = await supabase.from('employees').insert([formData]).select();
+    if (!error && data) {
+      setEmployees([data[0], ...employees]);
+      setShowModal(false);
+      setFormData({ full_name: '', email: '', role: '', department: 'Engineering', status: 'Active' });
+    }
+  };
+
+  const deleteEmployee = async (id: string) => {
+    await supabase.from('employees').delete().eq('id', id);
+    setEmployees(employees.filter((e) => e.id !== id));
+  };
+
+  return (
+    <div className="max-w-6xl mx-auto space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">HR & Employee Directory</h1>
+          <p className="text-sm text-slate-500">Manage internal IT staff and department roles</p>
+        </div>
+        <button
+          onClick={() => setShowModal(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg flex items-center gap-2 text-sm"
+        >
+          <Plus className="w-4 h-4" /> Add Employee
+        </button>
+      </div>
+
+      {showModal && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
+          <form onSubmit={createEmployee} className="bg-white rounded-xl p-6 w-full max-w-md space-y-4 shadow-xl">
+            <h2 className="text-lg font-bold text-slate-900">Add Staff Member</h2>
+            <input
+              type="text"
+              placeholder="Full Name"
+              required
+              className="w-full p-2 border rounded-lg text-sm"
+              value={formData.full_name}
+              onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+            />
+            <input
+              type="email"
+              placeholder="Email Address"
+              required
+              className="w-full p-2 border rounded-lg text-sm"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            />
+            <input
+              type="text"
+              placeholder="Role (e.g. Senior DevOps)"
+              required
+              className="w-full p-2 border rounded-lg text-sm"
+              value={formData.role}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+            />
+            <select
+              className="w-full p-2 border rounded-lg text-sm"
+              value={formData.department}
+              onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+            >
+              <option value="Engineering">Engineering</option>
+              <option value="Cybersecurity">Cybersecurity</option>
+              <option value="Infrastructure">Infrastructure</option>
+              <option value="Sales">Sales</option>
+            </select>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 border rounded-lg text-sm font-medium text-slate-600"
+              >
+                Cancel
+              </button>
+              <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">
+                Save
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {employees.map((emp) => (
+          <div key={emp.id} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative group">
+            <button
+              onClick={() => deleteEmployee(emp.id)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+            <h3 className="font-bold text-base text-slate-900">{emp.full_name}</h3>
+            <p className="text-sm text-slate-600 font-medium">{emp.role}</p>
+            <p className="text-xs text-slate-400 mb-4">{emp.email}</p>
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+              <span className="font-semibold text-slate-700">{emp.department}</span>
+              <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-medium">{emp.status}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/app/dashboard/sales/page.tsx">
+'use client';
+
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { Plus, Trash2 } from 'lucide-react';
+
+interface Lead {
+  id: string;
+  name: string;
+  email: string;
+  company: string;
+  status: string;
+  value: number;
+}
+
+export default function SalesPage() {
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [formData, setFormData] = useState({ name: '', email: '', company: '', value: 0, status: 'Lead' });
+
+  const fetchLeads = async () => {
+    const { data } = await supabase.from('leads').select('*').order('created_at', { ascending: false });
+    if (data) setLeads(data);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchLeads();
+  }, []);
+
+  const createLead = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const { data, error } = await supabase.from('leads').insert([formData]).select();
+    if (!error && data) {
+      setLeads([data[0], ...leads]);
+      setShowModal(false);
+      setFormData({ name: '', email: '', company: '', value: 0, status: 'Lead' });
+    }
+  };
+
+  const updateLeadStatus = async (id: string, status: string) => {
+    await supabase.from('leads').update({ status }).eq('id', id);
+    setLeads(leads.map((l) => (l.id === id ? { ...l, status } : l)));
+  };
+
+  const deleteLead = async (id: string) => {
+    await supabase.from('leads').delete().eq('id', id);
+    setLeads(leads.filter((l) => l.id !== id));
+  };
+
+  return (
+    <div className="max-w-6xl mx-auto space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Sales Pipeline</h1>
+          <p className="text-sm text-slate-500">Manage client leads, deal stages, and contract values</p>
+        </div>
+        <button
+          onClick={() => setShowModal(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg flex items-center gap-2 text-sm shadow-xs"
+        >
+          <Plus className="w-4 h-4" /> Add Lead
+        </button>
+      </div>
+
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
+          <form onSubmit={createLead} className="bg-white rounded-xl p-6 w-full max-w-md space-y-4 shadow-xl">
+            <h2 className="text-lg font-bold text-slate-900">Add New Sales Lead</h2>
+            <input
+              type="text"
+              placeholder="Contact Name"
+              required
+              className="w-full p-2 border rounded-lg text-sm"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            />
+            <input
+              type="email"
+              placeholder="Email Address"
+              required
+              className="w-full p-2 border rounded-lg text-sm"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            />
+            <input
+              type="text"
+              placeholder="Company"
+              required
+              className="w-full p-2 border rounded-lg text-sm"
+              value={formData.company}
+              onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+            />
+            <input
+              type="number"
+              placeholder="Estimated Value ($)"
+              required
+              className="w-full p-2 border rounded-lg text-sm"
+              value={formData.value || ''}
+              onChange={(e) => setFormData({ ...formData, value: Number(e.target.value) })}
+            />
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 border rounded-lg text-sm font-medium text-slate-600"
+              >
+                Cancel
+              </button>
+              <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">
+                Save Lead
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Leads Table */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <table className="w-full text-left border-collapse">
+          <thead className="bg-slate-100 border-b border-slate-200 text-slate-700 font-semibold uppercase text-xs">
+            <tr>
+              <th className="p-4">Contact</th>
+              <th className="p-4">Company</th>
+              <th className="p-4">Value</th>
+              <th className="p-4">Stage</th>
+              <th className="p-4">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 text-sm">
+            {leads.map((lead) => (
+              <tr key={lead.id} className="hover:bg-slate-50">
+                <td className="p-4">
+                  <div className="font-semibold text-slate-900">{lead.name}</div>
+                  <div className="text-xs text-slate-500">{lead.email}</div>
+                </td>
+                <td className="p-4 text-slate-700">{lead.company}</td>
+                <td className="p-4 font-semibold text-slate-900">${lead.value?.toLocaleString()}</td>
+                <td className="p-4">
+                  <select
+                    value={lead.status}
+                    onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
+                    className="p-1 border rounded-md text-xs font-medium bg-slate-50"
+                  >
+                    <option value="Lead">Lead</option>
+                    <option value="Contacted">Contacted</option>
+                    <option value="Qualified">Qualified</option>
+                    <option value="Proposal">Proposal</option>
+                    <option value="Converted">Converted</option>
+                    <option value="Lost">Lost</option>
+                  </select>
+                </td>
+                <td className="p-4">
+                  <button onClick={() => deleteLead(lead.id)} className="text-red-500 hover:text-red-700">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/app/dashboard/layout.tsx">
+'use client';
+
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { LogOut, Users, DollarSign, ShieldAlert, FolderKanban, Ticket } from 'lucide-react';
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    router.push('/login');
+    router.refresh();
+  };
+
+  const navItems = [
+    { href: '/dashboard/sales', label: 'Sales & Leads', icon: DollarSign },
+    { href: '/dashboard/projects', label: 'Projects & Ops', icon: FolderKanban },
+    { href: '/dashboard/tickets', label: 'IT Support Tickets', icon: Ticket },
+    { href: '/dashboard/hr', label: 'HR Directory', icon: Users },
+  ];
+
+  return (
+    <div className="min-h-screen flex bg-slate-50 text-slate-900">
+      <aside className="w-64 bg-slate-950 text-white flex flex-col justify-between p-4 border-r border-slate-800">
+        <div>
+          <div className="flex items-center gap-2 mb-8 px-2 pt-2 text-blue-400 font-bold text-xl">
+            <ShieldAlert className="w-6 h-6 text-blue-500" />
+            <span>4Biz IT CRM</span>
+          </div>
+
+          <nav className="space-y-1">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+
+        <div className="border-t border-slate-800 pt-4 space-y-3">
+          <div className="px-2">
+            <p className="text-xs text-slate-400 font-medium">Logged in as</p>
+            <p className="text-sm font-semibold text-slate-200 truncate">Admin User</p>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 py-2 px-3 rounded-lg text-sm font-semibold transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            Sign Out
+          </button>
+        </div>
+      </aside>
+
+      <main className="flex-1 p-8 overflow-y-auto">{children}</main>
+    </div>
+  );
+}
+</file>
+
+<file path="src/app/login/page.tsx">
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { ShieldCheck, Server, Ticket, ArrowRight, Lock, Mail, CheckCircle2 } from 'lucide-react';
+
+export default function LoginPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (res.ok) {
+        router.push('/dashboard/sales');
+      } else {
+        setError('Invalid admin credentials. Please try again.');
+      }
+    } catch (err) {
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen w-full bg-slate-50 flex items-center justify-center p-4 md:p-8">
+      <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl border border-slate-200/80 overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[600px]">
+        
+        {/* Left Side: Clean Feature Cards (No Stats/Numbers) */}
+        <div className="lg:col-span-7 bg-gradient-to-br from-blue-50 via-indigo-50/50 to-slate-100 p-8 lg:p-12 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-200">
+          <div>
+            <div className="flex items-center gap-2.5 mb-8">
+              <div className="bg-blue-600 text-white p-2 rounded-xl shadow-md shadow-blue-500/20">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+              <span className="font-bold text-xl text-slate-900 tracking-tight">
+                4Biz <span className="text-blue-600">IT CRM</span>
+              </span>
+            </div>
+
+            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-tight mb-3">
+              Unified Platform for IT Service & Client Management
+            </h1>
+            <p className="text-slate-600 text-sm leading-relaxed mb-8 max-w-md">
+              Streamline sales pipelines, client project operations, technical infrastructure tickets, and staff management in one centralized hub.
+            </p>
+
+            {/* Static Clean Widgets */}
+            <div className="grid grid-cols-2 gap-4 max-w-md">
+              <div className="bg-white/80 backdrop-blur-sm p-4 rounded-xl border border-slate-200/80 shadow-xs">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 bg-emerald-100 text-emerald-700 rounded-lg">
+                    <Server className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-semibold text-slate-700">System Status</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium pt-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>All Systems Operational</span>
+                </div>
+              </div>
+
+              <div className="bg-white/80 backdrop-blur-sm p-4 rounded-xl border border-slate-200/80 shadow-xs">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 bg-blue-100 text-blue-700 rounded-lg">
+                    <Ticket className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-semibold text-slate-700">Service Desk</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-xs text-blue-600 font-medium pt-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Real-time Ticketing Active</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-8 border-t border-slate-200/60 flex items-center gap-6 text-xs text-slate-500 font-medium">
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-blue-600" /> Enterprise Security
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-blue-600" /> Real-time Analytics
+            </span>
+          </div>
+        </div>
+
+        {/* Right Side: Login Form */}
+        <div className="lg:col-span-5 p-8 lg:p-12 flex flex-col justify-center bg-white">
+          <div className="max-w-sm mx-auto w-full space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900">Admin Sign In</h2>
+              <p className="text-xs text-slate-500 mt-1">
+                Enter your administrative credentials to access your workspace.
+              </p>
+            </div>
+
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-xs font-medium text-center">
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Admin Email Address
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    placeholder="4bizdeveloper@gmail.com"
+                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    placeholder="••••••••"
+                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-sm rounded-lg shadow-sm shadow-blue-500/20 flex items-center justify-center gap-2 transition-all disabled:opacity-70"
+              >
+                {loading ? (
+                  <span>Signing in...</span>
+                ) : (
+                  <>
+                    <span>Sign In to Dashboard</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div className="pt-4 text-center">
+              <p className="text-xs text-slate-400">
+                Encrypted with SSL 256-bit authentication
+              </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
 }
 </file>
 
