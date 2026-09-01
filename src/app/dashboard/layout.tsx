@@ -61,10 +61,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Main Container */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Header Bar with Logout Button */}
-        <header className="bg-white border-b border-slate-200 px-6 py-3.5 flex items-center justify-end shadow-2xs">
+<header className="bg-white border-b border-slate-200 px-6 py-3.5 flex items-center justify-end shadow-2xs">
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-red-600 transition-colors border border-slate-200 cursor-pointer"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors border border-red-200 cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
             Logout
