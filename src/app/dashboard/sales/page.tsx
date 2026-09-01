@@ -2,182 +2,147 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import {
-  TrendingUp, Plus, Download, Calendar, DollarSign, FileCheck,
-  Percent, Handshake, CreditCard, ShieldCheck, PieChart
-} from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
 
-interface Deal {
+interface Lead {
   id: string;
   name: string;
-  company: string;
-  value: number;
+  email?: string;
+  phone?: string;
+  contact_info?: string;
+  company?: string;
+  source?: string;
+  campaign_name?: string;
+  requirements?: string;
+  notes?: string;
   status: string;
+  assigned_to?: string;
   created_at: string;
 }
 
-export default function SalesModule() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'deals' | 'quotations' | 'approvals' | 'handover'>('overview');
-  const [deals, setDeals] = useState<Deal[]>([]);
+export default function SalesDashboard() {
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
-  const [dateRange, setDateRange] = useState<'daily' | 'weekly' | 'monthly' | 'custom'>('monthly');
 
-  const salesPipeline = ['Qualified', 'Requirement', 'Proposal', 'Negotiation', 'Approval', 'Won', 'Lost', 'Payment & Handover'];
+  const fetchData = async () => {
+    setLoading(true);
+    const { data: leadsData } = await supabase
+      .from('leads')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-  const fetchDeals = async () => {
-    const { data } = await supabase.from('leads').select('*').order('created_at', { ascending: false });
-    if (data) {
-      setDeals(data.map(d => ({
-        id: d.id,
-        name: d.name,
-        company: d.company || 'Enterprise Account',
-        value: d.value || 0,
-        status: d.status === 'Converted' ? 'Won' : d.status,
-        created_at: d.created_at
-      })));
-    }
+    if (leadsData) setLeads(leadsData);
     setLoading(false);
   };
 
-  useEffect(() => { fetchDeals(); }, []);
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-  const exportSalesCSV = () => {
-    const headers = ['Deal Name,Company,Value,Stage Status,Created At\n'];
-    const rows = deals.map(d => `"${d.name}","${d.company}",${d.value},"${d.status}","${new Date(d.created_at).toLocaleDateString()}"`).join('\n');
-    const blob = new Blob([headers + rows], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `sales_export_${dateRange}_${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
+  // Filter ONLY ASSIGNED LEADS
+  const assignedLeads = leads.filter(
+    (l) => l.assigned_to !== null && l.assigned_to !== undefined && l.assigned_to !== ''
+  );
+
+  const updateStatus = async (id: string, status: string) => {
+    const { error } = await supabase.from('leads').update({ status }).eq('id', id);
+
+    if (error) {
+      alert(`Status update failed: ${error.message}`);
+      return;
+    }
+
+    setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, status } : l)));
   };
 
+  const leadStatuses = ['New', 'Assigned', 'Contacted', 'Follow-up', 'Qualified', 'Converted', 'Disqualified'];
+
   return (
-    <div className="max-w-7xl mx-auto space-y-6 font-sans">
+    <div className="max-w-7xl mx-auto space-y-6 font-sans pb-10">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <TrendingUp className="w-6 h-6 text-emerald-600 shrink-0" />
-            Sales Operations & Deals
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Flow: <span className="font-semibold text-slate-700">Qualified → Requirement → Proposal → Negotiation → Approval → Won/Lost → Payment & Handover</span>
-          </p>
+      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+        <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+          <TrendingUp className="w-6 h-6 text-blue-600" />
+          Sales Team Dashboard
+        </h1>
+        <p className="text-xs sm:text-sm text-slate-500 mt-1">
+          Displaying assigned leads for active sales representatives
+        </p>
+      </div>
+
+      {/* Metrics */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+          <p className="text-xs font-semibold text-slate-500 uppercase">Assigned Leads</p>
+          <h3 className="text-3xl font-extrabold text-slate-900 mt-2">{assignedLeads.length}</h3>
+        </div>
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+          <p className="text-xs font-semibold text-slate-500 uppercase">Converted Wins</p>
+          <h3 className="text-3xl font-extrabold text-blue-600 mt-2">
+            {assignedLeads.filter((l) => l.status === 'Converted').length}
+          </h3>
         </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 overflow-x-auto pb-1">
-        {[
-          { id: 'overview', label: 'Overview & Export', icon: PieChart },
-          { id: 'deals', label: 'Pipeline & Deals', icon: DollarSign },
-          { id: 'quotations', label: 'Quotations & Proposals', icon: FileCheck },
-          { id: 'approvals', label: 'Discount Approvals', icon: Percent },
-          { id: 'handover', label: 'Payment & Handover', icon: CreditCard },
-        ].map((tab) => {
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-t-lg transition-all border-b-2 whitespace-nowrap ${
-                activeTab === tab.id
-                  ? 'border-emerald-600 text-emerald-600 bg-emerald-50/50'
-                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-100/50'
-              }`}
-            >
-              <Icon className="w-3.5 h-3.5" />
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Overview Analytics Tab */}
-      {activeTab === 'overview' && (
-        <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-100 p-4 rounded-xl border border-slate-200">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-slate-500" />
-              <span className="text-xs font-semibold text-slate-700">Filter Range:</span>
-              <select
-                value={dateRange}
-                onChange={(e) => setDateRange(e.target.value as any)}
-                className="bg-white border border-slate-300 rounded-md text-xs font-semibold px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-600"
-              >
-                <option value="daily">Daily Basis</option>
-                <option value="weekly">Weekly Basis</option>
-                <option value="monthly">Monthly Basis</option>
-                <option value="custom">Custom Date Range</option>
-              </select>
-            </div>
-            <button
-              onClick={exportSalesCSV}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-2 transition-colors shadow-xs"
-            >
-              <Download className="w-3.5 h-3.5" /> Export Sales Report (CSV)
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-              <p className="text-xs font-semibold text-slate-500">Won Revenue</p>
-              <h3 className="text-2xl font-bold text-emerald-600 mt-1">
-                ${deals.filter(d => d.status === 'Won').reduce((sum, d) => sum + d.value, 0).toLocaleString()}
-              </h3>
-            </div>
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-              <p className="text-xs font-semibold text-slate-500">Forecasted Revenue</p>
-              <h3 className="text-2xl font-bold text-blue-600 mt-1">
-                ${deals.reduce((sum, d) => sum + d.value, 0).toLocaleString()}
-              </h3>
-            </div>
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-              <p className="text-xs font-semibold text-slate-500">Negotiation Phase</p>
-              <h3 className="text-2xl font-bold text-slate-900 mt-1">
-                {deals.filter(d => d.status === 'Negotiation').length} Deals
-              </h3>
-            </div>
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-              <p className="text-xs font-semibold text-slate-500">Pending Approvals</p>
-              <h3 className="text-2xl font-bold text-amber-600 mt-1">
-                {deals.filter(d => d.status === 'Approval').length} Deals
-              </h3>
-            </div>
-          </div>
+      {/* Assigned Leads Table */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+        <div className="p-4 bg-slate-50 border-b border-slate-200 font-bold text-sm text-slate-800">
+          Assigned Deals & Lead Queue
         </div>
-      )}
-
-      {/* Deals & Pipeline View */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-slate-500 text-sm">Loading deal data...</div>
-        ) : deals.length === 0 ? (
-          <div className="p-8 text-center text-slate-500 text-sm">No sales deals found.</div>
+          <div className="p-8 text-center text-slate-500 text-sm">Loading assigned sales data...</div>
+        ) : assignedLeads.length === 0 ? (
+          <div className="p-8 text-center text-slate-500 text-sm">
+            No assigned leads found for this view. Assign leads from the Leads Directory to display them here.
+          </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[700px]">
-              <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase text-xs">
+            <table className="w-full text-left border-collapse min-w-[850px]">
+              <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase text-xs font-semibold">
                 <tr>
-                  <th className="p-4">Account / Client</th>
-                  <th className="p-4">Deal Opportunity</th>
-                  <th className="p-4">Deal Value</th>
-                  <th className="p-4">Pipeline Stage</th>
+                  <th className="p-4">Lead Contact</th>
+                  <th className="p-4">Company & Requirements</th>
+                  <th className="p-4">Campaign Source</th>
+                  <th className="p-4">Created Date</th>
+                  <th className="p-4">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
-                {deals.map((deal) => (
-                  <tr key={deal.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="p-4 font-bold text-slate-900">{deal.company}</td>
-                    <td className="p-4 text-slate-700">{deal.name}</td>
-                    <td className="p-4 font-semibold text-slate-900">${deal.value.toLocaleString()}</td>
+                {assignedLeads.map((lead) => (
+                  <tr key={lead.id} className="hover:bg-slate-50 transition-colors">
                     <td className="p-4">
-                      <span className={`px-2.5 py-1 rounded-md text-xs font-semibold ${
-                        deal.status === 'Won' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-800'
-                      }`}>
-                        {deal.status}
-                      </span>
+                      <div className="font-bold text-slate-900">{lead.name}</div>
+                      <div className="text-xs text-slate-500 mt-0.5">
+                        {lead.contact_info || lead.phone || lead.email || '—'}
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <div className="font-semibold text-slate-800">{lead.company || '—'}</div>
+                      <div className="text-xs text-slate-500 truncate max-w-xs">
+                        {lead.requirements || lead.notes || 'No notes'}
+                      </div>
+                    </td>
+                    <td className="p-4 text-xs font-medium text-slate-600">
+                      <span className="bg-slate-100 px-2 py-1 rounded-md">{lead.source || 'Website'}</span>
+                      {lead.campaign_name && (
+                        <div className="text-[10px] text-slate-400 mt-0.5">{lead.campaign_name}</div>
+                      )}
+                    </td>
+                    <td className="p-4 text-xs font-semibold text-slate-600">
+                      {new Date(lead.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="p-4">
+                      <select
+                        value={lead.status}
+                        onChange={(e) => updateStatus(lead.id, e.target.value)}
+                        className="p-1 border border-slate-200 rounded-lg text-xs font-semibold bg-slate-50 text-slate-800 focus:ring-1 focus:ring-blue-600"
+                      >
+                        {leadStatuses.map((st) => (
+                          <option key={st} value={st}>
+                            {st}
+                          </option>
+                        ))}
+                      </select>
                     </td>
                   </tr>
                 ))}
