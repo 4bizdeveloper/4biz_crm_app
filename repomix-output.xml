@@ -142,452 +142,6 @@ export async function POST() {
 }
 </file>
 
-<file path="src/app/dashboard/projects/page.tsx">
-'use client';
-
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Plus, Trash2, FolderKanban } from 'lucide-react';
-
-interface Project {
-  id: string;
-  project_name: string;
-  client_name: string;
-  budget: number;
-  status: string;
-  assigned_employee_id?: string;
-}
-
-interface Employee {
-  id: string;
-  full_name: string;
-}
-
-export default function ProjectsPage() {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({
-    project_name: '',
-    client_name: '',
-    budget: 0,
-    status: 'Planning',
-    assigned_employee_id: '',
-  });
-
-  const fetchData = async () => {
-    const { data: projData } = await supabase
-      .from('projects')
-      .select('*')
-      .order('created_at', { ascending: false });
-    const { data: empData } = await supabase.from('employees').select('id, full_name');
-
-    if (projData) setProjects(projData);
-    if (empData) setEmployees(empData);
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const createProject = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const payload = {
-      ...formData,
-      assigned_employee_id: formData.assigned_employee_id || null,
-    };
-    const { data, error } = await supabase.from('projects').insert([payload]).select();
-    if (!error && data) {
-      setProjects([data[0], ...projects]);
-      setShowModal(false);
-      setFormData({
-        project_name: '',
-        client_name: '',
-        budget: 0,
-        status: 'Planning',
-        assigned_employee_id: '',
-      });
-    }
-  };
-
-  const updateProjectStatus = async (id: string, status: string) => {
-    await supabase.from('projects').update({ status }).eq('id', id);
-    setProjects(projects.map((p) => (p.id === id ? { ...p, status } : p)));
-  };
-
-  const deleteProject = async (id: string) => {
-    await supabase.from('projects').delete().eq('id', id);
-    setProjects(projects.filter((p) => p.id !== id));
-  };
-
-  return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <FolderKanban className="w-6 h-6 text-blue-600" />
-            Projects & Operations
-          </h1>
-          <p className="text-sm text-slate-500">
-            Track client deliverables, tech stacks, budgets, and staff allocations
-          </p>
-        </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg flex items-center gap-2 text-sm shadow-xs transition-colors"
-        >
-          <Plus className="w-4 h-4" /> Create Project
-        </button>
-      </div>
-
-      {showModal && (
-        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
-          <form
-            onSubmit={createProject}
-            className="bg-white rounded-xl p-6 w-full max-w-md space-y-4 shadow-xl"
-          >
-            <h2 className="text-lg font-bold text-slate-900">Add New IT Project</h2>
-            <div>
-              <label className="text-xs font-semibold text-slate-600">Project Name</label>
-              <input
-                type="text"
-                placeholder="e.g. Infrastructure Upgrade"
-                required
-                className="w-full mt-1 p-2 border rounded-lg text-sm text-slate-900 bg-white"
-                value={formData.project_name}
-                onChange={(e) => setFormData({ ...formData, project_name: e.target.value })}
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-slate-600">Client Organization</label>
-              <input
-                type="text"
-                placeholder="e.g. Acme Enterprise"
-                required
-                className="w-full mt-1 p-2 border rounded-lg text-sm text-slate-900 bg-white"
-                value={formData.client_name}
-                onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-semibold text-slate-600">Budget ($)</label>
-                <input
-                  type="number"
-                  placeholder="25000"
-                  required
-                  className="w-full mt-1 p-2 border rounded-lg text-sm text-slate-900 bg-white"
-                  value={formData.budget || ''}
-                  onChange={(e) => setFormData({ ...formData, budget: Number(e.target.value) })}
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-600">Initial Status</label>
-                <select
-                  className="w-full mt-1 p-2 border rounded-lg text-sm bg-white text-slate-900"
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                >
-                  <option value="Planning">Planning</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Testing">Testing</option>
-                  <option value="Completed">Completed</option>
-                  <option value="On Hold">On Hold</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-slate-600">Assigned Tech Lead</label>
-              <select
-                className="w-full mt-1 p-2 border rounded-lg text-sm bg-white text-slate-900"
-                value={formData.assigned_employee_id}
-                onChange={(e) =>
-                  setFormData({ ...formData, assigned_employee_id: e.target.value })
-                }
-              >
-                <option value="">Unassigned</option>
-                {employees.map((emp) => (
-                  <option key={emp.id} value={emp.id}>
-                    {emp.full_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowModal(false)}
-                className="px-4 py-2 border rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
-              >
-                Save Project
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {loading ? (
-        <div className="p-8 bg-white rounded-xl border border-slate-200 text-center text-slate-500">
-          Loading project data...
-        </div>
-      ) : projects.length === 0 ? (
-        <div className="p-12 bg-white rounded-xl border border-slate-200 text-center space-y-3">
-          <FolderKanban className="w-12 h-12 text-slate-300 mx-auto" />
-          <h3 className="font-semibold text-slate-700">No active projects found</h3>
-          <p className="text-sm text-slate-500">
-            Click "Create Project" above to add your first IT delivery engagement.
-          </p>
-        </div>
-      ) : (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <table className="w-full text-left border-collapse">
-            <thead className="bg-slate-100 border-b border-slate-200 text-slate-700 font-semibold uppercase text-xs">
-              <tr>
-                <th className="p-4">Project Name</th>
-                <th className="p-4">Client</th>
-                <th className="p-4">Assigned Tech Lead</th>
-                <th className="p-4">Budget</th>
-                <th className="p-4">Status</th>
-                <th className="p-4">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-sm">
-              {projects.map((project) => {
-                const assignedStaff = employees.find(
-                  (e) => e.id === project.assigned_employee_id
-                );
-                return (
-                  <tr key={project.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="p-4 font-bold text-slate-900">{project.project_name}</td>
-                    <td className="p-4 text-slate-700 font-medium">{project.client_name}</td>
-                    <td className="p-4 text-slate-600">
-                      {assignedStaff ? (
-                        <span className="font-medium text-slate-800">{assignedStaff.full_name}</span>
-                      ) : (
-                        <span className="text-xs text-slate-400 italic">Unassigned</span>
-                      )}
-                    </td>
-                    <td className="p-4 font-semibold text-slate-900">
-                      ${project.budget?.toLocaleString()}
-                    </td>
-                    <td className="p-4">
-                      <select
-                        value={project.status}
-                        onChange={(e) => updateProjectStatus(project.id, e.target.value)}
-                        className="p-1.5 border rounded-lg text-xs font-semibold bg-slate-50 border-slate-200 text-slate-800"
-                      >
-                        <option value="Planning">Planning</option>
-                        <option value="In Progress">In Progress</option>
-                        <option value="Testing">Testing</option>
-                        <option value="Completed">Completed</option>
-                        <option value="On Hold">On Hold</option>
-                      </select>
-                    </td>
-                    <td className="p-4">
-                      <button
-                        onClick={() => deleteProject(project.id)}
-                        className="text-slate-400 hover:text-red-500 transition-colors"
-                        title="Delete project"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
-}
-</file>
-
-<file path="src/app/dashboard/tickets/page.tsx">
-'use client';
-
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Plus } from 'lucide-react';
-
-interface Ticket {
-  id: string;
-  title: string;
-  client_name: string;
-  priority: string;
-  status: string;
-}
-
-export default function TicketsPage() {
-  const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({ title: '', client_name: '', priority: 'Medium', status: 'Open' });
-
-  const fetchTickets = async () => {
-    const { data } = await supabase.from('tickets').select('*').order('created_at', { ascending: false });
-    if (data) setTickets(data);
-  };
-
-  useEffect(() => {
-    fetchTickets();
-  }, []);
-
-  const createTicket = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const { data, error } = await supabase.from('tickets').insert([formData]).select();
-    if (!error && data) {
-      setTickets([data[0], ...tickets]);
-      setShowModal(false);
-      setFormData({ title: '', client_name: '', priority: 'Medium', status: 'Open' });
-    }
-  };
-
-  return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">IT Service Desk & Helpdesk</h1>
-          <p className="text-sm text-slate-500">Track client support tickets and incident resolutions</p>
-        </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg flex items-center gap-2 text-sm"
-        >
-          <Plus className="w-4 h-4" /> Create Incident Ticket
-        </button>
-      </div>
-
-      {showModal && (
-        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
-          <form onSubmit={createTicket} className="bg-white rounded-xl p-6 w-full max-w-md space-y-4 shadow-xl">
-            <h2 className="text-lg font-bold text-slate-900">New Incident Ticket</h2>
-            <input
-              type="text"
-              placeholder="Ticket Title / Issue Description"
-              required
-              className="w-full p-2 border rounded-lg text-sm"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            />
-            <input
-              type="text"
-              placeholder="Client Company Name"
-              required
-              className="w-full p-2 border rounded-lg text-sm"
-              value={formData.client_name}
-              onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
-            />
-            <select
-              className="w-full p-2 border rounded-lg text-sm"
-              value={formData.priority}
-              onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-            >
-              <option value="Low">Low Priority</option>
-              <option value="Medium">Medium Priority</option>
-              <option value="High">High Priority</option>
-              <option value="Urgent">Urgent Priority</option>
-            </select>
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowModal(false)}
-                className="px-4 py-2 border rounded-lg text-sm font-medium text-slate-600"
-              >
-                Cancel
-              </button>
-              <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">
-                Submit Ticket
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <table className="w-full text-left border-collapse">
-          <thead className="bg-slate-100 border-b border-slate-200 text-slate-700 font-semibold uppercase text-xs">
-            <tr>
-              <th className="p-4">Ticket</th>
-              <th className="p-4">Client</th>
-              <th className="p-4">Priority</th>
-              <th className="p-4">Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 text-sm">
-            {tickets.map((t) => (
-              <tr key={t.id} className="hover:bg-slate-50">
-                <td className="p-4 font-semibold text-slate-900">{t.title}</td>
-                <td className="p-4 text-slate-700">{t.client_name}</td>
-                <td className="p-4">
-                  <span
-                    className={`px-2 py-1 rounded text-xs font-semibold ${
-                      t.priority === 'Urgent'
-                        ? 'bg-red-100 text-red-800'
-                        : t.priority === 'High'
-                        ? 'bg-orange-100 text-orange-800'
-                        : 'bg-slate-100 text-slate-800'
-                    }`}
-                  >
-                    {t.priority}
-                  </span>
-                </td>
-                <td className="p-4 font-medium text-slate-700">{t.status}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-</file>
-
-<file path="src/app/layout.tsx">
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-export const metadata: Metadata = {
-  title: "Create Next App",
-  description: "Generated by create next app",
-};
-
-export default function RootLayout({ children }: LayoutProps<"/">) {
-  return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
-    </html>
-  );
-}
-</file>
-
 <file path="src/lib/supabase.ts">
 import { createClient } from '@supabase/supabase-js';
 
@@ -798,391 +352,523 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 }
 </file>
 
-<file path="src/app/dashboard/hr/page.tsx">
+<file path="src/app/dashboard/projects/page.tsx">
 'use client';
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, FolderKanban } from 'lucide-react';
+
+interface Project {
+  id: string;
+  project_name: string;
+  client_name: string;
+  budget: number;
+  status: string;
+  assigned_employee_id?: string;
+}
 
 interface Employee {
   id: string;
   full_name: string;
-  email: string;
-  role: string;
-  department: string;
-  status: string;
 }
 
-export default function HRPage() {
+export default function ProjectsPage() {
+  const [projects, setProjects] = useState<Project[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({
-    full_name: '',
-    email: '',
-    role: '',
-    department: 'Engineering',
-    status: 'Active',
-  });
-
-  const fetchEmployees = async () => {
-    const { data } = await supabase.from('employees').select('*').order('joined_date', { ascending: false });
-    if (data) setEmployees(data);
-  };
-
-  useEffect(() => {
-    fetchEmployees();
-  }, []);
-
-  const createEmployee = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const { data, error } = await supabase.from('employees').insert([formData]).select();
-    if (!error && data) {
-      setEmployees([data[0], ...employees]);
-      setShowModal(false);
-      setFormData({ full_name: '', email: '', role: '', department: 'Engineering', status: 'Active' });
-    }
-  };
-
-  const deleteEmployee = async (id: string) => {
-    await supabase.from('employees').delete().eq('id', id);
-    setEmployees(employees.filter((e) => e.id !== id));
-  };
-
-  return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">HR & Employee Directory</h1>
-          <p className="text-sm text-slate-500">Manage internal IT staff and department roles</p>
-        </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg flex items-center gap-2 text-sm"
-        >
-          <Plus className="w-4 h-4" /> Add Employee
-        </button>
-      </div>
-
-      {showModal && (
-        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
-          <form onSubmit={createEmployee} className="bg-white rounded-xl p-6 w-full max-w-md space-y-4 shadow-xl">
-            <h2 className="text-lg font-bold text-slate-900">Add Staff Member</h2>
-            <input
-              type="text"
-              placeholder="Full Name"
-              required
-              className="w-full p-2 border rounded-lg text-sm"
-              value={formData.full_name}
-              onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-            />
-            <input
-              type="email"
-              placeholder="Email Address"
-              required
-              className="w-full p-2 border rounded-lg text-sm"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            />
-            <input
-              type="text"
-              placeholder="Role (e.g. Senior DevOps)"
-              required
-              className="w-full p-2 border rounded-lg text-sm"
-              value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-            />
-            <select
-              className="w-full p-2 border rounded-lg text-sm"
-              value={formData.department}
-              onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-            >
-              <option value="Engineering">Engineering</option>
-              <option value="Cybersecurity">Cybersecurity</option>
-              <option value="Infrastructure">Infrastructure</option>
-              <option value="Sales">Sales</option>
-            </select>
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowModal(false)}
-                className="px-4 py-2 border rounded-lg text-sm font-medium text-slate-600"
-              >
-                Cancel
-              </button>
-              <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">
-                Save
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {employees.map((emp) => (
-          <div key={emp.id} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative group">
-            <button
-              onClick={() => deleteEmployee(emp.id)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-            <h3 className="font-bold text-base text-slate-900">{emp.full_name}</h3>
-            <p className="text-sm text-slate-600 font-medium">{emp.role}</p>
-            <p className="text-xs text-slate-400 mb-4">{emp.email}</p>
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-              <span className="font-semibold text-slate-700">{emp.department}</span>
-              <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-medium">{emp.status}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-</file>
-
-<file path="src/app/dashboard/sales/page.tsx">
-'use client';
-
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Plus, Trash2 } from 'lucide-react';
-
-interface Lead {
-  id: string;
-  name: string;
-  email: string;
-  company: string;
-  status: string;
-  value: number;
-}
-
-export default function SalesPage() {
-  const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({ name: '', email: '', company: '', value: 0, status: 'Lead' });
+  const [formData, setFormData] = useState({
+    project_name: '',
+    client_name: '',
+    budget: 0,
+    status: 'Planning',
+    assigned_employee_id: '',
+  });
 
-  const fetchLeads = async () => {
-    const { data } = await supabase.from('leads').select('*').order('created_at', { ascending: false });
-    if (data) setLeads(data);
+  const fetchData = async () => {
+    const { data: projData } = await supabase
+      .from('projects')
+      .select('*')
+      .order('created_at', { ascending: false });
+    const { data: empData } = await supabase.from('employees').select('id, full_name');
+
+    if (projData) setProjects(projData);
+    if (empData) setEmployees(empData);
     setLoading(false);
   };
 
   useEffect(() => {
-    fetchLeads();
+    fetchData();
   }, []);
 
-  const createLead = async (e: React.FormEvent) => {
+  const createProject = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { data, error } = await supabase.from('leads').insert([formData]).select();
+    const payload = {
+      ...formData,
+      assigned_employee_id: formData.assigned_employee_id || null,
+    };
+    const { data, error } = await supabase.from('projects').insert([payload]).select();
     if (!error && data) {
-      setLeads([data[0], ...leads]);
+      setProjects([data[0], ...projects]);
       setShowModal(false);
-      setFormData({ name: '', email: '', company: '', value: 0, status: 'Lead' });
+      setFormData({
+        project_name: '',
+        client_name: '',
+        budget: 0,
+        status: 'Planning',
+        assigned_employee_id: '',
+      });
     }
   };
 
-  const updateLeadStatus = async (id: string, status: string) => {
-    await supabase.from('leads').update({ status }).eq('id', id);
-    setLeads(leads.map((l) => (l.id === id ? { ...l, status } : l)));
+  const updateProjectStatus = async (id: string, status: string) => {
+    await supabase.from('projects').update({ status }).eq('id', id);
+    setProjects(projects.map((p) => (p.id === id ? { ...p, status } : p)));
   };
 
-  const deleteLead = async (id: string) => {
-    await supabase.from('leads').delete().eq('id', id);
-    setLeads(leads.filter((l) => l.id !== id));
+  const deleteProject = async (id: string) => {
+    await supabase.from('projects').delete().eq('id', id);
+    setProjects(projects.filter((p) => p.id !== id));
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Sales Pipeline</h1>
-          <p className="text-sm text-slate-500">Manage client leads, deal stages, and contract values</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 flex items-center gap-2">
+            <FolderKanban className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 shrink-0" />
+            Projects & Operations
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500">
+            Track client deliverables, tech stacks, budgets, and staff allocations
+          </p>
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg flex items-center gap-2 text-sm shadow-xs"
+          className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2.5 sm:py-2 rounded-lg flex items-center justify-center gap-2 text-sm shadow-xs transition-colors shrink-0"
         >
-          <Plus className="w-4 h-4" /> Add Lead
+          <Plus className="w-4 h-4" /> Create Project
         </button>
       </div>
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
-          <form onSubmit={createLead} className="bg-white rounded-xl p-6 w-full max-w-md space-y-4 shadow-xl">
-            <h2 className="text-lg font-bold text-slate-900">Add New Sales Lead</h2>
-            <input
-              type="text"
-              placeholder="Contact Name"
-              required
-              className="w-full p-2 border rounded-lg text-sm"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            />
-            <input
-              type="email"
-              placeholder="Email Address"
-              required
-              className="w-full p-2 border rounded-lg text-sm"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            />
-            <input
-              type="text"
-              placeholder="Company"
-              required
-              className="w-full p-2 border rounded-lg text-sm"
-              value={formData.company}
-              onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-            />
-            <input
-              type="number"
-              placeholder="Estimated Value ($)"
-              required
-              className="w-full p-2 border rounded-lg text-sm"
-              value={formData.value || ''}
-              onChange={(e) => setFormData({ ...formData, value: Number(e.target.value) })}
-            />
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <form
+            onSubmit={createProject}
+            className="bg-white rounded-xl p-5 sm:p-6 w-full max-w-md space-y-4 shadow-xl my-auto"
+          >
+            <h2 className="text-lg font-bold text-slate-900">Add New IT Project</h2>
+            <div>
+              <label className="text-xs font-semibold text-slate-600 block mb-1">Project Name</label>
+              <input
+                type="text"
+                placeholder="e.g. Infrastructure Upgrade"
+                required
+                className="w-full p-2.5 sm:p-2 border border-slate-200 rounded-lg text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+                value={formData.project_name}
+                onChange={(e) => setFormData({ ...formData, project_name: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-slate-600 block mb-1">Client Organization</label>
+              <input
+                type="text"
+                placeholder="e.g. Acme Enterprise"
+                required
+                className="w-full p-2.5 sm:p-2 border border-slate-200 rounded-lg text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+                value={formData.client_name}
+                onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-slate-600 block mb-1">Budget ($)</label>
+                <input
+                  type="number"
+                  placeholder="25000"
+                  required
+                  className="w-full p-2.5 sm:p-2 border border-slate-200 rounded-lg text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={formData.budget || ''}
+                  onChange={(e) => setFormData({ ...formData, budget: Number(e.target.value) })}
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-600 block mb-1">Initial Status</label>
+                <select
+                  className="w-full p-2.5 sm:p-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                >
+                  <option value="Planning">Planning</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Testing">Testing</option>
+                  <option value="Completed">Completed</option>
+                  <option value="On Hold">On Hold</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-slate-600 block mb-1">Assigned Tech Lead</label>
+              <select
+                className="w-full p-2.5 sm:p-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                value={formData.assigned_employee_id}
+                onChange={(e) =>
+                  setFormData({ ...formData, assigned_employee_id: e.target.value })
+                }
+              >
+                <option value="">Unassigned</option>
+                {employees.map((emp) => (
+                  <option key={emp.id} value={emp.id}>
+                    {emp.full_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setShowModal(false)}
-                className="px-4 py-2 border rounded-lg text-sm font-medium text-slate-600"
+                className="px-4 py-2 border rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
               >
                 Cancel
               </button>
-              <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">
-                Save Lead
+              <button
+                type="submit"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+              >
+                Save Project
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Leads Table */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <table className="w-full text-left border-collapse">
-          <thead className="bg-slate-100 border-b border-slate-200 text-slate-700 font-semibold uppercase text-xs">
-            <tr>
-              <th className="p-4">Contact</th>
-              <th className="p-4">Company</th>
-              <th className="p-4">Value</th>
-              <th className="p-4">Stage</th>
-              <th className="p-4">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 text-sm">
-            {leads.map((lead) => (
-              <tr key={lead.id} className="hover:bg-slate-50">
-                <td className="p-4">
-                  <div className="font-semibold text-slate-900">{lead.name}</div>
-                  <div className="text-xs text-slate-500">{lead.email}</div>
-                </td>
-                <td className="p-4 text-slate-700">{lead.company}</td>
-                <td className="p-4 font-semibold text-slate-900">${lead.value?.toLocaleString()}</td>
-                <td className="p-4">
-                  <select
-                    value={lead.status}
-                    onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
-                    className="p-1 border rounded-md text-xs font-medium bg-slate-50"
-                  >
-                    <option value="Lead">Lead</option>
-                    <option value="Contacted">Contacted</option>
-                    <option value="Qualified">Qualified</option>
-                    <option value="Proposal">Proposal</option>
-                    <option value="Converted">Converted</option>
-                    <option value="Lost">Lost</option>
-                  </select>
-                </td>
-                <td className="p-4">
-                  <button onClick={() => deleteLead(lead.id)} className="text-red-500 hover:text-red-700">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {/* Main Content Area */}
+      {loading ? (
+        <div className="p-8 bg-white rounded-xl border border-slate-200 text-center text-slate-500 text-sm">
+          Loading project data...
+        </div>
+      ) : projects.length === 0 ? (
+        <div className="p-8 sm:p-12 bg-white rounded-xl border border-slate-200 text-center space-y-3">
+          <FolderKanban className="w-10 h-10 sm:w-12 sm:h-12 text-slate-300 mx-auto" />
+          <h3 className="font-semibold text-slate-700 text-base">No active projects found</h3>
+          <p className="text-xs sm:text-sm text-slate-500 max-w-sm mx-auto">
+            Click "Create Project" above to add your first IT delivery engagement.
+          </p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          {/* Desktop & Tablet Table View (Hidden on Small Screens) */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[700px]">
+              <thead className="bg-slate-100 border-b border-slate-200 text-slate-700 font-semibold uppercase text-xs">
+                <tr>
+                  <th className="p-4">Project Name</th>
+                  <th className="p-4">Client</th>
+                  <th className="p-4">Assigned Tech Lead</th>
+                  <th className="p-4">Budget</th>
+                  <th className="p-4">Status</th>
+                  <th className="p-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-sm">
+                {projects.map((project) => {
+                  const assignedStaff = employees.find(
+                    (e) => e.id === project.assigned_employee_id
+                  );
+                  return (
+                    <tr key={project.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="p-4 font-bold text-slate-900">{project.project_name}</td>
+                      <td className="p-4 text-slate-700 font-medium">{project.client_name}</td>
+                      <td className="p-4 text-slate-600">
+                        {assignedStaff ? (
+                          <span className="font-medium text-slate-800">{assignedStaff.full_name}</span>
+                        ) : (
+                          <span className="text-xs text-slate-400 italic">Unassigned</span>
+                        )}
+                      </td>
+                      <td className="p-4 font-semibold text-slate-900">
+                        ${project.budget?.toLocaleString()}
+                      </td>
+                      <td className="p-4">
+                        <select
+                          value={project.status}
+                          onChange={(e) => updateProjectStatus(project.id, e.target.value)}
+                          className="p-1.5 border rounded-lg text-xs font-semibold bg-slate-50 border-slate-200 text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        >
+                          <option value="Planning">Planning</option>
+                          <option value="In Progress">In Progress</option>
+                          <option value="Testing">Testing</option>
+                          <option value="Completed">Completed</option>
+                          <option value="On Hold">On Hold</option>
+                        </select>
+                      </td>
+                      <td className="p-4 text-right">
+                        <button
+                          onClick={() => deleteProject(project.id)}
+                          className="text-slate-400 hover:text-red-500 p-1 rounded-md transition-colors"
+                          title="Delete project"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Card Layout (Visible on Small Screens) */}
+          <div className="block md:hidden divide-y divide-slate-100">
+            {projects.map((project) => {
+              const assignedStaff = employees.find(
+                (e) => e.id === project.assigned_employee_id
+              );
+              return (
+                <div key={project.id} className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="font-bold text-slate-900 text-base">{project.project_name}</div>
+                      <div className="text-xs text-slate-500 font-medium">{project.client_name}</div>
+                    </div>
+                    <button
+                      onClick={() => deleteProject(project.id)}
+                      className="text-slate-400 hover:text-red-500 p-1 rounded-md transition-colors shrink-0"
+                      title="Delete project"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                    <div>
+                      <span className="text-slate-400 block font-medium">Tech Lead</span>
+                      <span className="text-slate-800 font-semibold truncate block">
+                        {assignedStaff ? assignedStaff.full_name : 'Unassigned'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block font-medium">Budget</span>
+                      <span className="text-slate-900 font-bold">${project.budget?.toLocaleString()}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-xs font-semibold text-slate-500">Status</span>
+                    <select
+                      value={project.status}
+                      onChange={(e) => updateProjectStatus(project.id, e.target.value)}
+                      className="p-1.5 border rounded-lg text-xs font-semibold bg-slate-50 border-slate-200 text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    >
+                      <option value="Planning">Planning</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Testing">Testing</option>
+                      <option value="Completed">Completed</option>
+                      <option value="On Hold">On Hold</option>
+                    </select>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 </file>
 
-<file path="src/app/dashboard/layout.tsx">
+<file path="src/app/dashboard/tickets/page.tsx">
 'use client';
 
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { LogOut, Users, DollarSign, ShieldAlert, FolderKanban, Ticket } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { Plus } from 'lucide-react';
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const router = useRouter();
+interface Ticket {
+  id: string;
+  title: string;
+  client_name: string;
+  priority: string;
+  status: string;
+}
 
-  const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    router.push('/login');
-    router.refresh();
+export default function TicketsPage() {
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [showModal, setShowModal] = useState(false);
+  const [formData, setFormData] = useState({ title: '', client_name: '', priority: 'Medium', status: 'Open' });
+
+  const fetchTickets = async () => {
+    const { data } = await supabase.from('tickets').select('*').order('created_at', { ascending: false });
+    if (data) setTickets(data);
   };
 
-  const navItems = [
-    { href: '/dashboard/sales', label: 'Sales & Leads', icon: DollarSign },
-    { href: '/dashboard/projects', label: 'Projects & Ops', icon: FolderKanban },
-    { href: '/dashboard/tickets', label: 'IT Support Tickets', icon: Ticket },
-    { href: '/dashboard/hr', label: 'HR Directory', icon: Users },
-  ];
+  useEffect(() => {
+    fetchTickets();
+  }, []);
+
+  const createTicket = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const { data, error } = await supabase.from('tickets').insert([formData]).select();
+    if (!error && data) {
+      setTickets([data[0], ...tickets]);
+      setShowModal(false);
+      setFormData({ title: '', client_name: '', priority: 'Medium', status: 'Open' });
+    }
+  };
 
   return (
-    <div className="min-h-screen flex bg-slate-50 text-slate-900">
-      <aside className="w-64 bg-slate-950 text-white flex flex-col justify-between p-4 border-r border-slate-800">
+    <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
+      {/* Responsive Header Section */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-8 px-2 pt-2 text-blue-400 font-bold text-xl">
-            <ShieldAlert className="w-6 h-6 text-blue-500" />
-            <span>4Biz IT CRM</span>
-          </div>
-
-          <nav className="space-y-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">IT Service Desk & Helpdesk</h1>
+          <p className="text-xs sm:text-sm text-slate-500">Track client support tickets and incident resolutions</p>
         </div>
+        <button
+          onClick={() => setShowModal(true)}
+          className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2.5 sm:py-2 rounded-lg flex items-center justify-center gap-2 text-sm shadow-xs transition-colors shrink-0"
+        >
+          <Plus className="w-4 h-4" /> Create Incident Ticket
+        </button>
+      </div>
 
-        <div className="border-t border-slate-800 pt-4 space-y-3">
-          <div className="px-2">
-            <p className="text-xs text-slate-400 font-medium">Logged in as</p>
-            <p className="text-sm font-semibold text-slate-200 truncate">Admin User</p>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 py-2 px-3 rounded-lg text-sm font-semibold transition-colors"
-          >
-            <LogOut className="w-4 h-4" />
-            Sign Out
-          </button>
+      {/* Responsive Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <form onSubmit={createTicket} className="bg-white rounded-xl p-5 sm:p-6 w-full max-w-md space-y-4 shadow-xl my-auto">
+            <h2 className="text-lg font-bold text-slate-900">New Incident Ticket</h2>
+            <div>
+              <label className="text-xs font-semibold text-slate-600 block mb-1">Ticket Title</label>
+              <input
+                type="text"
+                placeholder="Ticket Title / Issue Description"
+                required
+                className="w-full p-2.5 sm:p-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600 block mb-1">Client Company</label>
+              <input
+                type="text"
+                placeholder="Client Company Name"
+                required
+                className="w-full p-2.5 sm:p-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                value={formData.client_name}
+                onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600 block mb-1">Priority</label>
+              <select
+                className="w-full p-2.5 sm:p-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                value={formData.priority}
+                onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+              >
+                <option value="Low">Low Priority</option>
+                <option value="Medium">Medium Priority</option>
+                <option value="High">High Priority</option>
+                <option value="Urgent">Urgent Priority</option>
+              </select>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 border rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+                Submit Ticket
+              </button>
+            </div>
+          </form>
         </div>
-      </aside>
+      )}
 
-      <main className="flex-1 p-8 overflow-y-auto">{children}</main>
+      {/* Tickets Container */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        {tickets.length === 0 ? (
+          <div className="p-8 text-center text-slate-500 text-sm">No tickets found.</div>
+        ) : (
+          <>
+            {/* Desktop & Tablet Table View (Hidden on Small Screens) */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[600px]">
+                <thead className="bg-slate-100 border-b border-slate-200 text-slate-700 font-semibold uppercase text-xs">
+                  <tr>
+                    <th className="p-4">Ticket</th>
+                    <th className="p-4">Client</th>
+                    <th className="p-4">Priority</th>
+                    <th className="p-4">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-sm">
+                  {tickets.map((t) => (
+                    <tr key={t.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="p-4 font-semibold text-slate-900">{t.title}</td>
+                      <td className="p-4 text-slate-700">{t.client_name}</td>
+                      <td className="p-4">
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-semibold ${
+                            t.priority === 'Urgent'
+                              ? 'bg-red-100 text-red-800'
+                              : t.priority === 'High'
+                              ? 'bg-orange-100 text-orange-800'
+                              : 'bg-slate-100 text-slate-800'
+                          }`}
+                        >
+                          {t.priority}
+                        </span>
+                      </td>
+                      <td className="p-4 font-medium text-slate-700">{t.status}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card Layout (Visible on Small Screens) */}
+            <div className="block md:hidden divide-y divide-slate-100">
+              {tickets.map((t) => (
+                <div key={t.id} className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="font-semibold text-slate-900 text-base">{t.title}</div>
+                    <span
+                      className={`px-2 py-0.5 rounded text-xs font-semibold shrink-0 ${
+                        t.priority === 'Urgent'
+                          ? 'bg-red-100 text-red-800'
+                          : t.priority === 'High'
+                          ? 'bg-orange-100 text-orange-800'
+                          : 'bg-slate-100 text-slate-800'
+                      }`}
+                    >
+                      {t.priority}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs pt-1">
+                    <span className="text-slate-500 font-medium">Client: <span className="text-slate-800 font-semibold">{t.client_name}</span></span>
+                    <span className="font-medium text-slate-700 bg-slate-50 px-2 py-1 rounded border border-slate-100">{t.status}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -1386,6 +1072,38 @@ body {
 }
 </file>
 
+<file path="src/app/layout.tsx">
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+export const metadata: Metadata = {
+  title: "4Biz CRM",
+  description: "CRM for 4Biz",
+};
+
+export default function RootLayout({ children }: LayoutProps<"/">) {
+  return (
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+    >
+      <body className="min-h-full flex flex-col">{children}</body>
+    </html>
+  );
+}
+</file>
+
 <file path="src/app/page.tsx">
 import { redirect } from 'next/navigation';
 
@@ -1422,6 +1140,543 @@ export default function Home() {
     "tailwindcss": "^4",
     "typescript": "^5"
   }
+}
+</file>
+
+<file path="src/app/dashboard/hr/page.tsx">
+'use client';
+
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { Plus, Trash2 } from 'lucide-react';
+
+interface Employee {
+  id: string;
+  full_name: string;
+  email: string;
+  role: string;
+  department: string;
+  status: string;
+}
+
+export default function HRPage() {
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [showModal, setShowModal] = useState(false);
+  const [formData, setFormData] = useState({
+    full_name: '',
+    email: '',
+    role: '',
+    department: 'Engineering',
+    status: 'Active',
+  });
+
+  const fetchEmployees = async () => {
+    const { data } = await supabase.from('employees').select('*').order('joined_date', { ascending: false });
+    if (data) setEmployees(data);
+  };
+
+  useEffect(() => {
+    fetchEmployees();
+  }, []);
+
+  const createEmployee = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const { data, error } = await supabase.from('employees').insert([formData]).select();
+    if (!error && data) {
+      setEmployees([data[0], ...employees]);
+      setShowModal(false);
+      setFormData({ full_name: '', email: '', role: '', department: 'Engineering', status: 'Active' });
+    }
+  };
+
+  const deleteEmployee = async (id: string) => {
+    await supabase.from('employees').delete().eq('id', id);
+    setEmployees(employees.filter((e) => e.id !== id));
+  };
+
+  return (
+    <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">HR & Employee Directory</h1>
+          <p className="text-xs sm:text-sm text-slate-500">Manage internal IT staff and department roles</p>
+        </div>
+        <button
+          onClick={() => setShowModal(true)}
+          className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2.5 sm:py-2 rounded-lg flex items-center justify-center gap-2 text-sm shadow-xs transition-colors shrink-0"
+        >
+          <Plus className="w-4 h-4" /> Add Employee
+        </button>
+      </div>
+
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <form onSubmit={createEmployee} className="bg-white rounded-xl p-5 sm:p-6 w-full max-w-md space-y-4 shadow-xl my-auto">
+            <h2 className="text-lg font-bold text-slate-900">Add Staff Member</h2>
+            <div>
+              <label className="text-xs font-semibold text-slate-600 block mb-1">Full Name</label>
+              <input
+                type="text"
+                placeholder="Full Name"
+                required
+                className="w-full p-2.5 sm:p-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                value={formData.full_name}
+                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600 block mb-1">Email Address</label>
+              <input
+                type="email"
+                placeholder="Email Address"
+                required
+                className="w-full p-2.5 sm:p-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600 block mb-1">Role</label>
+              <input
+                type="text"
+                placeholder="Role (e.g. Senior DevOps)"
+                required
+                className="w-full p-2.5 sm:p-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                value={formData.role}
+                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600 block mb-1">Department</label>
+              <select
+                className="w-full p-2.5 sm:p-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                value={formData.department}
+                onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+              >
+                <option value="Engineering">Engineering</option>
+                <option value="Cybersecurity">Cybersecurity</option>
+                <option value="Infrastructure">Infrastructure</option>
+                <option value="Sales">Sales</option>
+              </select>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 border rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+                Save
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Employee Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+        {employees.map((emp) => (
+          <div key={emp.id} className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm relative group">
+            <button
+              onClick={() => deleteEmployee(emp.id)}
+              className="absolute top-3.5 right-3.5 text-slate-400 hover:text-red-500 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity p-1 rounded-md"
+              title="Delete Staff Member"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+            <h3 className="font-bold text-base text-slate-900 pr-8 truncate">{emp.full_name}</h3>
+            <p className="text-sm text-slate-600 font-medium truncate">{emp.role}</p>
+            <p className="text-xs text-slate-400 mb-4 truncate">{emp.email}</p>
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+              <span className="font-semibold text-slate-700 truncate">{emp.department}</span>
+              <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-medium shrink-0">{emp.status}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/app/dashboard/sales/page.tsx">
+'use client';
+
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { Plus, Trash2 } from 'lucide-react';
+
+interface Lead {
+  id: string;
+  name: string;
+  email: string;
+  company: string;
+  status: string;
+  value: number;
+}
+
+export default function SalesPage() {
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [formData, setFormData] = useState({ name: '', email: '', company: '', value: 0, status: 'Lead' });
+
+  const fetchLeads = async () => {
+    const { data } = await supabase.from('leads').select('*').order('created_at', { ascending: false });
+    if (data) setLeads(data);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchLeads();
+  }, []);
+
+  const createLead = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const { data, error } = await supabase.from('leads').insert([formData]).select();
+    if (!error && data) {
+      setLeads([data[0], ...leads]);
+      setShowModal(false);
+      setFormData({ name: '', email: '', company: '', value: 0, status: 'Lead' });
+    }
+  };
+
+  const updateLeadStatus = async (id: string, status: string) => {
+    await supabase.from('leads').update({ status }).eq('id', id);
+    setLeads(leads.map((l) => (l.id === id ? { ...l, status } : l)));
+  };
+
+  const deleteLead = async (id: string) => {
+    await supabase.from('leads').delete().eq('id', id);
+    setLeads(leads.filter((l) => l.id !== id));
+  };
+
+  return (
+    <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
+      {/* Responsive Header Section */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Sales Pipeline</h1>
+          <p className="text-xs sm:text-sm text-slate-500">Manage client leads, deal stages, and contract values</p>
+        </div>
+        <button
+          onClick={() => setShowModal(true)}
+          className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2.5 sm:py-2 rounded-lg flex items-center justify-center gap-2 text-sm shadow-xs transition-colors shrink-0"
+        >
+          <Plus className="w-4 h-4" /> Add Lead
+        </button>
+      </div>
+
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <form onSubmit={createLead} className="bg-white rounded-xl p-5 sm:p-6 w-full max-w-md space-y-4 shadow-xl my-auto">
+            <h2 className="text-lg font-bold text-slate-900">Add New Sales Lead</h2>
+            <div>
+              <label className="text-xs font-semibold text-slate-600 block mb-1">Contact Name</label>
+              <input
+                type="text"
+                placeholder="Contact Name"
+                required
+                className="w-full p-2.5 sm:p-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600 block mb-1">Email Address</label>
+              <input
+                type="email"
+                placeholder="Email Address"
+                required
+                className="w-full p-2.5 sm:p-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600 block mb-1">Company</label>
+              <input
+                type="text"
+                placeholder="Company"
+                required
+                className="w-full p-2.5 sm:p-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                value={formData.company}
+                onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600 block mb-1">Estimated Value ($)</label>
+              <input
+                type="number"
+                placeholder="Estimated Value ($)"
+                required
+                className="w-full p-2.5 sm:p-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                value={formData.value || ''}
+                onChange={(e) => setFormData({ ...formData, value: Number(e.target.value) })}
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 border rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+                Save Lead
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Responsive Leads Container */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        {loading ? (
+          <div className="p-8 text-center text-slate-500 text-sm">Loading leads...</div>
+        ) : leads.length === 0 ? (
+          <div className="p-8 text-center text-slate-500 text-sm">No leads found. Click "Add Lead" to get started.</div>
+        ) : (
+          <>
+            {/* Desktop & Tablet Table View (Hidden on Small Mobile Screens) */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[650px]">
+                <thead className="bg-slate-100 border-b border-slate-200 text-slate-700 font-semibold uppercase text-xs">
+                  <tr>
+                    <th className="p-4">Contact</th>
+                    <th className="p-4">Company</th>
+                    <th className="p-4">Value</th>
+                    <th className="p-4">Stage</th>
+                    <th className="p-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-sm">
+                  {leads.map((lead) => (
+                    <tr key={lead.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="p-4">
+                        <div className="font-semibold text-slate-900">{lead.name}</div>
+                        <div className="text-xs text-slate-500">{lead.email}</div>
+                      </td>
+                      <td className="p-4 text-slate-700 font-medium">{lead.company}</td>
+                      <td className="p-4 font-semibold text-slate-900">${lead.value?.toLocaleString()}</td>
+                      <td className="p-4">
+                        <select
+                          value={lead.status}
+                          onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
+                          className="p-1.5 border border-slate-200 rounded-md text-xs font-medium bg-slate-50 text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        >
+                          <option value="Lead">Lead</option>
+                          <option value="Contacted">Contacted</option>
+                          <option value="Qualified">Qualified</option>
+                          <option value="Proposal">Proposal</option>
+                          <option value="Converted">Converted</option>
+                          <option value="Lost">Lost</option>
+                        </select>
+                      </td>
+                      <td className="p-4 text-right">
+                        <button 
+                          onClick={() => deleteLead(lead.id)} 
+                          className="text-slate-400 hover:text-red-500 p-1 rounded-md transition-colors"
+                          title="Delete Lead"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card Layout (Visible on Small Screens) */}
+            <div className="block md:hidden divide-y divide-slate-100">
+              {leads.map((lead) => (
+                <div key={lead.id} className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="font-semibold text-slate-900 text-base">{lead.name}</div>
+                      <div className="text-xs text-slate-500">{lead.email}</div>
+                    </div>
+                    <button 
+                      onClick={() => deleteLead(lead.id)} 
+                      className="text-slate-400 hover:text-red-500 p-1 rounded-md transition-colors shrink-0"
+                      title="Delete Lead"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                    <div>
+                      <span className="text-slate-400 block font-medium">Company</span>
+                      <span className="text-slate-800 font-semibold">{lead.company}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block font-medium">Est. Value</span>
+                      <span className="text-slate-900 font-bold">${lead.value?.toLocaleString()}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-xs font-semibold text-slate-500">Stage</span>
+                    <select
+                      value={lead.status}
+                      onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
+                      className="p-1.5 border border-slate-200 rounded-md text-xs font-medium bg-slate-50 text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    >
+                      <option value="Lead">Lead</option>
+                      <option value="Contacted">Contacted</option>
+                      <option value="Qualified">Qualified</option>
+                      <option value="Proposal">Proposal</option>
+                      <option value="Converted">Converted</option>
+                      <option value="Lost">Lost</option>
+                    </select>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/app/dashboard/layout.tsx">
+'use client';
+
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import {
+  LogOut,
+  Users,
+  DollarSign,
+  ShieldAlert,
+  FolderKanban,
+  Ticket,
+  Menu,
+  X,
+} from 'lucide-react';
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Close mobile sidebar automatically on navigation route changes
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
+
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    router.push('/login');
+    router.refresh();
+  };
+
+  const navItems = [
+    { href: '/dashboard/sales', label: 'Sales & Leads', icon: DollarSign },
+    { href: '/dashboard/projects', label: 'Projects & Ops', icon: FolderKanban },
+    { href: '/dashboard/tickets', label: 'IT Support Tickets', icon: Ticket },
+    { href: '/dashboard/hr', label: 'HR Directory', icon: Users },
+  ];
+
+  return (
+    <div className="min-h-screen flex flex-col lg:flex-row bg-slate-50 text-slate-900">
+      {/* Mobile Top Navigation Header */}
+      <header className="lg:hidden flex items-center justify-between bg-slate-950 text-white px-4 py-3 border-b border-slate-800 sticky top-0 z-40">
+        <div className="flex items-center gap-2 text-blue-400 font-bold text-lg">
+          <ShieldAlert className="w-5 h-5 text-blue-500" />
+          <span>4Biz IT CRM</span>
+        </div>
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="p-2 text-slate-400 hover:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          aria-label="Toggle Navigation Menu"
+        >
+          {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
+      </header>
+
+      {/* Mobile Backdrop Overlay */}
+      {mobileMenuOpen && (
+        <div
+          onClick={() => setMobileMenuOpen(false)}
+          className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-40 lg:hidden"
+        />
+      )}
+
+      {/* Sidebar (Mobile Slide-over & Desktop Static) */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-950 text-white flex flex-col justify-between p-4 border-r border-slate-800 transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:z-auto ${
+          mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div>
+          <div className="flex items-center justify-between mb-8 px-2 pt-2">
+            <div className="flex items-center gap-2 text-blue-400 font-bold text-xl">
+              <ShieldAlert className="w-6 h-6 text-blue-500" />
+              <span>4Biz IT CRM</span>
+            </div>
+            <button
+              onClick={() => setMobileMenuOpen(false)}
+              className="lg:hidden text-slate-400 hover:text-white p-1"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <nav className="space-y-1">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+
+        <div className="border-t border-slate-800 pt-4 space-y-3">
+          <div className="px-2">
+            <p className="text-xs text-slate-400 font-medium">Logged in as</p>
+            <p className="text-sm font-semibold text-slate-200 truncate">Admin User</p>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 py-2 px-3 rounded-lg text-sm font-semibold transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            Sign Out
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto min-w-0">
+        {children}
+      </main>
+    </div>
+  );
 }
 </file>
 
