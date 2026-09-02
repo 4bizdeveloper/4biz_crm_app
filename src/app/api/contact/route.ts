@@ -7,16 +7,10 @@ export async function POST(request: Request) {
     const { name, email, phone, company, requirements, campaign_name } = body;
 
     if (!name || !email) {
-      return NextResponse.json(
-        { error: 'Name and email are required fields.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Name and email are required fields.' }, { status: 400 });
     }
 
-    // Format contact_info for display compatibility (e.g., in UI cards/lists)
-    const contactInfoCombined = `${phone ? phone + '\n' : ''}${email}`.trim();
-
-    // Insert lead into Supabase ensuring 'email', 'phone', and 'contact_info' are populated
+    // Insert fresh lead into Supabase
     const { data, error } = await supabase
       .from('leads')
       .insert([
@@ -24,13 +18,12 @@ export async function POST(request: Request) {
           name,
           email,
           phone: phone || null,
-          contact_info: contactInfoCombined,
           company: company || null,
           requirements: requirements || null,
           campaign_name: campaign_name || 'Website Direct',
           source: 'Website',
           status: 'New',
-          assigned_to: null,
+          assigned_to: null, // Unassigned fresh lead
           value: 0
         }
       ])
@@ -44,4 +37,15 @@ export async function POST(request: Request) {
   } catch (err: any) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
+}
+
+// Enable CORS if your website is hosted on a separate domain/subdomain
+export async function OPTIONS() {
+  return NextResponse.json({}, {
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
+  });
 }
