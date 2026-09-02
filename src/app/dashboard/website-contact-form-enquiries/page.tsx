@@ -95,9 +95,7 @@ export default function WebsiteContactFormEnquiriesPage() {
     });
   }, [leads, dateRange]);
 
-
-  
-const saveLead = async (e: React.FormEvent) => {
+  const saveLead = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingLead) return;
 
@@ -144,14 +142,12 @@ const saveLead = async (e: React.FormEvent) => {
     }
   };
 
-
-
   const openEditModal = (lead: Lead) => {
     setEditingLead(lead);
     const isAssigned = lead.assigned_to === 'assigned' || lead.assigned_to === 'Assigned';
     setFormData({
       name: lead.name || '',
-      contact_info: lead.contact_info || lead.phone || lead.email || '',
+      contact_info: lead.contact_info || (lead.email && lead.phone ? `${lead.email}\n${lead.phone}` : lead.email || lead.phone || ''),
       company: lead.company || '',
       source: 'Website',
       campaign_name: lead.campaign_name || '',
@@ -210,7 +206,8 @@ const saveLead = async (e: React.FormEvent) => {
         const assignmentLabel = l.assigned_to ? 'assign to leads' : 'not assign to leads';
         const formattedDate = formatDateDDMMYYYY(l.created_at);
         const cleanReq = (l.requirements || '').replace(/"/g, '""');
-        const cleanContact = (l.contact_info || l.phone || l.email || '').replace(/"/g, '""').replace(/\n/g, ' ');
+        const contactVal = l.contact_info || (l.email && l.phone ? `${l.email} ${l.phone}` : l.email || l.phone || '');
+        const cleanContact = contactVal.replace(/"/g, '""').replace(/\n/g, ' ');
         return `"${l.name}","${cleanContact}","${l.company || ''}","${l.source || ''}","${l.campaign_name || ''}","${cleanReq}","${l.status}",${l.value},"${assignmentLabel}","${formattedDate}"`;
       })
       .join('\n');
@@ -315,7 +312,7 @@ const saveLead = async (e: React.FormEvent) => {
                         <div className="font-bold text-slate-900">{lead.name}</div>
                         <div className="text-xs text-slate-500 flex items-start gap-1.5 mt-1 whitespace-pre-line">
                           <PhoneCall className="w-3 h-3 text-slate-400 shrink-0 mt-0.5" /> 
-                          <span>{lead.contact_info || lead.phone || lead.email}</span>
+                          <span>{lead.contact_info || `${lead.email}${lead.phone ? `\n${lead.phone}` : ''}`}</span>
                         </div>
                       </td>
                       <td className="p-4 align-top">

@@ -10,24 +10,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Name and email are required fields.' }, { status: 400 });
     }
 
-    // Insert fresh lead into Supabase
-    const { data, error } = await supabase
-      .from('leads')
-      .insert([
-        {
-          name,
-          email,
-          phone: phone || null,
-          company: company || null,
-          requirements: requirements || null,
-          campaign_name: campaign_name || 'Website Direct',
-          source: 'Website',
-          status: 'New',
-          assigned_to: null, // Unassigned fresh lead
-          value: 0
-        }
-      ])
-      .select();
+// src/app/api/contact/route.ts
+const { data, error } = await supabase
+  .from('leads')
+  .insert([
+    {
+      name,
+      email,
+      phone: phone || null,
+      contact_info: phone ? `${email}\n${phone}` : email, // Include email in contact_info
+      company: company || null,
+      requirements: requirements || null,
+      campaign_name: campaign_name || 'Website Direct',
+      source: 'Website',
+      status: 'New',
+      assigned_to: null,
+      value: 0
+    }
+  ])
+  .select();
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
