@@ -44,7 +44,7 @@ export default function DashboardLayout({
     },
     {
       name: 'Website Contact Form Enquiries',
-      href: '/dashboard/website-leads',
+      href: '/dashboard/website-contact-form-enquiries',
       icon: Globe,
     },
     {

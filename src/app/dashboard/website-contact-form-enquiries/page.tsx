@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import {
   Download, Calendar, CheckCircle2, FileText,
-  Bot, UserCheck, Trash2, PhoneCall, Sparkles, Edit
+  Bot, UserCheck, Trash2, PhoneCall, Edit
 } from 'lucide-react';
 
 interface Lead {
@@ -24,7 +24,7 @@ interface Lead {
   created_at: string;
 }
 
-export default function WebsiteEnquiriesModule() {
+export default function WebsiteContactFormEnquiriesPage() {
   const [activeTab, setActiveTab] = useState<'details' | 'pipeline' | 'automation'>('details');
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,9 +59,11 @@ export default function WebsiteEnquiriesModule() {
 
   const fetchData = async () => {
     setLoading(true);
+    // Fetch ONLY website contact form enquiries
     const { data: leadsData } = await supabase
       .from('leads')
       .select('*')
+      .eq('source', 'Website')
       .order('created_at', { ascending: false });
 
     if (leadsData) setLeads(leadsData);
@@ -106,7 +108,7 @@ export default function WebsiteEnquiriesModule() {
       phone: formData.contact_info.split('\n')[0].trim(),
       contact_info: formData.contact_info,
       company: formData.company || null,
-      source: formData.source || 'Website',
+      source: 'Website',
       value: Number(formData.value) || 0,
       status: isAssigned && formData.status === 'New' ? 'Assigned' : formData.status,
       assigned_to: isAssigned ? 'assigned' : null,
@@ -139,7 +141,7 @@ export default function WebsiteEnquiriesModule() {
       name: lead.name || '',
       contact_info: lead.contact_info || lead.phone || lead.email || '',
       company: lead.company || '',
-      source: lead.source || 'Website',
+      source: 'Website',
       campaign_name: lead.campaign_name || '',
       requirements: lead.requirements || '',
       value: lead.value || 0,
@@ -153,15 +155,6 @@ export default function WebsiteEnquiriesModule() {
   const closeModal = () => {
     setShowModal(false);
     setEditingLead(null);
-  };
-
-  const updateLeadStatus = async (id: string, status: string) => {
-    const { error } = await supabase.from('leads').update({ status }).eq('id', id);
-    if (error) {
-      alert(`Status update failed: ${error.message}`);
-      return;
-    }
-    setLeads(leads.map((l) => (l.id === id ? { ...l, status } : l)));
   };
 
   const updateAssignment = async (id: string, assignmentStatus: string) => {
@@ -214,7 +207,7 @@ export default function WebsiteEnquiriesModule() {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `enquiries_export_${dateRange}_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `website_contact_enquiries_${dateRange}_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
   };
 
@@ -228,7 +221,7 @@ export default function WebsiteEnquiriesModule() {
             Website Contact Form Enquiries
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Flow: <span className="font-semibold text-slate-700">New → Assigned → Contacted → Follow-up → Qualified → Converted / Disqualified</span>
+            Displaying only website contact form enquiries. Select <span className="font-semibold text-slate-700">"assign to leads"</span> to push an enquiry to the main Leads page.
           </p>
         </div>
       </div>
@@ -288,7 +281,7 @@ export default function WebsiteEnquiriesModule() {
           {loading ? (
             <div className="p-8 text-center text-slate-500 text-sm">Loading enquiry database...</div>
           ) : filteredLeads.length === 0 ? (
-            <div className="p-8 text-center text-slate-500 text-sm">No enquiries found.</div>
+            <div className="p-8 text-center text-slate-500 text-sm">No website enquiries found.</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[950px]">
@@ -369,7 +362,7 @@ export default function WebsiteEnquiriesModule() {
         </div>
       )}
 
-      {/* Edit Modal Only */}
+      {/* Edit Modal */}
       {showModal && editingLead && (
         <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 overflow-y-auto">
           <form onSubmit={saveLead} className="bg-white rounded-2xl p-6 w-full max-w-lg space-y-4 shadow-2xl border border-slate-100 my-auto">
