@@ -37,7 +37,7 @@ export default function LeadsModule() {
     name: '',
     contact_info: '',
     company: '',
-    source: 'Website',
+    source: 'Manual / Outreach',
     campaign_name: '',
     requirements: '',
     value: 0,
@@ -64,10 +64,27 @@ export default function LeadsModule() {
   }, []);
 
   const filteredLeads = useMemo(() => {
-    if (dateRange === 'all') return leads;
-
     const now = new Date();
+
     return leads.filter((lead) => {
+      // 1. Filter Check: Include self-created leads + assigned contact form leads
+      const isContactFormLead = lead.source?.toLowerCase() === 'website';
+      const isAssigned =
+        lead.assigned_to !== null &&
+        lead.assigned_to !== '' &&
+        lead.assigned_to !== 'Not assigned to sales' &&
+        lead.assigned_to !== 'not_assigned';
+
+      // Self-created leads (non-website source) OR contact form leads that are assigned
+      const isSelfCreatedOrAssignedWebsite = !isContactFormLead || isAssigned;
+
+      if (!isSelfCreatedOrAssignedWebsite) {
+        return false;
+      }
+
+      // 2. Date Range Filter
+      if (dateRange === 'all') return true;
+
       const leadDate = new Date(lead.created_at);
       if (dateRange === 'daily') {
         return leadDate.toDateString() === now.toDateString();
@@ -80,6 +97,7 @@ export default function LeadsModule() {
       if (dateRange === 'monthly') {
         return leadDate.getMonth() === now.getMonth() && leadDate.getFullYear() === now.getFullYear();
       }
+
       return true;
     });
   }, [leads, dateRange]);
@@ -95,7 +113,7 @@ export default function LeadsModule() {
       phone: formData.contact_info.split('\n')[0].trim(),
       contact_info: formData.contact_info,
       company: formData.company || null,
-      source: formData.source || 'Website',
+      source: formData.source || 'Manual / Outreach',
       value: Number(formData.value) || 0,
       status: formData.status,
       assigned_to: formData.assigned_to === 'Assigned to sales' ? 'assigned' : null,
@@ -147,7 +165,7 @@ export default function LeadsModule() {
       name: lead.name || '',
       contact_info: lead.contact_info || lead.phone || lead.email || '',
       company: lead.company || '',
-      source: lead.source || 'Website',
+      source: lead.source || 'Manual / Outreach',
       campaign_name: lead.campaign_name || '',
       requirements: lead.requirements || '',
       value: lead.value || 0,
@@ -169,7 +187,7 @@ export default function LeadsModule() {
       name: '',
       contact_info: '',
       company: '',
-      source: 'Website',
+      source: 'Manual / Outreach',
       campaign_name: '',
       requirements: '',
       value: 0,
@@ -595,11 +613,11 @@ export default function LeadsModule() {
                   value={formData.source}
                   onChange={(e) => setFormData({ ...formData, source: e.target.value })}
                 >
-                  <option value="Website">Website</option>
+                  <option value="Manual / Outreach">Manual / Outreach</option>
                   <option value="LinkedIn">LinkedIn</option>
                   <option value="Google Ads">Google Ads</option>
                   <option value="Referral">Referral</option>
-                  <option value="Outreach">Outreach</option>
+                  <option value="Website">Website</option>
                 </select>
               </div>
               <div>

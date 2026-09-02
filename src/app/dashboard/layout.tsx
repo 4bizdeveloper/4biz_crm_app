@@ -43,7 +43,7 @@ export default function DashboardLayout({
       icon: BarChart3,
     },
     {
-      name: 'Website Contact Form Leads',
+      name: 'Website Contact Form Enquiries',
       href: '/dashboard/website-leads',
       icon: Globe,
     },
