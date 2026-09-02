@@ -95,17 +95,27 @@ export default function WebsiteContactFormEnquiriesPage() {
     });
   }, [leads, dateRange]);
 
-  const saveLead = async (e: React.FormEvent) => {
+
+  
+const saveLead = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingLead) return;
 
     const isAssigned = formData.assigned_to === 'assigned';
+
+    // Separate potential email and phone from the contact_info string lines
+    const lines = formData.contact_info.split('\n').map((line) => line.trim());
+    const extractedEmail =
+      lines.find((line) => line.includes('@')) ||
+      editingLead.email ||
+      `${formData.name.toLowerCase().replace(/\s+/g, '')}@lead.com`;
+    const extractedPhone =
+      lines.find((line) => !line.includes('@')) || formData.contact_info.trim();
+
     const payload: Record<string, any> = {
       name: formData.name,
-      email: formData.contact_info.includes('@')
-        ? formData.contact_info.split('\n')[0].trim()
-        : `${formData.name.toLowerCase().replace(/\s+/g, '')}@lead.com`,
-      phone: formData.contact_info.split('\n')[0].trim(),
+      email: extractedEmail,
+      phone: extractedPhone,
       contact_info: formData.contact_info,
       company: formData.company || null,
       source: 'Website',
@@ -133,6 +143,8 @@ export default function WebsiteContactFormEnquiriesPage() {
       closeModal();
     }
   };
+
+
 
   const openEditModal = (lead: Lead) => {
     setEditingLead(lead);
