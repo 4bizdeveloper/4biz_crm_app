@@ -18,7 +18,6 @@ interface Lead {
   campaign_name?: string;
   requirements?: string;
   status: string;
-  value: number;
   assigned_to?: string | null;
   notes?: string;
   created_at: string;
@@ -28,7 +27,9 @@ export default function WebsiteContactFormEnquiriesPage() {
   const [activeTab, setActiveTab] = useState<'details' | 'pipeline' | 'automation'>('details');
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
-  const [dateRange, setDateRange] = useState<'all' | 'daily' | 'weekly' | 'monthly'>('all');
+  const [dateRange, setDateRange] = useState<'all' | 'daily' | 'weekly' | 'monthly' | 'custom'>('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
 
@@ -39,7 +40,6 @@ export default function WebsiteContactFormEnquiriesPage() {
     source: 'Website',
     campaign_name: '',
     requirements: '',
-    value: 0,
     status: 'New',
     assigned_to: 'not_assigned',
     notes: ''
@@ -91,9 +91,16 @@ export default function WebsiteContactFormEnquiriesPage() {
       if (dateRange === 'monthly') {
         return leadDate.getMonth() === now.getMonth() && leadDate.getFullYear() === now.getFullYear();
       }
+      if (dateRange === 'custom') {
+        if (!startDate || !endDate) return true;
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        return leadDate >= start && leadDate <= end;
+      }
       return true;
     });
-  }, [leads, dateRange]);
+  }, [leads, dateRange, startDate, endDate]);
 
   const saveLead = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,7 +124,6 @@ export default function WebsiteContactFormEnquiriesPage() {
       contact_info: formData.contact_info,
       company: formData.company || null,
       source: 'Website',
-      value: Number(formData.value) || 0,
       status: isAssigned && formData.status === 'New' ? 'Assigned' : formData.status,
       assigned_to: isAssigned ? 'assigned' : null,
       notes: formData.notes || null,
@@ -152,7 +158,6 @@ export default function WebsiteContactFormEnquiriesPage() {
       source: 'Website',
       campaign_name: lead.campaign_name || '',
       requirements: lead.requirements || '',
-      value: lead.value || 0,
       status: lead.status || 'New',
       assigned_to: isAssigned ? 'assigned' : 'not_assigned',
       notes: lead.notes || ''
@@ -200,7 +205,7 @@ export default function WebsiteContactFormEnquiriesPage() {
   };
 
   const exportCSV = () => {
-    const headers = ['Name,Contact Details,Company,Source,Campaign,Requirements,Status,Value,Assign Lead,Date Created\n'];
+    const headers = ['Name,Contact Details,Company,Source,Campaign,Requirements,Status,Assign Lead,Date Created\n'];
     const rows = filteredLeads
       .map((l) => {
         const assignmentLabel = l.assigned_to ? 'assign to leads' : 'not assign to leads';
@@ -208,7 +213,7 @@ export default function WebsiteContactFormEnquiriesPage() {
         const cleanReq = (l.requirements || '').replace(/"/g, '""');
         const contactVal = l.contact_info || (l.email && l.phone ? `${l.email} ${l.phone}` : l.email || l.phone || '');
         const cleanContact = contactVal.replace(/"/g, '""').replace(/\n/g, ' ');
-        return `"${l.name}","${cleanContact}","${l.company || ''}","${l.source || ''}","${l.campaign_name || ''}","${cleanReq}","${l.status}",${l.value},"${assignmentLabel}","${formattedDate}"`;
+        return `"${l.name}","${cleanContact}","${l.company || ''}","${l.source || ''}","${l.campaign_name || ''}","${cleanReq}","${l.status}","${assignmentLabel}","${formattedDate}"`;
       })
       .join('\n');
 
@@ -262,7 +267,7 @@ export default function WebsiteContactFormEnquiriesPage() {
 
       {/* Date Filter Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-100 p-4 rounded-xl border border-slate-200">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Calendar className="w-4 h-4 text-slate-600" />
           <span className="text-xs font-semibold text-slate-700">Filter By Date Created:</span>
           <select
@@ -274,7 +279,26 @@ export default function WebsiteContactFormEnquiriesPage() {
             <option value="daily">Today Only</option>
             <option value="weekly">Past 7 Days</option>
             <option value="monthly">This Month</option>
+            <option value="custom">Custom Date Range</option>
           </select>
+
+          {dateRange === 'custom' && (
+            <div className="flex items-center gap-2 ml-2">
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="bg-white border border-slate-300 rounded-lg text-xs font-semibold px-2 py-1 focus:ring-2 focus:ring-blue-600 text-slate-800"
+              />
+              <span className="text-xs font-semibold text-slate-500">to</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="bg-white border border-slate-300 rounded-lg text-xs font-semibold px-2 py-1 focus:ring-2 focus:ring-blue-600 text-slate-800"
+              />
+            </div>
+          )}
         </div>
         <button
           onClick={exportCSV}
@@ -348,14 +372,14 @@ export default function WebsiteContactFormEnquiriesPage() {
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => openEditModal(lead)}
-                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
                             title="Edit Enquiry"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => deleteLead(lead.id)}
-                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                             title="Delete Enquiry"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -451,13 +475,13 @@ export default function WebsiteContactFormEnquiriesPage() {
               <button
                 type="button"
                 onClick={closeModal}
-                className="px-4 py-2 border rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"
+                className="px-4 py-2 border rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 cursor-pointer"
               >
                 Update Record
               </button>

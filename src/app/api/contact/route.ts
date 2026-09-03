@@ -3,50 +3,72 @@ import { supabase } from '@/lib/supabase';
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { name, email, phone, company, requirements, campaign_name } = body;
+    let name = '';
+    let email = '';
+    let phone = '';
+    let company = '';
+    let requirements = '';
+    let campaign_name = '';
 
-    if (!name || !email) {
-      return NextResponse.json({ error: 'Name and email are required fields.' }, { status: 400 });
+    const contentType = request.headers.get('content-type') || '';
+
+    if (contentType.includes('application/json')) {
+      const body = await request.json();
+      name = body.name || '';
+      email = body.email || '';
+      phone = body.phone || '';
+      company = body.company || '';
+      requirements = body.requirements || body.message || '';
+      campaign_name = body.campaign_name || '';
+    } else if (contentType.includes('multipart/form-data') || contentType.includes('application/x-www-form-urlencoded')) {
+      const formData = await request.formData();
+      name = (formData.get('name') as string) || '';
+      email = (formData.get('email') as string) || '';
+      phone = (formData.get('phone') as string) || '';
+      company = (formData.get('company') as string) || '';
+      requirements = (formData.get('requirements') as string) || (formData.get('message') as string) || '';
+      campaign_name = (formData.get('campaign_name') as string) || '';
     }
 
-// src/app/api/contact/route.ts
-const { data, error } = await supabase
-  .from('leads')
-  .insert([
-    {
+    if (!name || !email) {
+      return NextResponse.json(
+        { error: 'Name and Email are required fields.' },
+        { status: 400 }
+      );
+    }
+
+    // Build unified contact_info string
+    const contactInfoParts = [email];
+    if (phone) contactInfoParts.push(phone);
+    const contactInfo = contactInfoParts.join('\n');
+
+    const payload = {
       name,
       email,
       phone: phone || null,
-      contact_info: phone ? `${email}\n${phone}` : email, // Include email in contact_info
+      contact_info: contactInfo,
       company: company || null,
       requirements: requirements || null,
       campaign_name: campaign_name || 'Website Direct',
       source: 'Website',
       status: 'New',
-      assigned_to: null,
-      value: 0
-    }
-  ])
-  .select();
+      assigned_to: null, // Strictly null so it stays unassigned initially
+    };
+
+    const { data, error } = await supabase
+      .from('leads')
+      .insert([payload])
+      .select();
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, lead: data[0] }, { status: 201 });
+    return NextResponse.json({ success: true, data: data[0] }, { status: 201 });
   } catch (err: any) {
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json(
+      { error: err.message || 'Internal server error' },
+      { status: 500 }
+    );
   }
-}
-
-// Enable CORS if your website is hosted on a separate domain/subdomain
-export async function OPTIONS() {
-  return NextResponse.json({}, {
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
-  });
 }

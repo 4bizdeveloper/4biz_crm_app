@@ -18,7 +18,6 @@ interface Lead {
   campaign_name?: string;
   requirements?: string;
   status: string;
-  value: number;
   assigned_to?: string | null;
   notes?: string;
   created_at: string;
@@ -28,7 +27,9 @@ export default function LeadsModule() {
   const [activeTab, setActiveTab] = useState<'details' | 'pipeline' | 'automation'>('details');
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
-  const [dateRange, setDateRange] = useState<'all' | 'daily' | 'weekly' | 'monthly'>('all');
+  const [dateRange, setDateRange] = useState<'all' | 'daily' | 'weekly' | 'monthly' | 'custom'>('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
@@ -40,13 +41,22 @@ export default function LeadsModule() {
     source: 'Manual / Outreach',
     campaign_name: '',
     requirements: '',
-    value: 0,
     status: 'New',
     assigned_to: 'Not assigned to sales',
     notes: ''
   });
 
   const leadFlow = ['New', 'Assigned', 'Contacted', 'Follow-up', 'Qualified', 'Converted', 'Disqualified'];
+
+  const formatDateDDMMYYYY = (dateString: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -71,11 +81,11 @@ export default function LeadsModule() {
       const isContactFormLead = lead.source?.toLowerCase() === 'website';
       const isAssigned =
         lead.assigned_to !== null &&
+        lead.assigned_to !== undefined &&
         lead.assigned_to !== '' &&
         lead.assigned_to !== 'Not assigned to sales' &&
         lead.assigned_to !== 'not_assigned';
 
-      // Self-created leads (non-website source) OR contact form leads that are assigned
       const isSelfCreatedOrAssignedWebsite = !isContactFormLead || isAssigned;
 
       if (!isSelfCreatedOrAssignedWebsite) {
@@ -97,10 +107,17 @@ export default function LeadsModule() {
       if (dateRange === 'monthly') {
         return leadDate.getMonth() === now.getMonth() && leadDate.getFullYear() === now.getFullYear();
       }
+      if (dateRange === 'custom') {
+        if (!startDate || !endDate) return true;
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        return leadDate >= start && leadDate <= end;
+      }
 
       return true;
     });
-  }, [leads, dateRange]);
+  }, [leads, dateRange, startDate, endDate]);
 
   const saveLead = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,7 +131,6 @@ export default function LeadsModule() {
       contact_info: formData.contact_info,
       company: formData.company || null,
       source: formData.source || 'Manual / Outreach',
-      value: Number(formData.value) || 0,
       status: formData.status,
       assigned_to: formData.assigned_to === 'Assigned to sales' ? 'assigned' : null,
       notes: formData.notes || null,
@@ -168,7 +184,6 @@ export default function LeadsModule() {
       source: lead.source || 'Manual / Outreach',
       campaign_name: lead.campaign_name || '',
       requirements: lead.requirements || '',
-      value: lead.value || 0,
       status: lead.status || 'New',
       assigned_to: lead.assigned_to ? 'Assigned to sales' : 'Not assigned to sales',
       notes: lead.notes || ''
@@ -190,7 +205,6 @@ export default function LeadsModule() {
       source: 'Manual / Outreach',
       campaign_name: '',
       requirements: '',
-      value: 0,
       status: 'New',
       assigned_to: 'Not assigned to sales',
       notes: ''
@@ -233,14 +247,14 @@ export default function LeadsModule() {
   };
 
   const exportCSV = () => {
-    const headers = ['Name,Contact Details,Company,Source,Campaign,Requirements,Status,Value,Sales Assigned,Date Created\n'];
+    const headers = ['Name,Contact Details,Company,Source,Campaign,Requirements,Status,Sales Assigned,Date Created\n'];
     const rows = filteredLeads
       .map((l) => {
         const assignmentLabel = l.assigned_to ? 'Assigned to sales' : 'Not assigned to sales';
-        const formattedDate = new Date(l.created_at).toLocaleDateString();
+        const formattedDate = formatDateDDMMYYYY(l.created_at);
         const cleanReq = (l.requirements || '').replace(/"/g, '""');
         const cleanContact = (l.contact_info || l.phone || l.email || '').replace(/"/g, '""').replace(/\n/g, ' ');
-        return `"${l.name}","${cleanContact}","${l.company || ''}","${l.source || ''}","${l.campaign_name || ''}","${cleanReq}","${l.status}",${l.value},"${assignmentLabel}","${formattedDate}"`;
+        return `"${l.name}","${cleanContact}","${l.company || ''}","${l.source || ''}","${l.campaign_name || ''}","${cleanReq}","${l.status}","${assignmentLabel}","${formattedDate}"`;
       })
       .join('\n');
 
@@ -300,7 +314,7 @@ export default function LeadsModule() {
 
       {/* Date Filter Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-100 p-4 rounded-xl border border-slate-200">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Calendar className="w-4 h-4 text-slate-600" />
           <span className="text-xs font-semibold text-slate-700">Filter By Date Created:</span>
           <select
@@ -312,7 +326,26 @@ export default function LeadsModule() {
             <option value="daily">Today Only</option>
             <option value="weekly">Past 7 Days</option>
             <option value="monthly">This Month</option>
+            <option value="custom">Custom Date Range</option>
           </select>
+
+          {dateRange === 'custom' && (
+            <div className="flex items-center gap-2 ml-2">
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="bg-white border border-slate-300 rounded-lg text-xs font-semibold px-2 py-1 focus:ring-2 focus:ring-blue-600 text-slate-800"
+              />
+              <span className="text-xs font-semibold text-slate-500">to</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="bg-white border border-slate-300 rounded-lg text-xs font-semibold px-2 py-1 focus:ring-2 focus:ring-blue-600 text-slate-800"
+              />
+            </div>
+          )}
         </div>
         <button
           onClick={exportCSV}
@@ -360,10 +393,9 @@ export default function LeadsModule() {
                           </div>
                         )}
 
-                        <div className="text-xs font-semibold text-emerald-600">${(lead.value || 0).toLocaleString()}</div>
                         <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                          <span className="text-[10px] text-slate-400">
-                            {new Date(lead.created_at).toLocaleDateString()}
+                          <span className="text-[10px] text-slate-400 font-medium">
+                            {formatDateDDMMYYYY(lead.created_at)}
                           </span>
                           <select
                             value={lead.status}
@@ -472,7 +504,7 @@ export default function LeadsModule() {
                         {lead.campaign_name && <div className="text-[10px] text-slate-400 mt-0.5">{lead.campaign_name}</div>}
                       </td>
                       <td className="p-4 align-top text-xs font-medium text-slate-700">
-                        {new Date(lead.created_at).toLocaleDateString()}
+                        {formatDateDDMMYYYY(lead.created_at)}
                       </td>
                       <td className="p-4 align-top">
                         <select
@@ -605,31 +637,19 @@ export default function LeadsModule() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-semibold text-slate-600 block mb-1">Lead Source</label>
-                <select
-                  className="w-full p-2.5 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:ring-2 focus:ring-blue-600"
-                  value={formData.source}
-                  onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                >
-                  <option value="Manual / Outreach">Manual / Outreach</option>
-                  <option value="LinkedIn">LinkedIn</option>
-                  <option value="Google Ads">Google Ads</option>
-                  <option value="Referral">Referral</option>
-                  <option value="Website">Website</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-600 block mb-1">Estimated Value ($)</label>
-                <input
-                  type="number"
-                  placeholder="5000"
-                  className="w-full p-2.5 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:ring-2 focus:ring-blue-600"
-                  value={formData.value || ''}
-                  onChange={(e) => setFormData({ ...formData, value: Number(e.target.value) })}
-                />
-              </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600 block mb-1">Lead Source</label>
+              <select
+                className="w-full p-2.5 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:ring-2 focus:ring-blue-600"
+                value={formData.source}
+                onChange={(e) => setFormData({ ...formData, source: e.target.value })}
+              >
+                <option value="Manual / Outreach">Manual / Outreach</option>
+                <option value="LinkedIn">LinkedIn</option>
+                <option value="Google Ads">Google Ads</option>
+                <option value="Referral">Referral</option>
+                <option value="Website">Website</option>
+              </select>
             </div>
 
             <div>

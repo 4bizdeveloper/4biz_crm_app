@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
-import { TrendingUp, PhoneCall, FileCode, X } from 'lucide-react';
+import { TrendingUp, PhoneCall, FileCode, X, Calendar, Download } from 'lucide-react';
 
 interface Lead {
   id: string;
@@ -25,6 +25,21 @@ export default function SalesDashboard() {
   const [loading, setLoading] = useState(true);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
+  // Date Filter State
+  const [dateRange, setDateRange] = useState<'all' | 'daily' | 'weekly' | 'monthly' | 'custom'>('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  const formatDateDDMMYYYY = (dateString: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
   const fetchData = async () => {
     setLoading(true);
     const { data: leadsData } = await supabase
@@ -41,9 +56,40 @@ export default function SalesDashboard() {
   }, []);
 
   // Filter ONLY ASSIGNED LEADS
-  const assignedLeads = leads.filter(
-    (l) => l.assigned_to !== null && l.assigned_to !== undefined && l.assigned_to !== ''
-  );
+  const assignedLeads = useMemo(() => {
+    return leads.filter(
+      (l) => l.assigned_to !== null && l.assigned_to !== undefined && l.assigned_to !== ''
+    );
+  }, [leads]);
+
+  // Apply Date Filtering to Assigned Leads
+  const filteredAssignedLeads = useMemo(() => {
+    if (dateRange === 'all') return assignedLeads;
+
+    const now = new Date();
+    return assignedLeads.filter((lead) => {
+      const leadDate = new Date(lead.created_at);
+      if (dateRange === 'daily') {
+        return leadDate.toDateString() === now.toDateString();
+      }
+      if (dateRange === 'weekly') {
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(now.getDate() - 7);
+        return leadDate >= oneWeekAgo;
+      }
+      if (dateRange === 'monthly') {
+        return leadDate.getMonth() === now.getMonth() && leadDate.getFullYear() === now.getFullYear();
+      }
+      if (dateRange === 'custom') {
+        if (!startDate || !endDate) return true;
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        return leadDate >= start && leadDate <= end;
+      }
+      return true;
+    });
+  }, [assignedLeads, dateRange, startDate, endDate]);
 
   const updateStatus = async (id: string, status: string) => {
     const { error } = await supabase.from('leads').update({ status }).eq('id', id);
@@ -54,6 +100,29 @@ export default function SalesDashboard() {
     }
 
     setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, status } : l)));
+  };
+
+  const exportCSV = () => {
+    const headers = ['Lead Contact,Company,Requirements,Campaign Source,Date Created,Status\n'];
+    const rows = filteredAssignedLeads
+      .map((l) => {
+        const contactVal = l.contact_info || l.phone || l.email || '';
+        const cleanContact = contactVal.replace(/"/g, '""').replace(/\n/g, ' ');
+        const cleanCompany = (l.company || '—').replace(/"/g, '""');
+        const cleanReq = (l.requirements || '').replace(/"/g, '""');
+        const sourceVal = l.campaign_name ? `${l.source || 'Website'} (${l.campaign_name})` : l.source || 'Website';
+        const formattedDate = formatDateDDMMYYYY(l.created_at);
+
+        return `"${l.name} - ${cleanContact}","${cleanCompany}","${cleanReq}","${sourceVal}","${formattedDate}","${l.status}"`;
+      })
+      .join('\n');
+
+    const blob = new Blob([headers + rows], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `assigned_sales_leads_${dateRange}_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
   };
 
   const leadStatuses = ['New', 'Assigned', 'Contacted', 'Follow-up', 'Qualified', 'Converted', 'Disqualified'];
@@ -85,6 +154,49 @@ export default function SalesDashboard() {
         </div>
       </div>
 
+      {/* Date Filter Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-100 p-4 rounded-xl border border-slate-200">
+        <div className="flex flex-wrap items-center gap-2">
+          <Calendar className="w-4 h-4 text-slate-600" />
+          <span className="text-xs font-semibold text-slate-700">Filter By Date Created:</span>
+          <select
+            value={dateRange}
+            onChange={(e) => setDateRange(e.target.value as any)}
+            className="bg-white border border-slate-300 rounded-lg text-xs font-semibold px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-600 text-slate-800"
+          >
+            <option value="all">All Dates</option>
+            <option value="daily">Today Only</option>
+            <option value="weekly">Past 7 Days</option>
+            <option value="monthly">This Month</option>
+            <option value="custom">Custom Date Range</option>
+          </select>
+
+          {dateRange === 'custom' && (
+            <div className="flex items-center gap-2 ml-2">
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="bg-white border border-slate-300 rounded-lg text-xs font-semibold px-2 py-1 focus:ring-2 focus:ring-blue-600 text-slate-800"
+              />
+              <span className="text-xs font-semibold text-slate-500">to</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="bg-white border border-slate-300 rounded-lg text-xs font-semibold px-2 py-1 focus:ring-2 focus:ring-blue-600 text-slate-800"
+              />
+            </div>
+          )}
+        </div>
+        <button
+          onClick={exportCSV}
+          className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer"
+        >
+          <Download className="w-3.5 h-3.5" /> Export Filtered Leads (CSV)
+        </button>
+      </div>
+
       {/* Assigned Leads Table */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         <div className="p-4 bg-slate-50 border-b border-slate-200 font-bold text-sm text-slate-800">
@@ -92,7 +204,7 @@ export default function SalesDashboard() {
         </div>
         {loading ? (
           <div className="p-8 text-center text-slate-500 text-sm">Loading assigned sales data...</div>
-        ) : assignedLeads.length === 0 ? (
+        ) : filteredAssignedLeads.length === 0 ? (
           <div className="p-8 text-center text-slate-500 text-sm">
             No assigned leads found for this view. Select "Assigned to sales" in the Leads Directory to display them here.
           </div>
@@ -110,7 +222,7 @@ export default function SalesDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
-                {assignedLeads.map((lead) => (
+                {filteredAssignedLeads.map((lead) => (
                   <tr key={lead.id} className="hover:bg-slate-50 transition-colors">
                     <td className="p-4 align-top">
                       <div className="font-bold text-slate-900">{lead.name}</div>
@@ -140,7 +252,7 @@ export default function SalesDashboard() {
                       {lead.campaign_name && <div className="text-[10px] text-slate-400 mt-0.5">{lead.campaign_name}</div>}
                     </td>
                     <td className="p-4 align-top text-xs font-medium text-slate-700">
-                      {new Date(lead.created_at).toLocaleDateString()}
+                      {formatDateDDMMYYYY(lead.created_at)}
                     </td>
                     <td className="p-4 align-top">
                       <select
