@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -15,7 +15,9 @@ import {
   Menu,
   X,
   ShieldCheck,
-  ChevronRight
+  ChevronRight,
+  MessageSquare,
+  Send
 } from 'lucide-react';
 
 export default function DashboardLayout({
@@ -26,6 +28,16 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userRole, setUserRole] = useState<'admin' | 'employee'>('admin');
+
+  useEffect(() => {
+    const cookies = document.cookie.split(';');
+    const roleCookie = cookies.find((c) => c.trim().startsWith('user_role='));
+    if (roleCookie) {
+      const roleVal = roleCookie.split('=')[1] as 'admin' | 'employee';
+      setUserRole(roleVal);
+    }
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -36,7 +48,7 @@ export default function DashboardLayout({
     }
   };
 
-  const navItems = [
+  const adminNav = [
     {
       name: 'Overview',
       href: '/dashboard/overview',
@@ -58,7 +70,7 @@ export default function DashboardLayout({
       icon: TrendingUp,
     },
     {
-      name: 'Projects',
+      name: 'Projects & ERP',
       href: '/dashboard/projects',
       icon: FolderKanban,
     },
@@ -68,14 +80,34 @@ export default function DashboardLayout({
       icon: Ticket,
     },
     {
-      name: 'HR & Directory',
+      name: 'HR & Users',
       href: '/dashboard/hr',
       icon: Users,
     },
+    {
+      name: 'Operations Chat',
+      href: '/dashboard/chat',
+      icon: MessageSquare,
+    },
   ];
 
+  const employeeNav = [
+    {
+      name: 'My Workspace & Deliverables',
+      href: '/dashboard/employee-portal',
+      icon: Send,
+    },
+    {
+      name: 'Operations Chat',
+      href: '/dashboard/chat',
+      icon: MessageSquare,
+    },
+  ];
+
+  const navItems = userRole === 'admin' ? adminNav : employeeNav;
+
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row text-slate-800">
+    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row text-slate-800 font-sans">
       {/* Mobile Top Navigation Header */}
       <div className="md:hidden bg-slate-900 text-white p-4 flex items-center justify-between border-b border-slate-800 sticky top-0 z-40">
         <div className="flex items-center gap-2">
@@ -135,11 +167,11 @@ export default function DashboardLayout({
                       : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
-                    <span>{item.name}</span>
+                  <div className="flex items-center gap-3 truncate">
+                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                    <span className="truncate">{item.name}</span>
                   </div>
-                  {isActive && <ChevronRight className="w-3.5 h-3.5 text-blue-200" />}
+                  {isActive && <ChevronRight className="w-3.5 h-3.5 text-blue-200 shrink-0" />}
                 </Link>
               );
             })}
@@ -150,12 +182,16 @@ export default function DashboardLayout({
         <div className="p-4 border-t border-slate-800/80 bg-slate-950/40">
           <div className="flex items-center justify-between">
             <div className="truncate pr-2">
-              <div className="text-xs font-bold text-slate-200 truncate">Administrator</div>
-              <div className="text-[10px] text-slate-500 truncate">System Workspace</div>
+              <div className="text-xs font-bold text-slate-200 truncate capitalize">
+                {userRole === 'admin' ? 'Administrator' : 'Employee Portal'}
+              </div>
+              <div className="text-[10px] text-slate-500 truncate">
+                {userRole === 'admin' ? 'System Workspace' : 'Staff Workspace'}
+              </div>
             </div>
             <button
               onClick={handleLogout}
-              className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors shrink-0"
+              className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors shrink-0 cursor-pointer"
               title="Sign Out"
             >
               <LogOut className="w-4 h-4" />
@@ -173,7 +209,7 @@ export default function DashboardLayout({
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 p-4 md:p-8 overflow-y-auto">
+      <main className="flex-1 p-4 md:p-8 overflow-y-auto min-w-0">
         {children}
       </main>
     </div>
