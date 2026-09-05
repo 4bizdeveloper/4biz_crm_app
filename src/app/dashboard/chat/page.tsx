@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Send, Paperclip, MessageSquare, UserCheck, ShieldCheck } from 'lucide-react';
+import { Send, Paperclip, MessageSquare, X, FileText } from 'lucide-react';
 
 interface Employee {
   id: string;
@@ -28,7 +28,10 @@ export default function OperationsChatPage() {
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [textInput, setTextInput] = useState('');
-  const [attachmentUrl, setAttachmentUrl] = useState('');
+  const [selectedAttachments, setSelectedAttachments] = useState<string[]>([]);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     // Determine user role and employee ID from cookies
@@ -44,6 +47,10 @@ export default function OperationsChatPage() {
 
     fetchEmployees(role, empId);
   }, []);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const fetchEmployees = async (role: string, empId: string | null) => {
     const { data } = await supabase.from('employees').select('id, full_name, role');
@@ -75,17 +82,32 @@ export default function OperationsChatPage() {
     fetchChatMessages(emp.id);
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    // Convert uploaded local file selection into mock object URLs or storage references
+    const fileUrls: string[] = [];
+    for (let i = 0; i < files.length; i++) {
+      fileUrls.push(URL.createObjectURL(files[i]));
+    }
+
+    setSelectedAttachments((prev) => [...prev, ...fileUrls]);
+  };
+
+  const removeAttachment = (index: number) => {
+    setSelectedAttachments((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeEmployee || (!textInput.trim() && !attachmentUrl.trim())) return;
-
-    const attachmentsArray = attachmentUrl.trim() ? [attachmentUrl.trim()] : [];
+    if (!activeEmployee || (!textInput.trim() && selectedAttachments.length === 0)) return;
 
     const payload = {
       sender_type: userRole,
       employee_id: activeEmployee.id,
       message: textInput,
-      attachments: attachmentsArray,
+      attachments: selectedAttachments,
     };
 
     const { data, error } = await supabase
@@ -96,7 +118,7 @@ export default function OperationsChatPage() {
     if (!error && data) {
       setMessages([...messages, data[0]]);
       setTextInput('');
-      setAttachmentUrl('');
+      setSelectedAttachments([]);
     }
   };
 
@@ -110,8 +132,8 @@ export default function OperationsChatPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[600px]">
-        {/* Left Bar: Employee Selection (Only Admin sees all, Employee sees active status) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[720px]">
+        {/* Left Bar: Employee Selection */}
         <div className="lg:col-span-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs overflow-y-auto space-y-3">
           <h2 className="text-sm font-bold text-slate-900 border-b pb-2">
             {userRole === 'admin' ? 'Select Employee' : 'My Discussion Channel'}
@@ -140,39 +162,55 @@ export default function OperationsChatPage() {
           )}
         </div>
 
-        {/* Right Bar: Chat Messages Screen */}
+        {/* Right Bar: Chat Workspace Screen */}
         <div className="lg:col-span-8 bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between overflow-hidden">
-          {/* Chat Messages */}
-          <div className="p-5 overflow-y-auto space-y-3 flex-1 bg-slate-50/50">
+          
+          {/* Active Conversation Header */}
+          <div className="p-4 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between">
+            <div>
+              <h3 className="font-bold text-slate-900 text-sm">
+                {userRole === 'admin' ? activeEmployee?.full_name || 'Select an Employee' : 'Admin Operations'}
+              </h3>
+              <p className="text-[11px] text-slate-500">
+                {userRole === 'admin' ? activeEmployee?.role : 'Direct support channel'}
+              </p>
+            </div>
+          </div>
+
+          {/* Chat Messages Log */}
+          <div className="p-6 overflow-y-auto space-y-4 flex-1 bg-slate-50/30">
             {messages.length === 0 ? (
-              <p className="text-center text-xs text-slate-400 my-auto pt-20">No messages yet in this conversation.</p>
+              <p className="text-center text-xs text-slate-400 my-auto pt-20">
+                No messages yet in this conversation.
+              </p>
             ) : (
               messages.map((msg) => {
                 const isMe = msg.sender_type === userRole;
                 return (
                   <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
                     <div
-                      className={`max-w-md p-3.5 rounded-2xl text-xs space-y-1 shadow-2xs ${
+                      className={`max-w-lg p-4 rounded-2xl text-sm space-y-1.5 shadow-xs ${
                         isMe ? 'bg-blue-600 text-white' : 'bg-white text-slate-900 border border-slate-200'
                       }`}
                     >
-                      <div className="font-semibold text-[10px] opacity-80 uppercase">
+                      <div className="font-semibold text-[10px] opacity-80 uppercase tracking-wider">
                         {msg.sender_type === 'admin' ? 'Admin' : 'Employee'}
                       </div>
-                      <p className="leading-relaxed">{msg.message}</p>
+                      {msg.message && <p className="leading-relaxed whitespace-pre-wrap">{msg.message}</p>}
                       {msg.attachments && msg.attachments.length > 0 && (
-                        <div className="pt-1">
+                        <div className="pt-2 space-y-1 border-t border-white/20">
                           {msg.attachments.map((att, idx) => (
                             <a
                               key={idx}
                               href={att}
                               target="_blank"
                               rel="noreferrer"
-                              className={`block underline text-[11px] truncate ${
-                                isMe ? 'text-blue-100' : 'text-blue-600'
+                              className={`flex items-center gap-1.5 text-xs truncate ${
+                                isMe ? 'text-blue-100 hover:text-white' : 'text-blue-600 hover:underline'
                               }`}
                             >
-                              Attachment Link #{idx + 1}
+                              <FileText className="w-3.5 h-3.5 shrink-0" />
+                              <span>Attachment #{idx + 1}</span>
                             </a>
                           ))}
                         </div>
@@ -182,33 +220,77 @@ export default function OperationsChatPage() {
                 );
               })
             )}
+            <div ref={messagesEndRef} />
           </div>
 
-          {/* Chat Input Area */}
-          <form onSubmit={sendMessage} className="p-4 bg-white border-t border-slate-200 space-y-2">
-            <input
-              type="text"
-              placeholder="Paste attachment/file URL (Optional)..."
-              className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-slate-50 text-slate-900 focus:bg-white focus:ring-1 focus:ring-blue-600"
-              value={attachmentUrl}
-              onChange={(e) => setAttachmentUrl(e.target.value)}
-            />
-            <div className="flex gap-2">
+          {/* Unified Chat Input Area */}
+          <div className="p-4 bg-white border-t border-slate-200 space-y-3">
+            {/* Attachment Preview Chips */}
+            {selectedAttachments.length > 0 && (
+              <div className="flex flex-wrap gap-2 pt-1">
+                {selectedAttachments.map((att, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center gap-1.5 bg-slate-100 border border-slate-200 text-slate-700 text-xs px-3 py-1.5 rounded-lg"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-blue-600" />
+                    <span className="truncate max-w-[150px]">Attachment {idx + 1}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeAttachment(idx)}
+                      className="hover:text-red-500 cursor-pointer ml-1"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <form onSubmit={sendMessage} className="flex items-end gap-2">
+              {/* File Upload Input Button */}
               <input
-                type="text"
-                placeholder="Type your message..."
-                className="flex-1 p-2.5 border border-slate-200 rounded-xl text-xs bg-slate-50 text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-600"
-                value={textInput}
-                onChange={(e) => setTextInput(e.target.value)}
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                multiple
+                onChange={handleFileUpload}
               />
               <button
-                type="submit"
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="p-3 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer shrink-0"
+                title="Attach file"
               >
-                <Send className="w-3.5 h-3.5" /> Send
+                <Paperclip className="w-5 h-5" />
               </button>
-            </div>
-          </form>
+
+              {/* Single Chat Input Field */}
+              <div className="flex-1">
+                <textarea
+                  rows={2}
+                  placeholder="Type a message or paste notes/links..."
+                  className="w-full p-3 border border-slate-200 rounded-xl text-sm bg-slate-50 text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-600 resize-none"
+                  value={textInput}
+                  onChange={(e) => setTextInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      sendMessage(e);
+                    }
+                  }}
+                />
+              </div>
+
+              {/* Send Button */}
+              <button
+                type="submit"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-3 rounded-xl text-sm flex items-center gap-2 transition-all cursor-pointer shrink-0 h-[48px]"
+              >
+                <Send className="w-4 h-4" /> Send
+              </button>
+            </form>
+          </div>
         </div>
       </div>
     </div>

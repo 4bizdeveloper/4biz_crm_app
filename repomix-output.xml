@@ -57,6 +57,10 @@ src/
       contact/
         route.ts
     dashboard/
+      chat/
+        page.tsx
+      employee-portal/
+        page.tsx
       hr/
         page.tsx
       leads/
@@ -116,30 +120,6 @@ This section contains the contents of the repository's files.
 <svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill-rule="evenodd" clip-rule="evenodd" d="M1.5 2.5h13v10a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1zM0 1h16v11.5a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 0 12.5zm3.75 4.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5M7 4.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0m1.75.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5" fill="#666"/></svg>
 </file>
 
-<file path="src/app/api/auth/login/route.ts">
-import { NextResponse } from 'next/server';
-
-export async function POST(request: Request) {
-  const { email, password } = await request.json();
-
-  const adminEmail = process.env.ADMIN_EMAIL;
-  const adminPassword = process.env.ADMIN_PASSWORD;
-
-  if (email === adminEmail && password === adminPassword) {
-    const response = NextResponse.json({ success: true }, { status: 200 });
-    response.cookies.set('crm_session', 'authenticated', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 24, // 1 day
-      path: '/',
-    });
-    return response;
-  }
-
-  return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
-}
-</file>
-
 <file path="src/app/api/auth/logout/route.ts">
 import { NextResponse } from 'next/server';
 
@@ -147,6 +127,520 @@ export async function POST() {
   const response = NextResponse.json({ success: true });
   response.cookies.delete('crm_session');
   return response;
+}
+</file>
+
+<file path="src/app/dashboard/chat/page.tsx">
+'use client';
+
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { Send, Paperclip, MessageSquare, UserCheck, ShieldCheck } from 'lucide-react';
+
+interface Employee {
+  id: string;
+  full_name: string;
+  role: string;
+}
+
+interface Message {
+  id: string;
+  sender_type: 'admin' | 'employee';
+  employee_id: string;
+  message: string;
+  attachments: string[];
+  created_at: string;
+}
+
+export default function OperationsChatPage() {
+  const [userRole, setUserRole] = useState<'admin' | 'employee'>('admin');
+  const [currentEmpId, setCurrentEmpId] = useState<string | null>(null);
+
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [activeEmployee, setActiveEmployee] = useState<Employee | null>(null);
+
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [textInput, setTextInput] = useState('');
+  const [attachmentUrl, setAttachmentUrl] = useState('');
+
+  useEffect(() => {
+    // Determine user role and employee ID from cookies
+    const cookies = document.cookie.split(';');
+    const roleCookie = cookies.find((c) => c.trim().startsWith('user_role='));
+    const empCookie = cookies.find((c) => c.trim().startsWith('employee_id='));
+
+    const role = roleCookie ? (roleCookie.split('=')[1] as 'admin' | 'employee') : 'admin';
+    const empId = empCookie ? empCookie.split('=')[1] : null;
+
+    setUserRole(role);
+    setCurrentEmpId(empId);
+
+    fetchEmployees(role, empId);
+  }, []);
+
+  const fetchEmployees = async (role: string, empId: string | null) => {
+    const { data } = await supabase.from('employees').select('id, full_name, role');
+    if (data) {
+      setEmployees(data);
+      if (role === 'admin' && data.length > 0) {
+        setActiveEmployee(data[0]);
+        fetchChatMessages(data[0].id);
+      } else if (role === 'employee' && empId) {
+        const me = data.find((e) => e.id === empId);
+        if (me) setActiveEmployee(me);
+        fetchChatMessages(empId);
+      }
+    }
+  };
+
+  const fetchChatMessages = async (empId: string) => {
+    const { data } = await supabase
+      .from('chat_messages')
+      .select('*')
+      .eq('employee_id', empId)
+      .order('created_at', { ascending: true });
+
+    if (data) setMessages(data);
+  };
+
+  const handleSelectEmployee = (emp: Employee) => {
+    setActiveEmployee(emp);
+    fetchChatMessages(emp.id);
+  };
+
+  const sendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeEmployee || (!textInput.trim() && !attachmentUrl.trim())) return;
+
+    const attachmentsArray = attachmentUrl.trim() ? [attachmentUrl.trim()] : [];
+
+    const payload = {
+      sender_type: userRole,
+      employee_id: activeEmployee.id,
+      message: textInput,
+      attachments: attachmentsArray,
+    };
+
+    const { data, error } = await supabase
+      .from('chat_messages')
+      .insert([payload])
+      .select();
+
+    if (!error && data) {
+      setMessages([...messages, data[0]]);
+      setTextInput('');
+      setAttachmentUrl('');
+    }
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto space-y-6 font-sans pb-10">
+      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3">
+        <MessageSquare className="w-6 h-6 text-blue-600" />
+        <div>
+          <h1 className="text-xl font-bold text-slate-900">ERP & Operations Chat Hub</h1>
+          <p className="text-xs text-slate-500">Real-time messaging and file sharing between Admin and Employees</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[600px]">
+        {/* Left Bar: Employee Selection (Only Admin sees all, Employee sees active status) */}
+        <div className="lg:col-span-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs overflow-y-auto space-y-3">
+          <h2 className="text-sm font-bold text-slate-900 border-b pb-2">
+            {userRole === 'admin' ? 'Select Employee' : 'My Discussion Channel'}
+          </h2>
+
+          {userRole === 'admin' ? (
+            employees.map((emp) => (
+              <div
+                key={emp.id}
+                onClick={() => handleSelectEmployee(emp)}
+                className={`p-3 rounded-xl border cursor-pointer transition-all ${
+                  activeEmployee?.id === emp.id
+                    ? 'border-blue-600 bg-blue-50'
+                    : 'border-slate-100 hover:bg-slate-50'
+                }`}
+              >
+                <div className="font-bold text-slate-900 text-sm">{emp.full_name}</div>
+                <div className="text-xs text-slate-500">{emp.role}</div>
+              </div>
+            ))
+          ) : (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl">
+              <div className="font-bold text-slate-900 text-sm">Admin Operations Channel</div>
+              <div className="text-xs text-blue-600 font-semibold">Direct communication with Admin</div>
+            </div>
+          )}
+        </div>
+
+        {/* Right Bar: Chat Messages Screen */}
+        <div className="lg:col-span-8 bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between overflow-hidden">
+          {/* Chat Messages */}
+          <div className="p-5 overflow-y-auto space-y-3 flex-1 bg-slate-50/50">
+            {messages.length === 0 ? (
+              <p className="text-center text-xs text-slate-400 my-auto pt-20">No messages yet in this conversation.</p>
+            ) : (
+              messages.map((msg) => {
+                const isMe = msg.sender_type === userRole;
+                return (
+                  <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                    <div
+                      className={`max-w-md p-3.5 rounded-2xl text-xs space-y-1 shadow-2xs ${
+                        isMe ? 'bg-blue-600 text-white' : 'bg-white text-slate-900 border border-slate-200'
+                      }`}
+                    >
+                      <div className="font-semibold text-[10px] opacity-80 uppercase">
+                        {msg.sender_type === 'admin' ? 'Admin' : 'Employee'}
+                      </div>
+                      <p className="leading-relaxed">{msg.message}</p>
+                      {msg.attachments && msg.attachments.length > 0 && (
+                        <div className="pt-1">
+                          {msg.attachments.map((att, idx) => (
+                            <a
+                              key={idx}
+                              href={att}
+                              target="_blank"
+                              rel="noreferrer"
+                              className={`block underline text-[11px] truncate ${
+                                isMe ? 'text-blue-100' : 'text-blue-600'
+                              }`}
+                            >
+                              Attachment Link #{idx + 1}
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Chat Input Area */}
+          <form onSubmit={sendMessage} className="p-4 bg-white border-t border-slate-200 space-y-2">
+            <input
+              type="text"
+              placeholder="Paste attachment/file URL (Optional)..."
+              className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-slate-50 text-slate-900 focus:bg-white focus:ring-1 focus:ring-blue-600"
+              value={attachmentUrl}
+              onChange={(e) => setAttachmentUrl(e.target.value)}
+            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Type your message..."
+                className="flex-1 p-2.5 border border-slate-200 rounded-xl text-xs bg-slate-50 text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-600"
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+              />
+              <button
+                type="submit"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
+              >
+                <Send className="w-3.5 h-3.5" /> Send
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/app/dashboard/employee-portal/page.tsx">
+'use client';
+
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import {
+  FolderKanban, Send, Link as LinkIcon, FileText, Upload,
+  CheckCircle2, Clock, Calendar, Paperclip, MessageSquare
+} from 'lucide-react';
+
+interface Project {
+  id: string;
+  project_name: string;
+  client_name: string;
+  status: string;
+  start_date?: string;
+  due_date?: string;
+  description?: string;
+}
+
+interface Submission {
+  id: string;
+  project_id: string;
+  content_text: string;
+  urls: string[];
+  file_urls: string[];
+  submitted_at: string;
+}
+
+export default function EmployeePortalPage() {
+  const [employeeId, setEmployeeId] = useState<string | null>(null);
+  const [assignedProjects, setAssignedProjects] = useState<Project[]>([]);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Form State
+  const [contentText, setContentText] = useState('');
+  const [urlInput, setUrlInput] = useState('');
+  const [fileInput, setFileInput] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    // Extract logged-in employee ID from cookies
+    const cookies = document.cookie.split(';');
+    const empCookie = cookies.find((c) => c.trim().startsWith('employee_id='));
+    const id = empCookie ? empCookie.split('=')[1] : null;
+
+    if (id) {
+      setEmployeeId(id);
+      fetchEmployeeData(id);
+    } else {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchEmployeeData = async (empId: string) => {
+    setLoading(true);
+    const { data: projData } = await supabase
+      .from('projects')
+      .select('*')
+      .eq('assigned_employee_id', empId)
+      .order('created_at', { ascending: false });
+
+    if (projData) {
+      setAssignedProjects(projData);
+      if (projData.length > 0) {
+        setSelectedProject(projData[0]);
+        fetchSubmissions(projData[0].id);
+      }
+    }
+    setLoading(false);
+  };
+
+  const fetchSubmissions = async (projectId: string) => {
+    const { data } = await supabase
+      .from('project_submissions')
+      .select('*')
+      .eq('project_id', projectId)
+      .order('submitted_at', { ascending: false });
+
+    if (data) setSubmissions(data);
+  };
+
+  const handleSelectProject = (proj: Project) => {
+    setSelectedProject(proj);
+    fetchSubmissions(proj.id);
+  };
+
+  const submitDeliverable = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedProject || !employeeId) return;
+
+    setIsSubmitting(true);
+
+    const urlsArray = urlInput
+      .split('\n')
+      .map((u) => u.trim())
+      .filter((u) => u.length > 0);
+
+    const filesArray = fileInput
+      .split('\n')
+      .map((f) => f.trim())
+      .filter((f) => f.length > 0);
+
+    const payload = {
+      project_id: selectedProject.id,
+      employee_id: employeeId,
+      content_text: contentText,
+      urls: urlsArray,
+      file_urls: filesArray,
+    };
+
+    const { data, error } = await supabase
+      .from('project_submissions')
+      .insert([payload])
+      .select();
+
+    if (error) {
+      alert(`Submission failed: ${error.message}`);
+    } else if (data) {
+      setSubmissions([data[0], ...submissions]);
+      setContentText('');
+      setUrlInput('');
+      setFileInput('');
+      alert('Deliverables submitted successfully!');
+    }
+    setIsSubmitting(false);
+  };
+
+  if (loading) {
+    return <div className="p-8 text-center text-slate-500">Loading your workspace...</div>;
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto space-y-6 font-sans pb-10">
+      {/* Header */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+            <FolderKanban className="w-6 h-6 text-blue-600" />
+            My Employee Workspace & Deliverables
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            Access assigned projects, submit code deliverables, URLs, docs, and report completion
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left Column: Assigned Projects List */}
+        <div className="lg:col-span-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+          <h2 className="text-base font-bold text-slate-900 border-b pb-3">Assigned Projects ({assignedProjects.length})</h2>
+          
+          <div className="space-y-3">
+            {assignedProjects.length === 0 ? (
+              <p className="text-xs text-slate-400 italic">No assigned projects found.</p>
+            ) : (
+              assignedProjects.map((proj) => (
+                <div
+                  key={proj.id}
+                  onClick={() => handleSelectProject(proj)}
+                  className={`p-4 rounded-xl border transition-all cursor-pointer ${
+                    selectedProject?.id === proj.id
+                      ? 'border-blue-600 bg-blue-50/50 shadow-xs'
+                      : 'border-slate-200 bg-white hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="flex justify-between items-start mb-1">
+                    <h3 className="font-bold text-slate-900 text-sm">{proj.project_name}</h3>
+                    <span className="text-[10px] font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md">
+                      {proj.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mb-2">{proj.client_name}</p>
+                  <div className="flex items-center gap-1 text-[11px] text-slate-400">
+                    <Calendar className="w-3 h-3 text-slate-400" />
+                    <span>Due: {proj.due_date || 'N/A'}</span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Right Column: Submission Form & History */}
+        <div className="lg:col-span-8 space-y-6">
+          {selectedProject ? (
+            <>
+              {/* Project Instructions Widget */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-2">
+                <h3 className="text-lg font-bold text-slate-900">{selectedProject.project_name}</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  {selectedProject.description || 'No detailed instructions provided by Admin.'}
+                </p>
+              </div>
+
+              {/* Work Submission Form */}
+              <form onSubmit={submitDeliverable} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2 border-b pb-3">
+                  <Send className="w-4 h-4 text-blue-600" /> Submit Project Deliverables
+                </h3>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">Project Content / Summary *</label>
+                  <textarea
+                    required
+                    rows={3}
+                    placeholder="Describe completed tasks, notes, or implementation summary..."
+                    className="w-full p-2.5 border rounded-xl text-sm bg-slate-50 text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-600"
+                    value={contentText}
+                    onChange={(e) => setContentText(e.target.value)}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5 mb-1">
+                      <LinkIcon className="w-3.5 h-3.5 text-blue-600" /> Submission URLs (GitHub, Figma, Vercel)
+                    </label>
+                    <textarea
+                      rows={2}
+                      placeholder="One URL per line e.g. https://github.com/..."
+                      className="w-full p-2.5 border rounded-xl text-xs bg-slate-50 text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-600"
+                      value={urlInput}
+                      onChange={(e) => setUrlInput(e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5 mb-1">
+                      <Paperclip className="w-3.5 h-3.5 text-emerald-600" /> File Attachment URLs
+                    </label>
+                    <textarea
+                      rows={2}
+                      placeholder="Google Drive, Dropbox, or storage link..."
+                      className="w-full p-2.5 border rounded-xl text-xs bg-slate-50 text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-600"
+                      value={fileInput}
+                      onChange={(e) => setFileInput(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-sm transition-all shadow-sm cursor-pointer"
+                >
+                  {isSubmitting ? 'Submitting Deliverable...' : 'Submit Work to Admin'}
+                </button>
+              </form>
+
+              {/* Submission Logs */}
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+                <h3 className="text-base font-bold text-slate-900 border-b pb-3">Previous Deliverable Submissions</h3>
+                {submissions.length === 0 ? (
+                  <p className="text-xs text-slate-400 italic">No submissions made yet for this project.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {submissions.map((sub) => (
+                      <div key={sub.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                        <div className="flex justify-between items-center text-xs text-slate-400">
+                          <span className="font-semibold text-slate-700">Submitted Work</span>
+                          <span>{new Date(sub.submitted_at).toLocaleString()}</span>
+                        </div>
+                        <p className="text-xs text-slate-800">{sub.content_text}</p>
+                        
+                        {sub.urls && sub.urls.length > 0 && (
+                          <div className="text-xs space-y-1 pt-1">
+                            <span className="font-semibold text-slate-600 block">Links:</span>
+                            {sub.urls.map((u, idx) => (
+                              <a key={idx} href={u} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline block truncate">
+                                {u}
+                              </a>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="bg-white p-8 rounded-2xl border text-center text-slate-400 text-sm">
+              Select a project from the left panel to submit your work.
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 </file>
 
@@ -348,6 +842,58 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
     "**/*.mts"
   ],
   "exclude": ["node_modules"]
+}
+</file>
+
+<file path="src/app/api/auth/login/route.ts">
+import { NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase';
+
+export async function POST(request: Request) {
+  const { email, password } = await request.json();
+
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  // 1. Admin Authentication Check
+  if (email === adminEmail && password === adminPassword) {
+    const response = NextResponse.json({ success: true, role: 'admin' }, { status: 200 });
+    response.cookies.set('crm_session', 'admin', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24,
+      path: '/',
+    });
+    response.cookies.set('user_role', 'admin', { path: '/' });
+    return response;
+  }
+
+  // 2. Employee Authentication Check against Supabase DB
+  const { data: employee, error } = await supabase
+    .from('employees')
+    .select('*')
+    .eq('email', email)
+    .single();
+
+  if (employee && employee.password === password && employee.status === 'Active') {
+    const response = NextResponse.json(
+      { success: true, role: 'employee', employeeId: employee.id },
+      { status: 200 }
+    );
+
+    response.cookies.set('crm_session', employee.id, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24,
+      path: '/',
+    });
+    response.cookies.set('user_role', 'employee', { path: '/' });
+    response.cookies.set('employee_id', employee.id, { path: '/' });
+
+    return response;
+  }
+
+  return NextResponse.json({ error: 'Invalid credentials or inactive account' }, { status: 401 });
 }
 </file>
 
@@ -653,341 +1199,6 @@ export default function OverviewPage() {
           )}
         </div>
       </div>
-    </div>
-  );
-}
-</file>
-
-<file path="src/app/dashboard/projects/page.tsx">
-'use client';
-
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Plus, Trash2, FolderKanban } from 'lucide-react';
-
-interface Project {
-  id: string;
-  project_name: string;
-  client_name: string;
-  budget: number;
-  status: string;
-  assigned_employee_id?: string;
-}
-
-interface Employee {
-  id: string;
-  full_name: string;
-}
-
-export default function ProjectsPage() {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({
-    project_name: '',
-    client_name: '',
-    budget: 0,
-    status: 'Planning',
-    assigned_employee_id: '',
-  });
-
-  const fetchData = async () => {
-    const { data: projData } = await supabase
-      .from('projects')
-      .select('*')
-      .order('created_at', { ascending: false });
-    const { data: empData } = await supabase.from('employees').select('id, full_name');
-
-    if (projData) setProjects(projData);
-    if (empData) setEmployees(empData);
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const createProject = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const payload = {
-      ...formData,
-      assigned_employee_id: formData.assigned_employee_id || null,
-    };
-    const { data, error } = await supabase.from('projects').insert([payload]).select();
-    if (!error && data) {
-      setProjects([data[0], ...projects]);
-      setShowModal(false);
-      setFormData({
-        project_name: '',
-        client_name: '',
-        budget: 0,
-        status: 'Planning',
-        assigned_employee_id: '',
-      });
-    }
-  };
-
-  const updateProjectStatus = async (id: string, status: string) => {
-    await supabase.from('projects').update({ status }).eq('id', id);
-    setProjects(projects.map((p) => (p.id === id ? { ...p, status } : p)));
-  };
-
-  const deleteProject = async (id: string) => {
-    await supabase.from('projects').delete().eq('id', id);
-    setProjects(projects.filter((p) => p.id !== id));
-  };
-
-  return (
-    <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
-      {/* Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <FolderKanban className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 shrink-0" />
-            Projects & Operations
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500">
-            Track client deliverables, tech stacks, budgets, and staff allocations
-          </p>
-        </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2.5 sm:py-2 rounded-lg flex items-center justify-center gap-2 text-sm shadow-xs transition-colors shrink-0"
-        >
-          <Plus className="w-4 h-4" /> Create Project
-        </button>
-      </div>
-
-      {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <form
-            onSubmit={createProject}
-            className="bg-white rounded-xl p-5 sm:p-6 w-full max-w-md space-y-4 shadow-xl my-auto"
-          >
-            <h2 className="text-lg font-bold text-slate-900">Add New IT Project</h2>
-            <div>
-              <label className="text-xs font-semibold text-slate-600 block mb-1">Project Name</label>
-              <input
-                type="text"
-                placeholder="e.g. Infrastructure Upgrade"
-                required
-                className="w-full p-2.5 sm:p-2 border border-slate-200 rounded-lg text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={formData.project_name}
-                onChange={(e) => setFormData({ ...formData, project_name: e.target.value })}
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-slate-600 block mb-1">Client Organization</label>
-              <input
-                type="text"
-                placeholder="e.g. Acme Enterprise"
-                required
-                className="w-full p-2.5 sm:p-2 border border-slate-200 rounded-lg text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={formData.client_name}
-                onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-semibold text-slate-600 block mb-1">Budget ($)</label>
-                <input
-                  type="number"
-                  placeholder="25000"
-                  required
-                  className="w-full p-2.5 sm:p-2 border border-slate-200 rounded-lg text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  value={formData.budget || ''}
-                  onChange={(e) => setFormData({ ...formData, budget: Number(e.target.value) })}
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-600 block mb-1">Initial Status</label>
-                <select
-                  className="w-full p-2.5 sm:p-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                >
-                  <option value="Planning">Planning</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Testing">Testing</option>
-                  <option value="Completed">Completed</option>
-                  <option value="On Hold">On Hold</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-slate-600 block mb-1">Assigned Tech Lead</label>
-              <select
-                className="w-full p-2.5 sm:p-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={formData.assigned_employee_id}
-                onChange={(e) =>
-                  setFormData({ ...formData, assigned_employee_id: e.target.value })
-                }
-              >
-                <option value="">Unassigned</option>
-                {employees.map((emp) => (
-                  <option key={emp.id} value={emp.id}>
-                    {emp.full_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowModal(false)}
-                className="px-4 py-2 border rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-              >
-                Save Project
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Main Content Area */}
-      {loading ? (
-        <div className="p-8 bg-white rounded-xl border border-slate-200 text-center text-slate-500 text-sm">
-          Loading project data...
-        </div>
-      ) : projects.length === 0 ? (
-        <div className="p-8 sm:p-12 bg-white rounded-xl border border-slate-200 text-center space-y-3">
-          <FolderKanban className="w-10 h-10 sm:w-12 sm:h-12 text-slate-300 mx-auto" />
-          <h3 className="font-semibold text-slate-700 text-base">No active projects found</h3>
-          <p className="text-xs sm:text-sm text-slate-500 max-w-sm mx-auto">
-            Click "Create Project" above to add your first IT delivery engagement.
-          </p>
-        </div>
-      ) : (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          {/* Desktop & Tablet Table View (Hidden on Small Screens) */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[700px]">
-              <thead className="bg-slate-100 border-b border-slate-200 text-slate-700 font-semibold uppercase text-xs">
-                <tr>
-                  <th className="p-4">Project Name</th>
-                  <th className="p-4">Client</th>
-                  <th className="p-4">Assigned Tech Lead</th>
-                  <th className="p-4">Budget</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-sm">
-                {projects.map((project) => {
-                  const assignedStaff = employees.find(
-                    (e) => e.id === project.assigned_employee_id
-                  );
-                  return (
-                    <tr key={project.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="p-4 font-bold text-slate-900">{project.project_name}</td>
-                      <td className="p-4 text-slate-700 font-medium">{project.client_name}</td>
-                      <td className="p-4 text-slate-600">
-                        {assignedStaff ? (
-                          <span className="font-medium text-slate-800">{assignedStaff.full_name}</span>
-                        ) : (
-                          <span className="text-xs text-slate-400 italic">Unassigned</span>
-                        )}
-                      </td>
-                      <td className="p-4 font-semibold text-slate-900">
-                        ${project.budget?.toLocaleString()}
-                      </td>
-                      <td className="p-4">
-                        <select
-                          value={project.status}
-                          onChange={(e) => updateProjectStatus(project.id, e.target.value)}
-                          className="p-1.5 border rounded-lg text-xs font-semibold bg-slate-50 border-slate-200 text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        >
-                          <option value="Planning">Planning</option>
-                          <option value="In Progress">In Progress</option>
-                          <option value="Testing">Testing</option>
-                          <option value="Completed">Completed</option>
-                          <option value="On Hold">On Hold</option>
-                        </select>
-                      </td>
-                      <td className="p-4 text-right">
-                        <button
-                          onClick={() => deleteProject(project.id)}
-                          className="text-slate-400 hover:text-red-500 p-1 rounded-md transition-colors"
-                          title="Delete project"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile Card Layout (Visible on Small Screens) */}
-          <div className="block md:hidden divide-y divide-slate-100">
-            {projects.map((project) => {
-              const assignedStaff = employees.find(
-                (e) => e.id === project.assigned_employee_id
-              );
-              return (
-                <div key={project.id} className="p-4 space-y-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="font-bold text-slate-900 text-base">{project.project_name}</div>
-                      <div className="text-xs text-slate-500 font-medium">{project.client_name}</div>
-                    </div>
-                    <button
-                      onClick={() => deleteProject(project.id)}
-                      className="text-slate-400 hover:text-red-500 p-1 rounded-md transition-colors shrink-0"
-                      title="Delete project"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                    <div>
-                      <span className="text-slate-400 block font-medium">Tech Lead</span>
-                      <span className="text-slate-800 font-semibold truncate block">
-                        {assignedStaff ? assignedStaff.full_name : 'Unassigned'}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block font-medium">Budget</span>
-                      <span className="text-slate-900 font-bold">${project.budget?.toLocaleString()}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-1">
-                    <span className="text-xs font-semibold text-slate-500">Status</span>
-                    <select
-                      value={project.status}
-                      onChange={(e) => updateProjectStatus(project.id, e.target.value)}
-                      className="p-1.5 border rounded-lg text-xs font-semibold bg-slate-50 border-slate-200 text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    >
-                      <option value="Planning">Planning</option>
-                      <option value="In Progress">In Progress</option>
-                      <option value="Testing">Testing</option>
-                      <option value="Completed">Completed</option>
-                      <option value="On Hold">On Hold</option>
-                    </select>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -1414,160 +1625,356 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 }
 </file>
 
-<file path="src/app/dashboard/hr/page.tsx">
+<file path="src/app/dashboard/projects/page.tsx">
 'use client';
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, FolderKanban, Edit, Calendar, UserCheck } from 'lucide-react';
+
+interface Project {
+  id: string;
+  project_name: string;
+  client_name: string;
+  budget: number;
+  status: string;
+  assigned_employee_id?: string;
+  start_date?: string;
+  due_date?: string;
+  description?: string;
+}
 
 interface Employee {
   id: string;
   full_name: string;
-  email: string;
-  role: string;
-  department: string;
-  status: string;
 }
 
-export default function HRPage() {
+export default function ProjectsPage() {
+  const [projects, setProjects] = useState<Project[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
+
   const [formData, setFormData] = useState({
-    full_name: '',
-    email: '',
-    role: '',
-    department: 'Engineering',
-    status: 'Active',
+    project_name: '',
+    client_name: '',
+    budget: 0,
+    status: 'Planning',
+    assigned_employee_id: '',
+    start_date: new Date().toISOString().slice(0, 10),
+    due_date: '',
+    description: '',
   });
 
-  const fetchEmployees = async () => {
-    const { data } = await supabase.from('employees').select('*').order('joined_date', { ascending: false });
-    if (data) setEmployees(data);
+  const fetchData = async () => {
+    const { data: projData } = await supabase
+      .from('projects')
+      .select('*')
+      .order('created_at', { ascending: false });
+    const { data: empData } = await supabase.from('employees').select('id, full_name');
+
+    if (projData) setProjects(projData);
+    if (empData) setEmployees(empData);
+    setLoading(false);
   };
 
   useEffect(() => {
-    fetchEmployees();
+    fetchData();
   }, []);
 
-  const createEmployee = async (e: React.FormEvent) => {
+  const openCreateModal = () => {
+    setEditingProject(null);
+    setFormData({
+      project_name: '',
+      client_name: '',
+      budget: 0,
+      status: 'Planning',
+      assigned_employee_id: '',
+      start_date: new Date().toISOString().slice(0, 10),
+      due_date: '',
+      description: '',
+    });
+    setShowModal(true);
+  };
+
+  const openEditModal = (proj: Project) => {
+    setEditingProject(proj);
+    setFormData({
+      project_name: proj.project_name || '',
+      client_name: proj.client_name || '',
+      budget: proj.budget || 0,
+      status: proj.status || 'Planning',
+      assigned_employee_id: proj.assigned_employee_id || '',
+      start_date: proj.start_date || new Date().toISOString().slice(0, 10),
+      due_date: proj.due_date || '',
+      description: proj.description || '',
+    });
+    setShowModal(true);
+  };
+
+  const saveProject = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { data, error } = await supabase.from('employees').insert([formData]).select();
-    if (!error && data) {
-      setEmployees([data[0], ...employees]);
-      setShowModal(false);
-      setFormData({ full_name: '', email: '', role: '', department: 'Engineering', status: 'Active' });
+    const payload = {
+      ...formData,
+      assigned_employee_id: formData.assigned_employee_id || null,
+      due_date: formData.due_date || null,
+    };
+
+    if (editingProject) {
+      const { data, error } = await supabase
+        .from('projects')
+        .update(payload)
+        .eq('id', editingProject.id)
+        .select();
+
+      if (!error && data) {
+        setProjects(projects.map((p) => (p.id === editingProject.id ? data[0] : p)));
+        setShowModal(false);
+      }
+    } else {
+      const { data, error } = await supabase.from('projects').insert([payload]).select();
+      if (!error && data) {
+        setProjects([data[0], ...projects]);
+        setShowModal(false);
+      }
     }
   };
 
-  const deleteEmployee = async (id: string) => {
-    await supabase.from('employees').delete().eq('id', id);
-    setEmployees(employees.filter((e) => e.id !== id));
+  const deleteProject = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this project?')) return;
+    await supabase.from('projects').delete().eq('id', id);
+    setProjects(projects.filter((p) => p.id !== id));
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
-      {/* Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">HR & Employee Directory</h1>
-          <p className="text-xs sm:text-sm text-slate-500">Manage internal IT staff and department roles</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 flex items-center gap-2">
+            <FolderKanban className="w-6 h-6 text-blue-600 shrink-0" /> IT Projects & ERP Operations
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500">
+            Schedule projects, assign tech teams, set milestones, and track deliveries
+          </p>
         </div>
         <button
-          onClick={() => setShowModal(true)}
-          className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2.5 sm:py-2 rounded-lg flex items-center justify-center gap-2 text-sm shadow-xs transition-colors shrink-0"
+          onClick={openCreateModal}
+          className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 text-sm shadow-xs transition-colors shrink-0 cursor-pointer"
         >
-          <Plus className="w-4 h-4" /> Add Employee
+          <Plus className="w-4 h-4" /> Create & Schedule Project
         </button>
       </div>
 
-      {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <form onSubmit={createEmployee} className="bg-white rounded-xl p-5 sm:p-6 w-full max-w-md space-y-4 shadow-xl my-auto">
-            <h2 className="text-lg font-bold text-slate-900">Add Staff Member</h2>
-            <div>
-              <label className="text-xs font-semibold text-slate-600 block mb-1">Full Name</label>
-              <input
-                type="text"
-                placeholder="Full Name"
-                required
-                className="w-full p-2.5 sm:p-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={formData.full_name}
-                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-              />
+          <form
+            onSubmit={saveProject}
+            className="bg-white rounded-xl p-5 sm:p-6 w-full max-w-lg space-y-4 shadow-xl my-auto"
+          >
+            <h2 className="text-lg font-bold text-slate-900 border-b pb-3">
+              {editingProject ? 'Edit Project Schedule' : 'Schedule New Project'}
+            </h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-slate-600 block mb-1">Project Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="ERP System Migration"
+                  className="w-full p-2.5 border rounded-lg text-sm bg-white text-slate-900 focus:ring-2 focus:ring-blue-600"
+                  value={formData.project_name}
+                  onChange={(e) => setFormData({ ...formData, project_name: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-600 block mb-1">Client Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Enterprise Client Corp"
+                  className="w-full p-2.5 border rounded-lg text-sm bg-white text-slate-900 focus:ring-2 focus:ring-blue-600"
+                  value={formData.client_name}
+                  onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
+                />
+              </div>
             </div>
-            <div>
-              <label className="text-xs font-semibold text-slate-600 block mb-1">Email Address</label>
-              <input
-                type="email"
-                placeholder="Email Address"
-                required
-                className="w-full p-2.5 sm:p-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-slate-600 block mb-1">Start Date</label>
+                <input
+                  type="date"
+                  className="w-full p-2.5 border rounded-lg text-sm bg-white text-slate-900 focus:ring-2 focus:ring-blue-600"
+                  value={formData.start_date}
+                  onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-600 block mb-1">Due Date</label>
+                <input
+                  type="date"
+                  className="w-full p-2.5 border rounded-lg text-sm bg-white text-slate-900 focus:ring-2 focus:ring-blue-600"
+                  value={formData.due_date}
+                  onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+                />
+              </div>
             </div>
-            <div>
-              <label className="text-xs font-semibold text-slate-600 block mb-1">Role</label>
-              <input
-                type="text"
-                placeholder="Role (e.g. Senior DevOps)"
-                required
-                className="w-full p-2.5 sm:p-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-              />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-slate-600 block mb-1">Budget ($)</label>
+                <input
+                  type="number"
+                  placeholder="15000"
+                  className="w-full p-2.5 border rounded-lg text-sm bg-white text-slate-900 focus:ring-2 focus:ring-blue-600"
+                  value={formData.budget || ''}
+                  onChange={(e) => setFormData({ ...formData, budget: Number(e.target.value) })}
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-600 block mb-1">Status</label>
+                <select
+                  className="w-full p-2.5 border rounded-lg text-sm bg-white text-slate-900 focus:ring-2 focus:ring-blue-600"
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                >
+                  <option value="Planning">Planning</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Testing">Testing</option>
+                  <option value="Completed">Completed</option>
+                  <option value="On Hold">On Hold</option>
+                </select>
+              </div>
             </div>
+
             <div>
-              <label className="text-xs font-semibold text-slate-600 block mb-1">Department</label>
+              <label className="text-xs font-semibold text-slate-600 block mb-1">Assigned Employee</label>
               <select
-                className="w-full p-2.5 sm:p-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={formData.department}
-                onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                className="w-full p-2.5 border rounded-lg text-sm bg-white text-slate-900 focus:ring-2 focus:ring-blue-600"
+                value={formData.assigned_employee_id}
+                onChange={(e) => setFormData({ ...formData, assigned_employee_id: e.target.value })}
               >
-                <option value="Engineering">Engineering</option>
-                <option value="Cybersecurity">Cybersecurity</option>
-                <option value="Infrastructure">Infrastructure</option>
-                <option value="Sales">Sales</option>
+                <option value="">-- Unassigned --</option>
+                {employees.map((emp) => (
+                  <option key={emp.id} value={emp.id}>
+                    {emp.full_name}
+                  </option>
+                ))}
               </select>
             </div>
-            <div className="flex justify-end gap-2 pt-2">
+
+            <div>
+              <label className="text-xs font-semibold text-slate-600 block mb-1">Project Instructions</label>
+              <textarea
+                rows={3}
+                placeholder="Details & deliverable requirements..."
+                className="w-full p-2.5 border rounded-lg text-sm bg-white text-slate-900 focus:ring-2 focus:ring-blue-600"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t">
               <button
                 type="button"
                 onClick={() => setShowModal(false)}
-                className="px-4 py-2 border rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+                className="px-4 py-2 border rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"
               >
                 Cancel
               </button>
-              <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
-                Save
+              <button
+                type="submit"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+              >
+                Save Project
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Employee Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-        {employees.map((emp) => (
-          <div key={emp.id} className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm relative group">
-            <button
-              onClick={() => deleteEmployee(emp.id)}
-              className="absolute top-3.5 right-3.5 text-slate-400 hover:text-red-500 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity p-1 rounded-md"
-              title="Delete Staff Member"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-            <h3 className="font-bold text-base text-slate-900 pr-8 truncate">{emp.full_name}</h3>
-            <p className="text-sm text-slate-600 font-medium truncate">{emp.role}</p>
-            <p className="text-xs text-slate-400 mb-4 truncate">{emp.email}</p>
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-              <span className="font-semibold text-slate-700 truncate">{emp.department}</span>
-              <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-medium shrink-0">{emp.status}</span>
-            </div>
+      {/* Responsive Table / Card View */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+        {loading ? (
+          <div className="p-8 text-center text-slate-500 text-sm">Loading projects database...</div>
+        ) : projects.length === 0 ? (
+          <div className="p-8 text-center text-slate-500 text-sm">No projects active.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[850px]">
+              <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase text-xs">
+                <tr>
+                  <th className="p-4">Project / Client</th>
+                  <th className="p-4">Assigned Employee</th>
+                  <th className="p-4">Schedule Dates</th>
+                  <th className="p-4">Budget</th>
+                  <th className="p-4">Status</th>
+                  <th className="p-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-sm">
+                {projects.map((project) => {
+                  const assignedStaff = employees.find((e) => e.id === project.assigned_employee_id);
+                  return (
+                    <tr key={project.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="p-4">
+                        <div className="font-bold text-slate-900">{project.project_name}</div>
+                        <div className="text-xs text-slate-500 font-medium">{project.client_name}</div>
+                      </td>
+                      <td className="p-4">
+                        {assignedStaff ? (
+                          <span className="font-semibold text-slate-800 flex items-center gap-1">
+                            <UserCheck className="w-3.5 h-3.5 text-blue-600" />
+                            {assignedStaff.full_name}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-slate-400 italic">Unassigned</span>
+                        )}
+                      </td>
+                      <td className="p-4 text-xs font-medium text-slate-600">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                          <span>
+                            {project.start_date || 'N/A'} → {project.due_date || 'No Due Date'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="p-4 font-bold text-slate-900">${project.budget?.toLocaleString()}</td>
+                      <td className="p-4">
+                        <span className="bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-md text-xs font-semibold text-slate-800">
+                          {project.status}
+                        </span>
+                      </td>
+                      <td className="p-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => openEditModal(project)}
+                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Edit Project"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => deleteProject(project.id)}
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete Project"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-        ))}
+        )}
       </div>
     </div>
   );
@@ -1613,6 +2020,231 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
       </body>
     </html>
+  );
+}
+</file>
+
+<file path="src/app/dashboard/hr/page.tsx">
+'use client';
+
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { Plus, Trash2, UserCheck, ShieldCheck, Mail, Lock } from 'lucide-react';
+
+interface Employee {
+  id: string;
+  full_name: string;
+  email: string;
+  role: string;
+  department: string;
+  status: string;
+  password?: string;
+}
+
+export default function HRPage() {
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [showModal, setShowModal] = useState(false);
+  const [formData, setFormData] = useState({
+    full_name: '',
+    email: '',
+    password: '',
+    role: 'Software Engineer',
+    department: 'Engineering',
+    status: 'Active',
+  });
+
+  const fetchEmployees = async () => {
+    const { data } = await supabase
+      .from('employees')
+      .select('*')
+      .order('joined_date', { ascending: false });
+    if (data) setEmployees(data);
+  };
+
+  useEffect(() => {
+    fetchEmployees();
+  }, []);
+
+  const createEmployee = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const { data, error } = await supabase.from('employees').insert([formData]).select();
+    if (error) {
+      alert(`Error creating employee: ${error.message}`);
+      return;
+    }
+    if (data) {
+      setEmployees([data[0], ...employees]);
+      setShowModal(false);
+      setFormData({
+        full_name: '',
+        email: '',
+        password: '',
+        role: 'Software Engineer',
+        department: 'Engineering',
+        status: 'Active',
+      });
+    }
+  };
+
+  const deleteEmployee = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this employee?')) return;
+    await supabase.from('employees').delete().eq('id', id);
+    setEmployees(employees.filter((e) => e.id !== id));
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 flex items-center gap-2">
+            <UserCheck className="w-6 h-6 text-blue-600 shrink-0" /> Employee & User Accounts
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500">
+            Create employee portal credentials and manage IT department roles
+          </p>
+        </div>
+        <button
+          onClick={() => setShowModal(true)}
+          className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 text-sm shadow-xs transition-colors shrink-0 cursor-pointer"
+        >
+          <Plus className="w-4 h-4" /> Add Employee User
+        </button>
+      </div>
+
+      {showModal && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <form
+            onSubmit={createEmployee}
+            className="bg-white rounded-xl p-5 sm:p-6 w-full max-w-md space-y-4 shadow-xl my-auto"
+          >
+            <h2 className="text-lg font-bold text-slate-900 border-b pb-3">Create Employee Account</h2>
+            
+            <div>
+              <label className="text-xs font-semibold text-slate-600 block mb-1">Full Name *</label>
+              <input
+                type="text"
+                required
+                placeholder="John Doe"
+                className="w-full p-2.5 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:ring-2 focus:ring-blue-600"
+                value={formData.full_name}
+                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-slate-600 block mb-1">Work Email *</label>
+              <div className="relative">
+                <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="email"
+                  required
+                  placeholder="employee@itcompany.com"
+                  className="w-full pl-9 p-2.5 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:ring-2 focus:ring-blue-600"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-slate-600 block mb-1">Portal Login Password *</label>
+              <div className="relative">
+                <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="password"
+                  required
+                  placeholder="••••••••"
+                  className="w-full pl-9 p-2.5 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:ring-2 focus:ring-blue-600"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-slate-600 block mb-1">Role</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Frontend Developer"
+                  className="w-full p-2.5 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:ring-2 focus:ring-blue-600"
+                  value={formData.role}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-600 block mb-1">Department</label>
+                <select
+                  className="w-full p-2.5 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:ring-2 focus:ring-blue-600"
+                  value={formData.department}
+                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                >
+                  <option value="Engineering">Engineering</option>
+                  <option value="Cybersecurity">Cybersecurity</option>
+                  <option value="Infrastructure">Infrastructure</option>
+                  <option value="DevOps">DevOps</option>
+                  <option value="UI/UX Design">UI/UX Design</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t">
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 border rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+              >
+                Create Account
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {employees.map((emp) => (
+          <div
+            key={emp.id}
+            className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs relative group flex flex-col justify-between space-y-4"
+          >
+            <div>
+              <div className="flex items-start justify-between pr-6">
+                <div>
+                  <h3 className="font-bold text-base text-slate-900">{emp.full_name}</h3>
+                  <p className="text-xs text-blue-600 font-semibold">{emp.role}</p>
+                </div>
+                <button
+                  onClick={() => deleteEmployee(emp.id)}
+                  className="text-slate-400 hover:text-red-500 p-1 rounded-md transition-colors"
+                  title="Delete User Account"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-xs text-slate-500 mt-2 flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <span className="truncate">{emp.email}</span>
+              </p>
+            </div>
+
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+              <span className="font-medium text-slate-600">{emp.department}</span>
+              <span className="bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-md font-semibold">
+                {emp.status}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 </file>
@@ -3200,7 +3832,7 @@ export default function SalesDashboard() {
 <file path="src/app/dashboard/layout.tsx">
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -3215,7 +3847,9 @@ import {
   Menu,
   X,
   ShieldCheck,
-  ChevronRight
+  ChevronRight,
+  MessageSquare,
+  Send
 } from 'lucide-react';
 
 export default function DashboardLayout({
@@ -3226,6 +3860,16 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userRole, setUserRole] = useState<'admin' | 'employee'>('admin');
+
+  useEffect(() => {
+    const cookies = document.cookie.split(';');
+    const roleCookie = cookies.find((c) => c.trim().startsWith('user_role='));
+    if (roleCookie) {
+      const roleVal = roleCookie.split('=')[1] as 'admin' | 'employee';
+      setUserRole(roleVal);
+    }
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -3236,7 +3880,7 @@ export default function DashboardLayout({
     }
   };
 
-  const navItems = [
+  const adminNav = [
     {
       name: 'Overview',
       href: '/dashboard/overview',
@@ -3258,7 +3902,7 @@ export default function DashboardLayout({
       icon: TrendingUp,
     },
     {
-      name: 'Projects',
+      name: 'Projects & ERP',
       href: '/dashboard/projects',
       icon: FolderKanban,
     },
@@ -3268,14 +3912,34 @@ export default function DashboardLayout({
       icon: Ticket,
     },
     {
-      name: 'HR & Directory',
+      name: 'HR & Users',
       href: '/dashboard/hr',
       icon: Users,
     },
+    {
+      name: 'Operations Chat',
+      href: '/dashboard/chat',
+      icon: MessageSquare,
+    },
   ];
 
+  const employeeNav = [
+    {
+      name: 'My Workspace & Deliverables',
+      href: '/dashboard/employee-portal',
+      icon: Send,
+    },
+    {
+      name: 'Operations Chat',
+      href: '/dashboard/chat',
+      icon: MessageSquare,
+    },
+  ];
+
+  const navItems = userRole === 'admin' ? adminNav : employeeNav;
+
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row text-slate-800">
+    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row text-slate-800 font-sans">
       {/* Mobile Top Navigation Header */}
       <div className="md:hidden bg-slate-900 text-white p-4 flex items-center justify-between border-b border-slate-800 sticky top-0 z-40">
         <div className="flex items-center gap-2">
@@ -3335,11 +3999,11 @@ export default function DashboardLayout({
                       : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
-                    <span>{item.name}</span>
+                  <div className="flex items-center gap-3 truncate">
+                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                    <span className="truncate">{item.name}</span>
                   </div>
-                  {isActive && <ChevronRight className="w-3.5 h-3.5 text-blue-200" />}
+                  {isActive && <ChevronRight className="w-3.5 h-3.5 text-blue-200 shrink-0" />}
                 </Link>
               );
             })}
@@ -3350,12 +4014,16 @@ export default function DashboardLayout({
         <div className="p-4 border-t border-slate-800/80 bg-slate-950/40">
           <div className="flex items-center justify-between">
             <div className="truncate pr-2">
-              <div className="text-xs font-bold text-slate-200 truncate">Administrator</div>
-              <div className="text-[10px] text-slate-500 truncate">System Workspace</div>
+              <div className="text-xs font-bold text-slate-200 truncate capitalize">
+                {userRole === 'admin' ? 'Administrator' : 'Employee Portal'}
+              </div>
+              <div className="text-[10px] text-slate-500 truncate">
+                {userRole === 'admin' ? 'System Workspace' : 'Staff Workspace'}
+              </div>
             </div>
             <button
               onClick={handleLogout}
-              className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors shrink-0"
+              className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors shrink-0 cursor-pointer"
               title="Sign Out"
             >
               <LogOut className="w-4 h-4" />
@@ -3373,7 +4041,7 @@ export default function DashboardLayout({
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 p-4 md:p-8 overflow-y-auto">
+      <main className="flex-1 p-4 md:p-8 overflow-y-auto min-w-0">
         {children}
       </main>
     </div>
