@@ -1559,188 +1559,6 @@ export default function TicketsPage() {
 }
 </file>
 
-<file path="src/app/login/page.tsx">
-'use client';
-
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { ShieldCheck, Server, Ticket, ArrowRight, Lock, Mail, CheckCircle2 } from 'lucide-react';
-
-export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (res.ok) {
-        router.push('/dashboard/sales');
-      } else {
-        setError('Invalid admin credentials. Please try again.');
-      }
-    } catch (err) {
-      setError('An unexpected error occurred. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="min-h-screen w-full bg-slate-50 flex items-center justify-center p-4 md:p-8">
-      <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl border border-slate-200/80 overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[600px]">
-        
-        {/* Left Side: Clean Feature Cards (No Stats/Numbers) */}
-        <div className="lg:col-span-7 bg-gradient-to-br from-blue-50 via-indigo-50/50 to-slate-100 p-8 lg:p-12 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-200">
-          <div>
-            <div className="flex items-center gap-2.5 mb-8">
-              <div className="bg-blue-600 text-white p-2 rounded-xl shadow-md shadow-blue-500/20">
-                <ShieldCheck className="w-6 h-6" />
-              </div>
-              <span className="font-bold text-xl text-slate-900 tracking-tight">
-                4Biz <span className="text-blue-600">IT CRM</span>
-              </span>
-            </div>
-
-            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-tight mb-3">
-              Unified Platform for IT Service & Client Management
-            </h1>
-            <p className="text-slate-600 text-sm leading-relaxed mb-8 max-w-md">
-              Streamline sales pipelines, client project operations, technical infrastructure tickets, and staff management in one centralized hub.
-            </p>
-
-            {/* Static Clean Widgets */}
-            <div className="grid grid-cols-2 gap-4 max-w-md">
-              <div className="bg-white/80 backdrop-blur-sm p-4 rounded-xl border border-slate-200/80 shadow-xs">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 bg-emerald-100 text-emerald-700 rounded-lg">
-                    <Server className="w-4 h-4" />
-                  </div>
-                  <span className="text-xs font-semibold text-slate-700">System Status</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium pt-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>All Systems Operational</span>
-                </div>
-              </div>
-
-              <div className="bg-white/80 backdrop-blur-sm p-4 rounded-xl border border-slate-200/80 shadow-xs">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 bg-blue-100 text-blue-700 rounded-lg">
-                    <Ticket className="w-4 h-4" />
-                  </div>
-                  <span className="text-xs font-semibold text-slate-700">Service Desk</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-xs text-blue-600 font-medium pt-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Real-time Ticketing Active</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="pt-8 border-t border-slate-200/60 flex items-center gap-6 text-xs text-slate-500 font-medium">
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-blue-600" /> Enterprise Security
-            </span>
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-blue-600" /> Real-time Analytics
-            </span>
-          </div>
-        </div>
-
-        {/* Right Side: Login Form */}
-        <div className="lg:col-span-5 p-8 lg:p-12 flex flex-col justify-center bg-white">
-          <div className="max-w-sm mx-auto w-full space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-slate-900">Admin Sign In</h2>
-              <p className="text-xs text-slate-500 mt-1">
-                Enter your administrative credentials to access your workspace.
-              </p>
-            </div>
-
-            {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-xs font-medium text-center">
-                {error}
-              </div>
-            )}
-
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  Admin Email Address
-                </label>
-                <div className="relative">
-                  <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    placeholder="4bizdeveloper@gmail.com"
-                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    placeholder="••••••••"
-                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-sm rounded-lg shadow-sm shadow-blue-500/20 flex items-center justify-center gap-2 transition-all disabled:opacity-70"
-              >
-                {loading ? (
-                  <span>Signing in...</span>
-                ) : (
-                  <>
-                    <span>Sign In to Dashboard</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-            </form>
-
-            <div className="pt-4 text-center">
-              <p className="text-xs text-slate-400">
-                Encrypted with SSL 256-bit authentication
-              </p>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  );
-}
-</file>
-
 <file path="src/app/page.tsx">
 import { redirect } from 'next/navigation';
 
@@ -2143,6 +1961,188 @@ export default function ProjectsPage() {
             </table>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/app/login/page.tsx">
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { ShieldCheck, Server, Ticket, ArrowRight, Lock, Mail, CheckCircle2 } from 'lucide-react';
+
+export default function LoginPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (res.ok) {
+        router.push('/dashboard/overview');
+      } else {
+        setError('Invalid admin credentials. Please try again.');
+      }
+    } catch (err) {
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen w-full bg-slate-50 flex items-center justify-center p-4 md:p-8">
+      <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl border border-slate-200/80 overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[600px]">
+        
+        {/* Left Side: Clean Feature Cards (No Stats/Numbers) */}
+        <div className="lg:col-span-7 bg-gradient-to-br from-blue-50 via-indigo-50/50 to-slate-100 p-8 lg:p-12 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-200">
+          <div>
+            <div className="flex items-center gap-2.5 mb-8">
+              <div className="bg-blue-600 text-white p-2 rounded-xl shadow-md shadow-blue-500/20">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+              <span className="font-bold text-xl text-slate-900 tracking-tight">
+                4Biz <span className="text-blue-600">IT CRM</span>
+              </span>
+            </div>
+
+            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-tight mb-3">
+              Unified Platform for IT Service & Client Management
+            </h1>
+            <p className="text-slate-600 text-sm leading-relaxed mb-8 max-w-md">
+              Streamline sales pipelines, client project operations, technical infrastructure tickets, and staff management in one centralized hub.
+            </p>
+
+            {/* Static Clean Widgets */}
+            <div className="grid grid-cols-2 gap-4 max-w-md">
+              <div className="bg-white/80 backdrop-blur-sm p-4 rounded-xl border border-slate-200/80 shadow-xs">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 bg-emerald-100 text-emerald-700 rounded-lg">
+                    <Server className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-semibold text-slate-700">System Status</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium pt-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>All Systems Operational</span>
+                </div>
+              </div>
+
+              <div className="bg-white/80 backdrop-blur-sm p-4 rounded-xl border border-slate-200/80 shadow-xs">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 bg-blue-100 text-blue-700 rounded-lg">
+                    <Ticket className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-semibold text-slate-700">Service Desk</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-xs text-blue-600 font-medium pt-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Real-time Ticketing Active</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-8 border-t border-slate-200/60 flex items-center gap-6 text-xs text-slate-500 font-medium">
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-blue-600" /> Enterprise Security
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-blue-600" /> Real-time Analytics
+            </span>
+          </div>
+        </div>
+
+        {/* Right Side: Login Form */}
+        <div className="lg:col-span-5 p-8 lg:p-12 flex flex-col justify-center bg-white">
+          <div className="max-w-sm mx-auto w-full space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900">Admin Sign In</h2>
+              <p className="text-xs text-slate-500 mt-1">
+                Enter your administrative credentials to access your workspace.
+              </p>
+            </div>
+
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-xs font-medium text-center">
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Admin Email Address
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    placeholder="4bizdeveloper@gmail.com"
+                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    placeholder="••••••••"
+                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-sm rounded-lg shadow-sm shadow-blue-500/20 flex items-center justify-center gap-2 transition-all disabled:opacity-70"
+              >
+                {loading ? (
+                  <span>Signing in...</span>
+                ) : (
+                  <>
+                    <span>Sign In to Dashboard</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div className="pt-4 text-center">
+              <p className="text-xs text-slate-400">
+                Encrypted with SSL 256-bit authentication
+              </p>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );
@@ -4750,7 +4750,8 @@ import {
   ChevronRight,
   MessageSquare,
   Send,
-  User
+  User,
+  Sparkles
 } from 'lucide-react';
 
 export default function DashboardLayout({
@@ -4800,33 +4801,34 @@ export default function DashboardLayout({
   const navItems = userRole === 'admin' ? adminNav : employeeNav;
 
   return (
-    <div className="min-h-screen bg-slate-100/70 text-slate-800 font-sans flex flex-col antialiased">
-      {/* Ultra-Modern Full-Width Top Header */}
-      <header className="bg-slate-900 text-white h-16 px-4 md:px-6 flex items-center justify-between border-b border-slate-800 sticky top-0 z-40 shadow-md">
+    <div className="min-h-screen bg-slate-900 text-slate-100 font-sans flex flex-col antialiased selection:bg-blue-500 selection:text-white">
+      {/* Ultra-Modern Glassmorphism Header */}
+      <header className="bg-slate-950/80 backdrop-blur-xl text-white h-16 px-3 sm:px-6 flex items-center justify-between border-b border-slate-800/80 sticky top-0 z-40 shadow-xl">
         
-        {/* Left Side: Toggle Menu Button & Context Title */}
-        <div className="flex items-center gap-3">
+        {/* Left Side: Navigation Controls */}
+        <div className="flex items-center gap-2 sm:gap-4">
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="p-2.5 text-slate-300 hover:text-white hover:bg-slate-800/80 rounded-xl transition-all border border-slate-700/60 shadow-xs cursor-pointer flex items-center gap-2"
+            className="p-2 sm:p-2.5 text-slate-300 hover:text-white hover:bg-slate-800/80 rounded-xl transition-all border border-slate-700/60 shadow-xs cursor-pointer flex items-center gap-2 group"
             aria-label="Toggle Navigation Drawer"
           >
-            {menuOpen ? <X className="w-5 h-5 text-blue-400" /> : <Menu className="w-5 h-5 text-blue-400" />}
+            {menuOpen ? <X className="w-5 h-5 text-orange-400" /> : <Menu className="w-5 h-5 text-blue-400 group-hover:rotate-180 transition-transform duration-300" />}
             <span className="hidden sm:inline-block text-xs font-semibold text-slate-200">Menu</span>
           </button>
 
-          <div className="hidden md:flex items-center gap-2 pl-3 border-l border-slate-800 text-xs font-medium text-slate-400">
-            <span>Workspace:</span>
-            <span className="text-white font-bold bg-slate-800 px-2.5 py-1 rounded-md text-[11px] border border-slate-700">
+          <div className="flex items-center gap-2 pl-2 sm:pl-4 border-l border-slate-800 text-xs font-medium text-slate-400">
+            <span className="hidden md:inline-block">Workspace:</span>
+            <span className="text-white font-bold bg-gradient-to-r from-blue-600/30 to-indigo-600/30 text-blue-300 px-2.5 py-1 rounded-lg text-[11px] border border-blue-500/30 flex items-center gap-1.5 shadow-inner">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>
               {userRole === 'admin' ? 'Administrator' : 'Employee Portal'}
             </span>
           </div>
         </div>
 
-        {/* Right Side: Logo Display */}
+        {/* Right Side: Brand Logo */}
         <div className="flex items-center gap-3">
           <Link href="/dashboard/overview" className="flex items-center gap-2.5 group">
-            <div className="relative h-9 w-32 sm:w-36 flex items-center justify-end">
+            <div className="relative h-8 w-28 sm:h-9 sm:w-36 flex items-center justify-end">
               <Image
                 src="/logo.png"
                 alt="4Biz IT CRM Logo"
@@ -4839,19 +4841,21 @@ export default function DashboardLayout({
         </div>
       </header>
 
-      {/* Slide-out Left Drawer Menu */}
+      {/* Slide-out Modern Side Navigation Drawer */}
       <aside
-        className={`fixed top-16 inset-y-0 left-0 z-50 w-72 sm:w-80 bg-slate-900/95 backdrop-blur-md text-slate-300 flex flex-col justify-between transition-transform duration-300 ease-in-out border-r border-slate-800/80 shadow-2xl ${
-          menuOpen ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed top-16 inset-y-0 left-0 z-50 w-72 sm:w-80 bg-slate-950/95 backdrop-blur-2xl text-slate-300 flex flex-col justify-between transition-all duration-300 ease-in-out border-r border-slate-800/80 shadow-2xl ${
+          menuOpen ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0 pointer-events-none'
         }`}
         style={{ height: 'calc(100vh - 4rem)' }}
       >
-        <div className="p-4 sm:p-5 space-y-4 overflow-y-auto">
-          {/* Navigation Items */}
-          <nav className="space-y-1">
+        <div className="p-4 sm:p-5 space-y-4 overflow-y-auto custom-scrollbar">
+          {/* Navigation Section */}
+          <nav className="space-y-1.5">
             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 py-2 flex items-center justify-between">
-              <span>CRM Modules & Services</span>
-              <span className="text-[9px] bg-blue-600/30 text-blue-300 px-1.5 py-0.5 rounded font-mono">
+              <span className="flex items-center gap-1.5">
+                <Sparkles className="w-3 h-3 text-orange-400" /> CRM Modules
+              </span>
+              <span className="text-[9px] bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold px-2 py-0.5 rounded-full font-mono shadow-xs">
                 {navItems.length} Apps
               </span>
             </div>
@@ -4865,14 +4869,14 @@ export default function DashboardLayout({
                   key={item.href}
                   href={item.href}
                   onClick={() => setMenuOpen(false)}
-                  className={`flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-semibold transition-all ${
+                  className={`flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-semibold transition-all group ${
                     isActive
-                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 font-bold border border-blue-500/50'
-                      : 'text-slate-300 hover:text-white hover:bg-slate-800/80'
+                      ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-lg shadow-blue-600/25 font-bold border border-blue-400/30'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/70'
                   }`}
                 >
                   <div className="flex items-center gap-3 truncate">
-                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                    <Icon className={`w-4 h-4 shrink-0 transition-transform duration-200 group-hover:scale-110 ${isActive ? 'text-white' : 'text-slate-400'}`} />
                     <span className="truncate">{item.name}</span>
                   </div>
                   {isActive ? (
@@ -4886,14 +4890,14 @@ export default function DashboardLayout({
           </nav>
         </div>
 
-        {/* User Account Footer & Logout */}
-        <div className="p-4 border-t border-slate-800/80 bg-slate-950/60 flex items-center justify-between">
-          <div className="flex items-center gap-3 truncate pr-2">
-            <div className="bg-slate-800 p-2 rounded-xl border border-slate-700 text-blue-400 shrink-0">
+        {/* Account Profile Footer with Explicit Logout Button Text */}
+        <div className="p-4 border-t border-slate-800/80 bg-slate-950/80 backdrop-blur-md space-y-3">
+          <div className="flex items-center gap-3 truncate px-1">
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-2.5 rounded-xl border border-slate-700/80 text-blue-400 shrink-0 shadow-inner">
               <User className="w-4 h-4" />
             </div>
             <div className="truncate">
-              <div className="text-xs font-bold text-slate-200 truncate capitalize">
+              <div className="text-xs font-bold text-slate-100 truncate capitalize">
                 {userRole === 'admin' ? 'Administrator' : 'Employee Staff'}
               </div>
               <div className="text-[10px] text-slate-400 truncate">
@@ -4901,25 +4905,27 @@ export default function DashboardLayout({
               </div>
             </div>
           </div>
+
+          {/* Full Logout Button with Text Label */}
           <button
             onClick={handleLogout}
-            className="p-2.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all border border-transparent hover:border-red-500/20 shrink-0 cursor-pointer"
-            title="Sign Out of Dashboard"
+            className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 bg-gradient-to-r from-red-500/10 via-red-500/15 to-rose-500/10 hover:from-red-600 hover:to-rose-600 text-red-300 hover:text-white font-semibold text-xs rounded-xl border border-red-500/20 hover:border-red-500/40 transition-all duration-200 shadow-sm cursor-pointer group"
           >
-            <LogOut className="w-4.5 h-4.5" />
+            <LogOut className="w-4 h-4 text-red-400 group-hover:text-white transition-colors" />
+            <span>Logout</span>
           </button>
         </div>
       </aside>
 
-      {/* Backdrop overlay when side menu drawer is expanded */}
+      {/* Backdrop Overlay for Mobile/Tablet */}
       {menuOpen && (
         <div
           onClick={() => setMenuOpen(false)}
-          className="fixed inset-0 top-16 bg-slate-950/50 backdrop-blur-xs z-40 transition-opacity"
+          className="fixed inset-0 top-16 bg-slate-950/70 backdrop-blur-xs z-40 transition-opacity animate-in fade-in duration-200"
         />
       )}
 
-      {/* Main Full-Width Content Canvas */}
+      {/* Main Responsive Canvas Wrapper */}
       <main className="flex-1 p-3 sm:p-6 lg:p-8 overflow-y-auto w-full max-w-[1920px] mx-auto">
         {children}
       </main>
