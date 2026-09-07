@@ -24,7 +24,7 @@ export default function LoginPage() {
       });
 
       if (res.ok) {
-        router.push('/dashboard/sales');
+        router.push('/dashboard/overview');
       } else {
         setError('Invalid admin credentials. Please try again.');
       }
