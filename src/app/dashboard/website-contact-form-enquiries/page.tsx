@@ -288,33 +288,41 @@ export default function WebsiteContactFormEnquiriesPage() {
         )}
       </div>
 
-      {/* View Tabs */}
-      <div className="flex gap-2 border-b border-slate-200 pb-2 text-sm font-semibold">
-        <button
-          onClick={() => setActiveTab('details')}
-          className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${
-            activeTab === 'details' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'
-          }`}
-        >
-          Detailed Enquiry Table
-        </button>
-        <button
-          onClick={() => setActiveTab('pipeline')}
-          className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${
-            activeTab === 'pipeline' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'
-          }`}
-        >
-          Visual Enquiry Pipeline
-        </button>
-        <button
-          onClick={() => setActiveTab('automation')}
-          className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${
-            activeTab === 'automation' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'
-          }`}
-        >
-          Form AI & Webhook Automation
-        </button>
-      </div>
+{/* View Tabs */}
+<div className="w-full overflow-x-auto no-scrollbar py-1">
+  <div className="inline-flex items-center gap-1.5 p-1.5 bg-white rounded-2xl border border-slate-200 shadow-xs max-w-full min-w-max">
+    <button
+      onClick={() => setActiveTab('details')}
+      className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+        activeTab === 'details'
+          ? 'bg-blue-600 text-white shadow-xs'
+          : 'text-slate-600 hover:text-orange-600 hover:bg-orange-50'
+      }`}
+    >
+      Detailed Enquiry Table
+    </button>
+    <button
+      onClick={() => setActiveTab('pipeline')}
+      className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+        activeTab === 'pipeline'
+          ? 'bg-blue-600 text-white shadow-xs'
+          : 'text-slate-600 hover:text-orange-600 hover:bg-orange-50'
+      }`}
+    >
+      Visual Enquiry Pipeline
+    </button>
+    <button
+      onClick={() => setActiveTab('automation')}
+      className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+        activeTab === 'automation'
+          ? 'bg-blue-600 text-white shadow-xs'
+          : 'text-slate-600 hover:text-orange-600 hover:bg-orange-50'
+      }`}
+    >
+      Form AI & Webhook Automation
+    </button>
+  </div>
+</div>
 
       {/* Requirements Full Text Zoom Modal */}
       {viewRequirements && (

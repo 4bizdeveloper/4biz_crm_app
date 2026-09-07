@@ -498,12 +498,12 @@ export default function LeadsModule() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 font-sans pb-10">
+    <div className="max-w-7xl mx-auto space-y-6 font-sans pb-10 px-2 sm:px-4 md:px-6">
       {/* Executive CRM Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <UserCheck className="w-6 h-6 text-blue-600 shrink-0" />
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 flex items-center gap-2">
+            <UserCheck className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 shrink-0" />
             Leads Management Directory & CRM Operations
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
@@ -512,7 +512,7 @@ export default function LeadsModule() {
         </div>
         <button
           onClick={openCreateModal}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 text-sm transition-all shadow-md shadow-blue-500/20 shrink-0 cursor-pointer"
+          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 text-xs sm:text-sm transition-all shadow-md shadow-blue-500/20 shrink-0 cursor-pointer w-full sm:w-auto"
         >
           <Plus className="w-4 h-4" /> Add New Lead
         </button>
@@ -520,75 +520,78 @@ export default function LeadsModule() {
 
       {/* Analytics Summary Bar */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Total Leads</span>
-          <div className="text-2xl font-black text-slate-900 mt-1">{metrics.totalLeads}</div>
+        <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-2xs">
+          <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Total Leads</span>
+          <div className="text-xl sm:text-2xl font-black text-slate-900 mt-1">{metrics.totalLeads}</div>
           <span className="text-[10px] text-blue-600 font-semibold">{metrics.newToday} New Today</span>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Unassigned</span>
-          <div className="text-2xl font-black text-amber-600 mt-1">{metrics.unassigned}</div>
+        <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-2xs">
+          <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Unassigned</span>
+          <div className="text-xl sm:text-2xl font-black text-amber-600 mt-1">{metrics.unassigned}</div>
           <span className="text-[10px] text-slate-400">Requires Sales</span>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Lead Temp (H/W/C)</span>
-          <div className="text-lg font-extrabold text-slate-900 mt-1 flex items-center gap-1">
+        <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-2xs">
+          <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Lead Temp (H/W/C)</span>
+          <div className="text-base sm:text-lg font-extrabold text-slate-900 mt-1 flex items-center gap-1">
             <span className="text-red-500">{metrics.hot}</span> / <span className="text-amber-500">{metrics.warm}</span> / <span className="text-blue-400">{metrics.cold}</span>
           </div>
           <span className="text-[10px] text-slate-400">Hot / Warm / Cold</span>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Follow-ups Due</span>
-          <div className="text-2xl font-black text-indigo-600 mt-1">{metrics.followUpsDueToday}</div>
+        <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-2xs">
+          <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Follow-ups Due</span>
+          <div className="text-xl sm:text-2xl font-black text-indigo-600 mt-1">{metrics.followUpsDueToday}</div>
           <span className="text-[10px] text-red-500 font-semibold">{metrics.overdueFollowUps} Overdue</span>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Avg First Response</span>
-          <div className="text-xl font-black text-emerald-600 mt-1">{metrics.avgResponseTimeHours} hrs</div>
+        <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-2xs">
+          <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Avg First Response</span>
+          <div className="text-lg sm:text-xl font-black text-emerald-600 mt-1">{metrics.avgResponseTimeHours} hrs</div>
           <span className="text-[10px] text-slate-400">SLA Response</span>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Conversion Rate</span>
-          <div className="text-2xl font-black text-blue-600 mt-1">{metrics.conversionRate}%</div>
+        <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-2xs">
+          <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Conversion Rate</span>
+          <div className="text-xl sm:text-2xl font-black text-blue-600 mt-1">{metrics.conversionRate}%</div>
           <span className="text-[10px] text-slate-400">{metrics.converted} Converted</span>
         </div>
       </div>
 
-      {/* Tabs Navigation */}
-      <div className="flex items-center gap-2 border-b border-slate-200 overflow-x-auto pb-1">
-        {[
-          { id: 'details', label: 'Lead Records & Assignment', icon: FileText },
-          { id: 'pipeline', label: 'Status & Pipeline', icon: CheckCircle2 },
-          { id: 'automation', label: 'Automation & Tasks', icon: Bot },
-        ].map((tab) => {
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-t-xl transition-all border-b-2 whitespace-nowrap cursor-pointer ${
-                activeTab === tab.id
-                  ? 'border-blue-600 text-blue-600 bg-blue-50/60'
-                  : 'border-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-100/60'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              {tab.label}
-            </button>
-          );
-        })}
+{/* Tabs Navigation Section (White Card Container Style) */}
+<div className="w-full overflow-x-auto no-scrollbar py-1">
+  <div className="inline-flex items-center gap-1.5 p-1.5 bg-white rounded-2xl border border-slate-200 shadow-xs max-w-full min-w-max">
+          {[
+            { id: 'details', label: 'Lead Records & Assignment', icon: FileText },
+            { id: 'pipeline', label: 'Status & Pipeline', icon: CheckCircle2 },
+            { id: 'automation', label: 'Automation & Tasks', icon: Bot },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isSelected = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs font-bold rounded-xl transition-all duration-200 whitespace-nowrap cursor-pointer ${
+                  isSelected
+                    ? 'bg-white text-blue-600 shadow-xs border border-slate-200/80 ring-1 ring-slate-900/5'
+                    : 'text-slate-600 hover:text-orange-600 hover:bg-orange-50'
+                }`}
+              >
+                <Icon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-blue-600' : 'text-slate-500'}`} />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Advanced Multi-Parametric Filter Bar */}
       <div className="bg-slate-100 p-4 rounded-xl border border-slate-200 space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-2">
-            <Calendar className="w-4 h-4 text-slate-600" />
+            <Calendar className="w-4 h-4 text-slate-600 shrink-0" />
             <span className="text-xs font-semibold text-slate-700">Date Range:</span>
             <select
               value={dateRange}
@@ -603,7 +606,7 @@ export default function LeadsModule() {
             </select>
 
             {dateRange === 'custom' && (
-              <div className="flex items-center gap-2 ml-2">
+              <div className="flex flex-wrap items-center gap-2 ml-0 sm:ml-2 mt-2 sm:mt-0">
                 <input
                   type="date"
                   value={startDate}
@@ -623,14 +626,14 @@ export default function LeadsModule() {
 
           <button
             onClick={exportCSV}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer self-start sm:self-auto"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer w-full sm:w-auto"
           >
             <Download className="w-3.5 h-3.5" /> Export Filtered Leads (CSV)
           </button>
         </div>
 
         {/* Multi-Parametric Dropdown Filters */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-xs pt-2 border-t border-slate-200">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 text-xs pt-2 border-t border-slate-200">
           <div>
             <label className="font-semibold text-slate-600 block mb-1">Temperature</label>
             <select
@@ -721,7 +724,7 @@ export default function LeadsModule() {
                   maxScore: 100,
                 })
               }
-              className="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold p-1.5 rounded-lg text-xs transition-colors"
+              className="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold p-1.5 rounded-lg text-xs transition-colors cursor-pointer"
             >
               Reset Filters
             </button>
@@ -742,23 +745,23 @@ export default function LeadsModule() {
                     {stageLeads.length}
                   </span>
                 </div>
-                <div className="space-y-3 flex-1 overflow-y-auto">
+                <div className="space-y-3 flex-1 overflow-y-auto max-h-[600px]">
                   {stageLeads.length === 0 ? (
                     <div className="text-xs text-slate-400 italic text-center py-6">No leads in {stage}</div>
                   ) : (
                     stageLeads.map((lead) => (
                       <div key={lead.id} className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-2">
                         <div className="font-bold text-slate-900 text-sm flex items-center justify-between">
-                          <span>{lead.name}</span>
+                          <span className="truncate max-w-[170px]">{lead.name}</span>
                           <button
                             onClick={() => openEditModal(lead)}
-                            className="text-slate-400 hover:text-blue-600 p-1 cursor-pointer"
+                            className="text-slate-400 hover:text-blue-600 p-1 cursor-pointer shrink-0"
                             title="Edit Lead"
                           >
                             <Edit className="w-3.5 h-3.5" />
                           </button>
                         </div>
-                        <div className="text-xs text-slate-500 whitespace-pre-line">{lead.contact_info || lead.phone || lead.email}</div>
+                        <div className="text-xs text-slate-500 whitespace-pre-line truncate">{lead.contact_info || lead.phone || lead.email}</div>
                         
                         {lead.requirements && (
                           <div className="text-xs bg-slate-50 border border-slate-100 p-2 rounded-md text-slate-600 mt-1 line-clamp-2">
@@ -782,14 +785,14 @@ export default function LeadsModule() {
                           <span className="text-[10px] font-bold text-slate-600">Score: {lead.lead_score || 0}</span>
                         </div>
 
-                        <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                          <span className="text-[10px] text-slate-400 font-medium">
+                        <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+                          <span className="text-[10px] text-slate-400 font-medium truncate">
                             {formatDateDDMMYYYY(lead.created_at)}
                           </span>
                           <select
                             value={lead.status}
                             onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
-                            className="text-[11px] p-1 border rounded bg-slate-50 text-slate-800 font-semibold"
+                            className="text-[11px] p-1 border rounded bg-slate-50 text-slate-800 font-semibold max-w-[120px]"
                           >
                             {leadFlow.map((st) => (
                               <option key={st} value={st}>{st}</option>
@@ -808,9 +811,9 @@ export default function LeadsModule() {
 
       {/* Automation Tab */}
       {activeTab === 'automation' && (
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+        <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
           <div className="flex items-center gap-2 text-blue-600 font-bold text-base">
-            <Sparkles className="w-5 h-5" />
+            <Sparkles className="w-5 h-5 shrink-0" />
             CRM Lead Automations & Activity Reminders
           </div>
           <p className="text-xs text-slate-500">Automated workflow logs and upcoming schedule actions based on current lead assignments.</p>
@@ -820,18 +823,18 @@ export default function LeadsModule() {
               <div key={lead.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                   <div className="font-bold text-slate-800 text-sm">{lead.name}</div>
-                  <div className="text-xs text-slate-500 flex items-center gap-2">
+                  <div className="text-xs text-slate-500 flex flex-wrap items-center gap-2">
                     <span>Source: {lead.source}</span> • <span>Sales Status: {lead.assigned_to ? 'Assigned to sales' : 'Not assigned to sales'}</span>
                   </div>
                   {lead.requirements && (
-                    <div className="text-xs text-slate-600 mt-1">
+                    <div className="text-xs text-slate-600 mt-1 line-clamp-2">
                       <span className="font-semibold">Requirements:</span> {lead.requirements}
                     </div>
                   )}
                 </div>
                 <button
                   onClick={() => alert(`Automated follow-up task triggered for ${lead.name}`)}
-                  className="bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold text-xs px-3 py-1.5 rounded-lg border border-blue-200 transition-colors self-start sm:self-auto cursor-pointer"
+                  className="bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold text-xs px-3 py-1.5 rounded-lg border border-blue-200 transition-colors shrink-0 cursor-pointer w-full sm:w-auto"
                 >
                   Trigger Follow-up Task
                 </button>
@@ -845,7 +848,7 @@ export default function LeadsModule() {
       {activeTab === 'details' && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
           <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row justify-between gap-3 bg-slate-50/50">
-            <div className="relative flex-1 max-w-md">
+            <div className="relative flex-1 max-w-md w-full">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
@@ -855,7 +858,7 @@ export default function LeadsModule() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <div className="text-xs text-slate-500 self-center font-medium">
+            <div className="text-xs text-slate-500 sm:self-center font-medium">
               Showing <span className="font-bold text-slate-900">{filteredLeads.length}</span> matching leads
             </div>
           </div>
@@ -974,8 +977,8 @@ export default function LeadsModule() {
 
       {/* Extended Profile & Requirements Modal */}
       {selectedLead && (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto space-y-6 shadow-2xl my-auto border border-slate-100">
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto">
+          <div className="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto space-y-6 shadow-2xl my-auto border border-slate-100">
             
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b pb-4">
@@ -983,22 +986,22 @@ export default function LeadsModule() {
                 <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest block">
                   Lead Profile #{selectedLead.id.slice(0, 8)}
                 </span>
-                <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                  <FileCode className="w-5 h-5 text-blue-600" />
+                <h2 className="text-lg sm:text-xl font-bold text-slate-900 flex items-center gap-2">
+                  <FileCode className="w-5 h-5 text-blue-600 shrink-0" />
                   {selectedLead.name}
                 </h2>
                 <p className="text-xs text-slate-500">{selectedLead.job_title || 'Decision Maker'} at <span className="font-semibold text-slate-800">{selectedLead.company || 'Personal / N/A'}</span></p>
               </div>
               <button 
                 onClick={() => setSelectedLead(null)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer shrink-0"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Structured Profile Breakdown */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
               
               {/* Section 1: Personal Details */}
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
@@ -1076,7 +1079,7 @@ export default function LeadsModule() {
             <div className="flex justify-end pt-2 border-t">
               <button
                 onClick={() => setSelectedLead(null)}
-                className="px-5 py-2 bg-slate-900 text-white font-semibold text-xs rounded-xl hover:bg-slate-800 transition-colors cursor-pointer"
+                className="px-5 py-2 bg-slate-900 text-white font-semibold text-xs rounded-xl hover:bg-slate-800 transition-colors cursor-pointer w-full sm:w-auto text-center"
               >
                 Close Profile
               </button>
@@ -1087,8 +1090,8 @@ export default function LeadsModule() {
 
       {/* Create / Edit Lead Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <form onSubmit={saveLead} className="bg-white rounded-2xl p-6 w-full max-w-xl max-h-[90vh] overflow-y-auto space-y-4 shadow-2xl my-auto border border-slate-100">
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto">
+          <form onSubmit={saveLead} className="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-xl max-h-[90vh] overflow-y-auto space-y-4 shadow-2xl my-auto border border-slate-100">
             <h2 className="text-lg font-bold text-slate-900 border-b pb-3">
               {editingLead ? 'Edit Lead Details' : 'Add New Lead Contact'}
             </h2>
@@ -1217,15 +1220,15 @@ export default function LeadsModule() {
               />
             </div>
 
-            <div className="flex justify-end gap-2 pt-4 border-t">
+            <div className="flex flex-col sm:flex-row justify-end gap-2 pt-4 border-t">
               <button
                 type="button"
                 onClick={closeModal}
-                className="px-4 py-2 border rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                className="px-4 py-2 border rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer w-full sm:w-auto text-center"
               >
                 Cancel
               </button>
-              <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 shadow-md cursor-pointer">
+              <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 shadow-md cursor-pointer w-full sm:w-auto text-center">
                 {editingLead ? 'Update Lead' : 'Save Lead'}
               </button>
             </div>
