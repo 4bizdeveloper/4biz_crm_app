@@ -2,16 +2,18 @@ export interface Lead {
   id: string;
   name: string;
   email: string;
+  contact_info?: string;
   phone?: string;
   company?: string;
-  status: 'New' | 'Assigned' | 'Contacted' | 'Follow-up' | 'Qualified' | 'Converted' | 'Disqualified';
-  value: number;
-  created_at: string;
-  source: string;
-  notes?: string;
+  source?: string;
+  campaign_name?: string;
+  requirements?: string;
+  status: string;
   assigned_to?: string | null;
+  notes?: string;
+  created_at: string;
 
-  // Personal Details
+  // Extended CRM Schema Fields
   first_name?: string;
   last_name?: string;
   display_name?: string;
@@ -29,8 +31,6 @@ export interface Lead {
   city?: string;
   address?: string;
   time_zone?: string;
-
-  // Company Details
   company_website?: string;
   industry?: string;
   company_size?: string;
@@ -42,8 +42,6 @@ export interface Lead {
   customer_type?: string;
   parent_company?: string;
   linkedin_company_url?: string;
-
-  // Requirement Details
   interested_service?: string;
   sub_service?: string;
   product_category?: string;
@@ -59,10 +57,7 @@ export interface Lead {
   existing_vendor?: string;
   competitors_considered?: string;
   additional_requirements?: string;
-
-  // Source & Marketing Attribution Details
   sub_source?: string;
-  campaign_name?: string;
   campaign_id?: string;
   ad_set?: string;
   ad_name?: string;
@@ -76,8 +71,6 @@ export interface Lead {
   utm_term?: string;
   first_touch_source?: string;
   latest_touch_source?: string;
-
-  // Scoring & Metrics
   lead_temperature?: 'Hot' | 'Warm' | 'Cold';
   lead_score?: number;
   branch?: string;
@@ -87,10 +80,7 @@ export interface Lead {
   first_response_time_minutes?: number;
 }
 
-export interface LeadFilterState {
-  dateRange: string;
-  startDate: string;
-  endDate: string;
+export interface CRMFilterState {
   leadOwner: string;
   team: string;
   branch: string;

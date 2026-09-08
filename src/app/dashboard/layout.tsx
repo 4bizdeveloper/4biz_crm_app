@@ -1,3 +1,4 @@
+// src/app/dashboard/layout.tsx
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -7,7 +8,6 @@ import {
   LayoutDashboard,
   Target,
   Globe,
-  TrendingUp,
   FolderKanban,
   Ticket,
   UserCheck,
@@ -120,12 +120,6 @@ export default function DashboardLayout({
       name: 'Website Enquiries',
       path: '/dashboard/website-contact-form-enquiries',
       icon: Globe,
-      badge: null,
-    },
-    {
-      name: 'Sales & Revenue',
-      path: '/dashboard/sales',
-      icon: TrendingUp,
       badge: null,
     },
     {

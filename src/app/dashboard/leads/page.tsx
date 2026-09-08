@@ -136,7 +136,6 @@ export default function LeadsModule() {
     interested_service: '',
     estimated_budget: 0,
     status: 'New',
-    assigned_to: 'Not assigned to sales',
     lead_temperature: 'Warm' as 'Hot' | 'Warm' | 'Cold',
     lead_score: 50,
     branch: 'Main Branch',
@@ -187,22 +186,7 @@ export default function LeadsModule() {
         return false;
       }
 
-      // 1. Filter Check: Include self-created leads + assigned contact form leads
-      const isContactFormLead = lead.source?.toLowerCase() === 'website';
-      const isAssigned =
-        lead.assigned_to !== null &&
-        lead.assigned_to !== undefined &&
-        lead.assigned_to !== '' &&
-        lead.assigned_to !== 'Not assigned to sales' &&
-        lead.assigned_to !== 'not_assigned';
-
-      const isSelfCreatedOrAssignedWebsite = !isContactFormLead || isAssigned;
-
-      if (!isSelfCreatedOrAssignedWebsite) {
-        return false;
-      }
-
-      // 2. Date Range Filter
+      // Date Range Filter
       const leadDate = new Date(lead.created_at);
       if (dateRange === 'daily') {
         if (leadDate.toDateString() !== now.toDateString()) return false;
@@ -221,7 +205,7 @@ export default function LeadsModule() {
         }
       }
 
-      // 3. Multi-Parametric CRM Filters
+      // Multi-Parametric CRM Filters
       if (filters.leadOwner !== 'all' && lead.assigned_to !== filters.leadOwner) return false;
       if (filters.team !== 'all' && lead.team !== filters.team) return false;
       if (filters.branch !== 'all' && lead.branch !== filters.branch) return false;
@@ -260,7 +244,7 @@ export default function LeadsModule() {
     filteredLeads.forEach((lead) => {
       const createdAt = new Date(lead.created_at);
       if (createdAt.toDateString() === todayStr) newToday++;
-      if (!lead.assigned_to || lead.assigned_to === 'Not assigned to sales') unassigned++;
+      if (!lead.assigned_to) unassigned++;
 
       const temp = lead.lead_temperature || 'Warm';
       if (temp === 'Hot') hot++;
@@ -324,7 +308,6 @@ export default function LeadsModule() {
       job_title: formData.job_title || null,
       source: formData.source || 'Manual / Outreach',
       status: formData.status,
-      assigned_to: formData.assigned_to === 'Assigned to sales' ? 'assigned' : null,
       notes: formData.notes || null,
       campaign_name: formData.campaign_name || null,
       requirements: formData.requirements || null,
@@ -395,7 +378,6 @@ export default function LeadsModule() {
       interested_service: lead.interested_service || '',
       estimated_budget: lead.estimated_budget || 0,
       status: lead.status || 'New',
-      assigned_to: lead.assigned_to ? 'Assigned to sales' : 'Not assigned to sales',
       lead_temperature: lead.lead_temperature || 'Warm',
       lead_score: lead.lead_score || 50,
       branch: lead.branch || 'Main Branch',
@@ -432,7 +414,6 @@ export default function LeadsModule() {
       interested_service: '',
       estimated_budget: 0,
       status: 'New',
-      assigned_to: 'Not assigned to sales',
       lead_temperature: 'Warm',
       lead_score: 50,
       branch: 'Main Branch',
@@ -452,22 +433,6 @@ export default function LeadsModule() {
     setLeads(leads.map((l) => (l.id === id ? { ...l, status } : l)));
   };
 
-  const updateAssignment = async (id: string, assignmentStatus: string) => {
-    const assignedVal = assignmentStatus === 'Assigned to sales' ? 'assigned' : null;
-
-    const { error } = await supabase
-      .from('leads')
-      .update({ assigned_to: assignedVal })
-      .eq('id', id);
-
-    if (error) {
-      alert(`Assignment update failed: ${error.message}`);
-      return;
-    }
-
-    setLeads(leads.map((l) => (l.id === id ? { ...l, assigned_to: assignedVal } : l)));
-  };
-
   const deleteLead = async (id: string) => {
     if (!confirm('Are you sure you want to delete this lead?')) return;
     const { error } = await supabase.from('leads').delete().eq('id', id);
@@ -479,14 +444,13 @@ export default function LeadsModule() {
   };
 
   const exportCSV = () => {
-    const headers = ['Name,Contact Details,Company,Source,Campaign,Requirements,Status,Sales Assigned,Lead Temperature,Score,Date Created\n'];
+    const headers = ['Name,Contact Details,Company,Source,Campaign,Requirements,Status,Lead Temperature,Score,Date Created\n'];
     const rows = filteredLeads
       .map((l) => {
-        const assignmentLabel = l.assigned_to ? 'Assigned to sales' : 'Not assigned to sales';
         const formattedDate = formatDateDDMMYYYY(l.created_at);
         const cleanReq = (l.requirements || '').replace(/"/g, '""');
         const cleanContact = (l.contact_info || l.phone || l.email || '').replace(/"/g, '""').replace(/\n/g, ' ');
-        return `"${l.name}","${cleanContact}","${l.company || ''}","${l.source || ''}","${l.campaign_name || ''}","${cleanReq}","${l.status}","${assignmentLabel}","${l.lead_temperature || 'Warm'}","${l.lead_score || 0}","${formattedDate}"`;
+        return `"${l.name}","${cleanContact}","${l.company || ''}","${l.source || ''}","${l.campaign_name || ''}","${cleanReq}","${l.status}","${l.lead_temperature || 'Warm'}","${l.lead_score || 0}","${formattedDate}"`;
       })
       .join('\n');
 
@@ -501,7 +465,7 @@ export default function LeadsModule() {
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6 font-sans pb-12 px-2 sm:px-4 md:px-6">
       
-      {/* Clean Executive CRM Header Container */}
+      {/* Executive CRM Header Container */}
       <div className="bg-white p-4 sm:p-6 rounded-3xl border border-slate-200/80 shadow-xl shadow-slate-200/40 relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-5">
         <div className="flex items-start sm:items-center gap-3.5">
           <div className="p-3.5 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/25 shrink-0">
@@ -516,12 +480,12 @@ export default function LeadsModule() {
               Leads Directory & Pipeline Management
             </h1>
             <p className="text-xs sm:text-sm font-semibold text-slate-700 mt-0.5">
-              Real-time lead scoring, team assignment, acquisition attribution, and automated workflows.
+              Real-time lead scoring, acquisition attribution, status tracking, and automated workflows.
             </p>
           </div>
         </div>
 
-        {/* Action Button - Gradient Button */}
+        {/* Action Button */}
         <button
           onClick={openCreateModal}
           className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white font-bold px-6 py-3.5 rounded-2xl flex items-center justify-center gap-2.5 text-xs sm:text-sm transition-all duration-200 shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:scale-[1.01] active:scale-[0.99] cursor-pointer shrink-0 w-full md:w-auto"
@@ -687,7 +651,6 @@ export default function LeadsModule() {
             )}
           </div>
 
-          {/* Gradient Export Button */}
           <button
             onClick={exportCSV}
             className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-600/20 hover:shadow-emerald-600/30 cursor-pointer w-full lg:w-auto"
@@ -889,7 +852,7 @@ export default function LeadsModule() {
             </div>
             <span>CRM Lead Automations & Activity Schedule</span>
           </div>
-          <p className="text-xs text-slate-700 font-semibold">Automated workflow logs and scheduled actions based on current lead assignments.</p>
+          <p className="text-xs text-slate-700 font-semibold">Automated workflow logs and scheduled actions based on current lead pipelines.</p>
 
           <div className="divide-y divide-slate-100">
             {filteredLeads.map((lead) => (
@@ -901,7 +864,7 @@ export default function LeadsModule() {
                   </div>
                   <div className="text-xs text-slate-700 flex flex-wrap items-center gap-2 font-semibold">
                     <span>Source: <strong className="text-slate-900">{lead.source}</strong></span> • 
-                    <span>Sales Status: <strong className="text-slate-900">{lead.assigned_to ? 'Assigned to sales' : 'Not assigned to sales'}</strong></span>
+                    <span>Pipeline Status: <strong className="text-slate-900">{lead.status}</strong></span>
                   </div>
                   {lead.requirements && (
                     <div className="text-xs text-slate-800 line-clamp-1 bg-slate-50 p-2 rounded-xl border border-slate-200 max-w-2xl font-medium">
@@ -910,7 +873,6 @@ export default function LeadsModule() {
                   )}
                 </div>
 
-                {/* Modern Gradient Action Trigger Button */}
                 <button
                   onClick={() => alert(`Automated follow-up task triggered for ${lead.name}`)}
                   className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow-md shadow-blue-600/20 hover:shadow-blue-600/30 cursor-pointer shrink-0 w-full sm:w-auto text-center"
@@ -957,7 +919,7 @@ export default function LeadsModule() {
                     <th className="p-4">Campaign Source</th>
                     <th className="p-4">Score & Temp</th>
                     <th className="p-4">Date Created</th>
-                    <th className="p-4">Sales Assigned</th>
+                    <th className="p-4">Lead Status</th>
                     <th className="p-4 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -966,7 +928,6 @@ export default function LeadsModule() {
                     <tr key={lead.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="p-4 align-top">
                         <div className="flex items-start gap-3">
-                          {/* User Icon Avatar Placeholder */}
                           <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-slate-200 to-slate-300 border border-slate-300 flex items-center justify-center text-slate-700 shrink-0 shadow-2xs mt-0.5">
                             <User className="w-4 h-4 stroke-[2.2]" />
                           </div>
@@ -1021,17 +982,17 @@ export default function LeadsModule() {
                       </td>
                       <td className="p-4 align-top">
                         <select
-                          value={lead.assigned_to ? 'Assigned to sales' : 'Not assigned to sales'}
-                          onChange={(e) => updateAssignment(lead.id, e.target.value)}
+                          value={lead.status}
+                          onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
                           className="bg-white border border-slate-300 rounded-xl text-xs font-bold px-2.5 py-1.5 focus:ring-2 focus:ring-blue-600 text-slate-900 shadow-2xs cursor-pointer"
                         >
-                          <option value="Not assigned to sales">Not assigned to sales</option>
-                          <option value="Assigned to sales">Assigned to sales</option>
+                          {leadFlow.map((st) => (
+                            <option key={st} value={st}>{st}</option>
+                          ))}
                         </select>
                       </td>
                       <td className="p-4 align-top text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          {/* Gradient Action Button */}
                           <button
                             onClick={() => setSelectedLead(lead)}
                             className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
@@ -1088,7 +1049,7 @@ export default function LeadsModule() {
               </button>
             </div>
 
-            {/* Structured Profile Breakdown Inside White Sub-Containers */}
+            {/* Structured Profile Breakdown */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               
               {/* Section 1: Personal Details */}
@@ -1131,7 +1092,7 @@ export default function LeadsModule() {
               </div>
             </div>
 
-            {/* Detailed Requirements Description inside White Container */}
+            {/* Detailed Requirements Description */}
             <div className="space-y-2">
               <label className="text-xs font-black text-slate-900 uppercase tracking-wider">Requirements Specifications</label>
               <div className="bg-white p-4 rounded-2xl border border-slate-200 text-sm text-slate-900 font-medium whitespace-pre-wrap min-h-[90px] shadow-2xs">
@@ -1165,7 +1126,6 @@ export default function LeadsModule() {
             </div>
 
             <div className="flex justify-end pt-3 border-t border-slate-200">
-              {/* Gradient Close Button */}
               <button
                 onClick={() => setSelectedLead(null)}
                 className="px-6 py-2.5 bg-gradient-to-r from-slate-800 to-slate-950 hover:from-slate-900 hover:to-black text-white font-bold text-xs rounded-xl transition-all cursor-pointer w-full sm:w-auto text-center shadow-md"
@@ -1246,14 +1206,15 @@ export default function LeadsModule() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-extrabold text-slate-800 block mb-1">Sales Assigned</label>
+                <label className="text-xs font-extrabold text-slate-800 block mb-1">Pipeline Status</label>
                 <select
-                  value={formData.assigned_to}
-                  onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                   className="w-full p-2.5 border border-slate-300 rounded-xl text-sm bg-white text-slate-900 font-bold focus:ring-2 focus:ring-blue-600 cursor-pointer"
                 >
-                  <option value="Not assigned to sales">Not assigned to sales</option>
-                  <option value="Assigned to sales">Assigned to sales</option>
+                  {leadFlow.map((st) => (
+                    <option key={st} value={st}>{st}</option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -1318,7 +1279,6 @@ export default function LeadsModule() {
                 Cancel
               </button>
               
-              {/* Gradient Submit Button */}
               <button 
                 type="submit" 
                 className="px-6 py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 cursor-pointer w-full sm:w-auto text-center"
