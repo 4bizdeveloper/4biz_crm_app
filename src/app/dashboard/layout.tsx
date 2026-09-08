@@ -110,16 +110,16 @@ export default function DashboardLayout({
       icon: LayoutDashboard,
       badge: null,
     },
+      {
+      name: 'Website Enquiries',
+      path: '/dashboard/website-contact-form-enquiries',
+      icon: Globe,
+      badge: null,
+    },
     {
       name: 'Leads Management',
       path: '/dashboard/leads',
       icon: Target,
-      badge: null,
-    },
-    {
-      name: 'Website Enquiries',
-      path: '/dashboard/website-contact-form-enquiries',
-      icon: Globe,
       badge: null,
     },
     {
