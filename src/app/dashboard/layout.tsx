@@ -1,8 +1,8 @@
-// src/app/dashboard/layout.tsx
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
@@ -110,7 +110,7 @@ export default function DashboardLayout({
       icon: LayoutDashboard,
       badge: null,
     },
-      {
+    {
       name: 'Website Enquiries',
       path: '/dashboard/website-contact-form-enquiries',
       icon: Globe,
@@ -161,8 +161,15 @@ export default function DashboardLayout({
       {/* Mobile Top Header */}
       <header className="lg:hidden sticky top-0 z-40 bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-900 border-b border-indigo-500/20 px-4 py-3 flex items-center justify-between shadow-lg shadow-indigo-950/40">
         <div className="flex items-center space-x-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-violet-600 via-indigo-500 to-cyan-400 flex items-center justify-center text-white font-black text-lg shadow-md shadow-indigo-500/30">
-            4B
+          <div className="relative w-9 h-9 shrink-0 overflow-hidden rounded-xl">
+            <Image
+              src="/logo.png"
+              alt="Company Logo"
+              width={36}
+              height={36}
+              className="object-contain w-full h-full"
+              priority
+            />
           </div>
           <div className="flex flex-col">
             <span className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white via-indigo-100 to-indigo-300 text-base leading-tight tracking-tight">
@@ -216,8 +223,15 @@ export default function DashboardLayout({
           {/* Company Branding & Collapse Toggle */}
           <div className={`p-4 border-b border-indigo-500/15 flex items-center justify-between ${isCollapsed ? 'px-3 justify-center' : 'p-6'}`}>
             <div className="flex items-center space-x-3 overflow-hidden">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-violet-600 via-indigo-500 to-cyan-400 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-indigo-500/30 shrink-0 ring-1 ring-white/20">
-                4B
+              <div className="relative w-10 h-10 shrink-0 overflow-hidden rounded-2xl">
+                <Image
+                  src="/logo.png"
+                  alt="Company Logo"
+                  width={40}
+                  height={40}
+                  className="object-contain w-full h-full"
+                  priority
+                />
               </div>
               {!isCollapsed && (
                 <div className="flex flex-col overflow-hidden">
