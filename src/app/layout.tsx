@@ -1,5 +1,3 @@
-// Path: src/app/layout.tsx
-
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
@@ -18,7 +16,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${poppins.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col font-sans bg-[#020b22] text-white">
+      <body className="min-h-full flex flex-col font-sans bg-[#020806] text-white">
         {children}
       </body>
     </html>
