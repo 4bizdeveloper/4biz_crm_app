@@ -53,12 +53,6 @@ src/
       contact/
         route.ts
     dashboard/
-      chat/
-        page.tsx
-      employee-portal/
-        page.tsx
-      hr/
-        page.tsx
       leads/
         page.tsx
       overview/
@@ -103,301 +97,6 @@ export async function POST() {
   const response = NextResponse.json({ success: true });
   response.cookies.delete('crm_session');
   return response;
-}
-</file>
-
-<file path="src/app/dashboard/employee-portal/page.tsx">
-'use client';
-
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import {
-  FolderKanban, Send, Link as LinkIcon, FileText, Upload,
-  CheckCircle2, Clock, Calendar, Paperclip, MessageSquare
-} from 'lucide-react';
-
-interface Project {
-  id: string;
-  project_name: string;
-  client_name: string;
-  status: string;
-  start_date?: string;
-  due_date?: string;
-  description?: string;
-}
-
-interface Submission {
-  id: string;
-  project_id: string;
-  content_text: string;
-  urls: string[];
-  file_urls: string[];
-  submitted_at: string;
-}
-
-export default function EmployeePortalPage() {
-  const [employeeId, setEmployeeId] = useState<string | null>(null);
-  const [assignedProjects, setAssignedProjects] = useState<Project[]>([]);
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [submissions, setSubmissions] = useState<Submission[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  // Form State
-  const [contentText, setContentText] = useState('');
-  const [urlInput, setUrlInput] = useState('');
-  const [fileInput, setFileInput] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    // Extract logged-in employee ID from cookies
-    const cookies = document.cookie.split(';');
-    const empCookie = cookies.find((c) => c.trim().startsWith('employee_id='));
-    const id = empCookie ? empCookie.split('=')[1] : null;
-
-    if (id) {
-      setEmployeeId(id);
-      fetchEmployeeData(id);
-    } else {
-      setLoading(false);
-    }
-  }, []);
-
-  const fetchEmployeeData = async (empId: string) => {
-    setLoading(true);
-    const { data: projData } = await supabase
-      .from('projects')
-      .select('*')
-      .eq('assigned_employee_id', empId)
-      .order('created_at', { ascending: false });
-
-    if (projData) {
-      setAssignedProjects(projData);
-      if (projData.length > 0) {
-        setSelectedProject(projData[0]);
-        fetchSubmissions(projData[0].id);
-      }
-    }
-    setLoading(false);
-  };
-
-  const fetchSubmissions = async (projectId: string) => {
-    const { data } = await supabase
-      .from('project_submissions')
-      .select('*')
-      .eq('project_id', projectId)
-      .order('submitted_at', { ascending: false });
-
-    if (data) setSubmissions(data);
-  };
-
-  const handleSelectProject = (proj: Project) => {
-    setSelectedProject(proj);
-    fetchSubmissions(proj.id);
-  };
-
-  const submitDeliverable = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedProject || !employeeId) return;
-
-    setIsSubmitting(true);
-
-    const urlsArray = urlInput
-      .split('\n')
-      .map((u) => u.trim())
-      .filter((u) => u.length > 0);
-
-    const filesArray = fileInput
-      .split('\n')
-      .map((f) => f.trim())
-      .filter((f) => f.length > 0);
-
-    const payload = {
-      project_id: selectedProject.id,
-      employee_id: employeeId,
-      content_text: contentText,
-      urls: urlsArray,
-      file_urls: filesArray,
-    };
-
-    const { data, error } = await supabase
-      .from('project_submissions')
-      .insert([payload])
-      .select();
-
-    if (error) {
-      alert(`Submission failed: ${error.message}`);
-    } else if (data) {
-      setSubmissions([data[0], ...submissions]);
-      setContentText('');
-      setUrlInput('');
-      setFileInput('');
-      alert('Deliverables submitted successfully!');
-    }
-    setIsSubmitting(false);
-  };
-
-  if (loading) {
-    return <div className="p-8 text-center text-slate-500">Loading your workspace...</div>;
-  }
-
-  return (
-    <div className="max-w-7xl mx-auto space-y-6 font-sans pb-10">
-      {/* Header */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <FolderKanban className="w-6 h-6 text-blue-600" />
-            My Employee Workspace & Deliverables
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Access assigned projects, submit code deliverables, URLs, docs, and report completion
-          </p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Assigned Projects List */}
-        <div className="lg:col-span-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
-          <h2 className="text-base font-bold text-slate-900 border-b pb-3">Assigned Projects ({assignedProjects.length})</h2>
-          
-          <div className="space-y-3">
-            {assignedProjects.length === 0 ? (
-              <p className="text-xs text-slate-400 italic">No assigned projects found.</p>
-            ) : (
-              assignedProjects.map((proj) => (
-                <div
-                  key={proj.id}
-                  onClick={() => handleSelectProject(proj)}
-                  className={`p-4 rounded-xl border transition-all cursor-pointer ${
-                    selectedProject?.id === proj.id
-                      ? 'border-blue-600 bg-blue-50/50 shadow-xs'
-                      : 'border-slate-200 bg-white hover:bg-slate-50'
-                  }`}
-                >
-                  <div className="flex justify-between items-start mb-1">
-                    <h3 className="font-bold text-slate-900 text-sm">{proj.project_name}</h3>
-                    <span className="text-[10px] font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md">
-                      {proj.status}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 mb-2">{proj.client_name}</p>
-                  <div className="flex items-center gap-1 text-[11px] text-slate-400">
-                    <Calendar className="w-3 h-3 text-slate-400" />
-                    <span>Due: {proj.due_date || 'N/A'}</span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Right Column: Submission Form & History */}
-        <div className="lg:col-span-8 space-y-6">
-          {selectedProject ? (
-            <>
-              {/* Project Instructions Widget */}
-              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-2">
-                <h3 className="text-lg font-bold text-slate-900">{selectedProject.project_name}</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  {selectedProject.description || 'No detailed instructions provided by Admin.'}
-                </p>
-              </div>
-
-              {/* Work Submission Form */}
-              <form onSubmit={submitDeliverable} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
-                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2 border-b pb-3">
-                  <Send className="w-4 h-4 text-blue-600" /> Submit Project Deliverables
-                </h3>
-
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Project Content / Summary *</label>
-                  <textarea
-                    required
-                    rows={3}
-                    placeholder="Describe completed tasks, notes, or implementation summary..."
-                    className="w-full p-2.5 border rounded-xl text-sm bg-slate-50 text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-600"
-                    value={contentText}
-                    onChange={(e) => setContentText(e.target.value)}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5 mb-1">
-                      <LinkIcon className="w-3.5 h-3.5 text-blue-600" /> Submission URLs (GitHub, Figma, Vercel)
-                    </label>
-                    <textarea
-                      rows={2}
-                      placeholder="One URL per line e.g. https://github.com/..."
-                      className="w-full p-2.5 border rounded-xl text-xs bg-slate-50 text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-600"
-                      value={urlInput}
-                      onChange={(e) => setUrlInput(e.target.value)}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5 mb-1">
-                      <Paperclip className="w-3.5 h-3.5 text-emerald-600" /> File Attachment URLs
-                    </label>
-                    <textarea
-                      rows={2}
-                      placeholder="Google Drive, Dropbox, or storage link..."
-                      className="w-full p-2.5 border rounded-xl text-xs bg-slate-50 text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-600"
-                      value={fileInput}
-                      onChange={(e) => setFileInput(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-sm transition-all shadow-sm cursor-pointer"
-                >
-                  {isSubmitting ? 'Submitting Deliverable...' : 'Submit Work to Admin'}
-                </button>
-              </form>
-
-              {/* Submission Logs */}
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
-                <h3 className="text-base font-bold text-slate-900 border-b pb-3">Previous Deliverable Submissions</h3>
-                {submissions.length === 0 ? (
-                  <p className="text-xs text-slate-400 italic">No submissions made yet for this project.</p>
-                ) : (
-                  <div className="space-y-3">
-                    {submissions.map((sub) => (
-                      <div key={sub.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-                        <div className="flex justify-between items-center text-xs text-slate-400">
-                          <span className="font-semibold text-slate-700">Submitted Work</span>
-                          <span>{new Date(sub.submitted_at).toLocaleString()}</span>
-                        </div>
-                        <p className="text-xs text-slate-800">{sub.content_text}</p>
-                        
-                        {sub.urls && sub.urls.length > 0 && (
-                          <div className="text-xs space-y-1 pt-1">
-                            <span className="font-semibold text-slate-600 block">Links:</span>
-                            {sub.urls.map((u, idx) => (
-                              <a key={idx} href={u} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline block truncate">
-                                {u}
-                              </a>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </>
-          ) : (
-            <div className="bg-white p-8 rounded-2xl border text-center text-slate-400 text-sm">
-              Select a project from the left panel to submit your work.
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
 }
 </file>
 
@@ -630,494 +329,6 @@ export async function POST(request: Request) {
 }
 </file>
 
-<file path="src/app/dashboard/chat/page.tsx">
-'use client';
-
-import { useEffect, useState, useRef } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Send, Paperclip, MessageSquare, X, FileText } from 'lucide-react';
-
-interface Employee {
-  id: string;
-  full_name: string;
-  role: string;
-}
-
-interface Message {
-  id: string;
-  sender_type: 'admin' | 'employee';
-  employee_id: string;
-  message: string;
-  attachments: string[];
-  created_at: string;
-}
-
-export default function OperationsChatPage() {
-  const [userRole, setUserRole] = useState<'admin' | 'employee'>('admin');
-  const [currentEmpId, setCurrentEmpId] = useState<string | null>(null);
-
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [activeEmployee, setActiveEmployee] = useState<Employee | null>(null);
-
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [textInput, setTextInput] = useState('');
-  const [selectedAttachments, setSelectedAttachments] = useState<string[]>([]);
-
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    // Determine user role and employee ID from cookies
-    const cookies = document.cookie.split(';');
-    const roleCookie = cookies.find((c) => c.trim().startsWith('user_role='));
-    const empCookie = cookies.find((c) => c.trim().startsWith('employee_id='));
-
-    const role = roleCookie ? (roleCookie.split('=')[1] as 'admin' | 'employee') : 'admin';
-    const empId = empCookie ? empCookie.split('=')[1] : null;
-
-    setUserRole(role);
-    setCurrentEmpId(empId);
-
-    fetchEmployees(role, empId);
-  }, []);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  const fetchEmployees = async (role: string, empId: string | null) => {
-    const { data } = await supabase.from('employees').select('id, full_name, role');
-    if (data) {
-      setEmployees(data);
-      if (role === 'admin' && data.length > 0) {
-        setActiveEmployee(data[0]);
-        fetchChatMessages(data[0].id);
-      } else if (role === 'employee' && empId) {
-        const me = data.find((e) => e.id === empId);
-        if (me) setActiveEmployee(me);
-        fetchChatMessages(empId);
-      }
-    }
-  };
-
-  const fetchChatMessages = async (empId: string) => {
-    const { data } = await supabase
-      .from('chat_messages')
-      .select('*')
-      .eq('employee_id', empId)
-      .order('created_at', { ascending: true });
-
-    if (data) setMessages(data);
-  };
-
-  const handleSelectEmployee = (emp: Employee) => {
-    setActiveEmployee(emp);
-    fetchChatMessages(emp.id);
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-
-    // Convert uploaded local file selection into mock object URLs or storage references
-    const fileUrls: string[] = [];
-    for (let i = 0; i < files.length; i++) {
-      fileUrls.push(URL.createObjectURL(files[i]));
-    }
-
-    setSelectedAttachments((prev) => [...prev, ...fileUrls]);
-  };
-
-  const removeAttachment = (index: number) => {
-    setSelectedAttachments((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const sendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!activeEmployee || (!textInput.trim() && selectedAttachments.length === 0)) return;
-
-    const payload = {
-      sender_type: userRole,
-      employee_id: activeEmployee.id,
-      message: textInput,
-      attachments: selectedAttachments,
-    };
-
-    const { data, error } = await supabase
-      .from('chat_messages')
-      .insert([payload])
-      .select();
-
-    if (!error && data) {
-      setMessages([...messages, data[0]]);
-      setTextInput('');
-      setSelectedAttachments([]);
-    }
-  };
-
-  return (
-    <div className="max-w-7xl mx-auto space-y-6 font-sans pb-10">
-      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3">
-        <MessageSquare className="w-6 h-6 text-blue-600" />
-        <div>
-          <h1 className="text-xl font-bold text-slate-900">ERP & Operations Chat Hub</h1>
-          <p className="text-xs text-slate-500">Real-time messaging and file sharing between Admin and Employees</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[720px]">
-        {/* Left Bar: Employee Selection */}
-        <div className="lg:col-span-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs overflow-y-auto space-y-3">
-          <h2 className="text-sm font-bold text-slate-900 border-b pb-2">
-            {userRole === 'admin' ? 'Select Employee' : 'My Discussion Channel'}
-          </h2>
-
-          {userRole === 'admin' ? (
-            employees.map((emp) => (
-              <div
-                key={emp.id}
-                onClick={() => handleSelectEmployee(emp)}
-                className={`p-3 rounded-xl border cursor-pointer transition-all ${
-                  activeEmployee?.id === emp.id
-                    ? 'border-blue-600 bg-blue-50'
-                    : 'border-slate-100 hover:bg-slate-50'
-                }`}
-              >
-                <div className="font-bold text-slate-900 text-sm">{emp.full_name}</div>
-                <div className="text-xs text-slate-500">{emp.role}</div>
-              </div>
-            ))
-          ) : (
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl">
-              <div className="font-bold text-slate-900 text-sm">Admin Operations Channel</div>
-              <div className="text-xs text-blue-600 font-semibold">Direct communication with Admin</div>
-            </div>
-          )}
-        </div>
-
-        {/* Right Bar: Chat Workspace Screen */}
-        <div className="lg:col-span-8 bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between overflow-hidden">
-          
-          {/* Active Conversation Header */}
-          <div className="p-4 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between">
-            <div>
-              <h3 className="font-bold text-slate-900 text-sm">
-                {userRole === 'admin' ? activeEmployee?.full_name || 'Select an Employee' : 'Admin Operations'}
-              </h3>
-              <p className="text-[11px] text-slate-500">
-                {userRole === 'admin' ? activeEmployee?.role : 'Direct support channel'}
-              </p>
-            </div>
-          </div>
-
-          {/* Chat Messages Log */}
-          <div className="p-6 overflow-y-auto space-y-4 flex-1 bg-slate-50/30">
-            {messages.length === 0 ? (
-              <p className="text-center text-xs text-slate-400 my-auto pt-20">
-                No messages yet in this conversation.
-              </p>
-            ) : (
-              messages.map((msg) => {
-                const isMe = msg.sender_type === userRole;
-                return (
-                  <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                    <div
-                      className={`max-w-lg p-4 rounded-2xl text-sm space-y-1.5 shadow-xs ${
-                        isMe ? 'bg-blue-600 text-white' : 'bg-white text-slate-900 border border-slate-200'
-                      }`}
-                    >
-                      <div className="font-semibold text-[10px] opacity-80 uppercase tracking-wider">
-                        {msg.sender_type === 'admin' ? 'Admin' : 'Employee'}
-                      </div>
-                      {msg.message && <p className="leading-relaxed whitespace-pre-wrap">{msg.message}</p>}
-                      {msg.attachments && msg.attachments.length > 0 && (
-                        <div className="pt-2 space-y-1 border-t border-white/20">
-                          {msg.attachments.map((att, idx) => (
-                            <a
-                              key={idx}
-                              href={att}
-                              target="_blank"
-                              rel="noreferrer"
-                              className={`flex items-center gap-1.5 text-xs truncate ${
-                                isMe ? 'text-blue-100 hover:text-white' : 'text-blue-600 hover:underline'
-                              }`}
-                            >
-                              <FileText className="w-3.5 h-3.5 shrink-0" />
-                              <span>Attachment #{idx + 1}</span>
-                            </a>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Unified Chat Input Area */}
-          <div className="p-4 bg-white border-t border-slate-200 space-y-3">
-            {/* Attachment Preview Chips */}
-            {selectedAttachments.length > 0 && (
-              <div className="flex flex-wrap gap-2 pt-1">
-                {selectedAttachments.map((att, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-1.5 bg-slate-100 border border-slate-200 text-slate-700 text-xs px-3 py-1.5 rounded-lg"
-                  >
-                    <FileText className="w-3.5 h-3.5 text-blue-600" />
-                    <span className="truncate max-w-[150px]">Attachment {idx + 1}</span>
-                    <button
-                      type="button"
-                      onClick={() => removeAttachment(idx)}
-                      className="hover:text-red-500 cursor-pointer ml-1"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <form onSubmit={sendMessage} className="flex items-end gap-2">
-              {/* File Upload Input Button */}
-              <input
-                type="file"
-                ref={fileInputRef}
-                className="hidden"
-                multiple
-                onChange={handleFileUpload}
-              />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="p-3 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer shrink-0"
-                title="Attach file"
-              >
-                <Paperclip className="w-5 h-5" />
-              </button>
-
-              {/* Single Chat Input Field */}
-              <div className="flex-1">
-                <textarea
-                  rows={2}
-                  placeholder="Type a message or paste notes/links..."
-                  className="w-full p-3 border border-slate-200 rounded-xl text-sm bg-slate-50 text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-600 resize-none"
-                  value={textInput}
-                  onChange={(e) => setTextInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      sendMessage(e);
-                    }
-                  }}
-                />
-              </div>
-
-              {/* Send Button */}
-              <button
-                type="submit"
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-3 rounded-xl text-sm flex items-center gap-2 transition-all cursor-pointer shrink-0 h-[48px]"
-              >
-                <Send className="w-4 h-4" /> Send
-              </button>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-</file>
-
-<file path="src/app/dashboard/tickets/page.tsx">
-'use client';
-
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Plus } from 'lucide-react';
-
-interface Ticket {
-  id: string;
-  title: string;
-  client_name: string;
-  priority: string;
-  status: string;
-}
-
-export default function TicketsPage() {
-  const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({ title: '', client_name: '', priority: 'Medium', status: 'Open' });
-
-  const fetchTickets = async () => {
-    const { data } = await supabase.from('tickets').select('*').order('created_at', { ascending: false });
-    if (data) setTickets(data);
-  };
-
-  useEffect(() => {
-    fetchTickets();
-  }, []);
-
-  const createTicket = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const { data, error } = await supabase.from('tickets').insert([formData]).select();
-    if (!error && data) {
-      setTickets([data[0], ...tickets]);
-      setShowModal(false);
-      setFormData({ title: '', client_name: '', priority: 'Medium', status: 'Open' });
-    }
-  };
-
-  return (
-    <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
-      {/* Responsive Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">IT Service Desk & Helpdesk</h1>
-          <p className="text-xs sm:text-sm text-slate-500">Track client support tickets and incident resolutions</p>
-        </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2.5 sm:py-2 rounded-lg flex items-center justify-center gap-2 text-sm shadow-xs transition-colors shrink-0"
-        >
-          <Plus className="w-4 h-4" /> Create Incident Ticket
-        </button>
-      </div>
-
-      {/* Responsive Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <form onSubmit={createTicket} className="bg-white rounded-xl p-5 sm:p-6 w-full max-w-md space-y-4 shadow-xl my-auto">
-            <h2 className="text-lg font-bold text-slate-900">New Incident Ticket</h2>
-            <div>
-              <label className="text-xs font-semibold text-slate-600 block mb-1">Ticket Title</label>
-              <input
-                type="text"
-                placeholder="Ticket Title / Issue Description"
-                required
-                className="w-full p-2.5 sm:p-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-slate-600 block mb-1">Client Company</label>
-              <input
-                type="text"
-                placeholder="Client Company Name"
-                required
-                className="w-full p-2.5 sm:p-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={formData.client_name}
-                onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-slate-600 block mb-1">Priority</label>
-              <select
-                className="w-full p-2.5 sm:p-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={formData.priority}
-                onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-              >
-                <option value="Low">Low Priority</option>
-                <option value="Medium">Medium Priority</option>
-                <option value="High">High Priority</option>
-                <option value="Urgent">Urgent Priority</option>
-              </select>
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowModal(false)}
-                className="px-4 py-2 border rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
-                Submit Ticket
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Tickets Container */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        {tickets.length === 0 ? (
-          <div className="p-8 text-center text-slate-500 text-sm">No tickets found.</div>
-        ) : (
-          <>
-            {/* Desktop & Tablet Table View (Hidden on Small Screens) */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[600px]">
-                <thead className="bg-slate-100 border-b border-slate-200 text-slate-700 font-semibold uppercase text-xs">
-                  <tr>
-                    <th className="p-4">Ticket</th>
-                    <th className="p-4">Client</th>
-                    <th className="p-4">Priority</th>
-                    <th className="p-4">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-sm">
-                  {tickets.map((t) => (
-                    <tr key={t.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="p-4 font-semibold text-slate-900">{t.title}</td>
-                      <td className="p-4 text-slate-700">{t.client_name}</td>
-                      <td className="p-4">
-                        <span
-                          className={`px-2 py-1 rounded text-xs font-semibold ${
-                            t.priority === 'Urgent'
-                              ? 'bg-red-100 text-red-800'
-                              : t.priority === 'High'
-                              ? 'bg-orange-100 text-orange-800'
-                              : 'bg-slate-100 text-slate-800'
-                          }`}
-                        >
-                          {t.priority}
-                        </span>
-                      </td>
-                      <td className="p-4 font-medium text-slate-700">{t.status}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile Card Layout (Visible on Small Screens) */}
-            <div className="block md:hidden divide-y divide-slate-100">
-              {tickets.map((t) => (
-                <div key={t.id} className="p-4 space-y-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="font-semibold text-slate-900 text-base">{t.title}</div>
-                    <span
-                      className={`px-2 py-0.5 rounded text-xs font-semibold shrink-0 ${
-                        t.priority === 'Urgent'
-                          ? 'bg-red-100 text-red-800'
-                          : t.priority === 'High'
-                          ? 'bg-orange-100 text-orange-800'
-                          : 'bg-slate-100 text-slate-800'
-                      }`}
-                    >
-                      {t.priority}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs pt-1">
-                    <span className="text-slate-500 font-medium">Client: <span className="text-slate-800 font-semibold">{t.client_name}</span></span>
-                    <span className="font-medium text-slate-700 bg-slate-50 px-2 py-1 rounded border border-slate-100">{t.status}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-</file>
-
 <file path="src/app/page.tsx">
 import { redirect } from 'next/navigation';
 
@@ -1306,1016 +517,187 @@ export const config = {
 }
 </file>
 
-<file path="src/app/dashboard/overview/page.tsx">
-'use client';
-
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
-import {
-  BarChart3,
-  Users,
-  FolderKanban,
-  Ticket,
-  Target,
-  CheckCircle2,
-  AlertTriangle,
-  Clock,
-  Activity,
-  Workflow,
-  Calendar,
-  Sparkles,
-  TrendingUp,
-  ArrowUpRight,
-  RefreshCw,
-  Zap,
-  Briefcase
-} from 'lucide-react';
-
-// Custom SVG Donut Diagram Component
-function ModernDonutChart({
-  data,
-  total,
-}: {
-  data: { label: string; value: number; color: string }[];
-  total: number;
-}) {
-  const size = 160;
-  const strokeWidth = 24;
-  const center = size / 2;
-  const radius = center - strokeWidth;
-  const circumference = 2 * Math.PI * radius;
-
-  let accumulatedAngle = 0;
-
-  if (total === 0) {
-    return (
-      <div className="relative flex items-center justify-center w-40 h-40">
-        <svg className="w-full h-full transform -rotate-90" viewBox={`0 0 ${size} ${size}`}>
-          <circle
-            cx={center}
-            cy={center}
-            r={radius}
-            className="stroke-slate-100"
-            strokeWidth={strokeWidth}
-            fill="transparent"
-          />
-        </svg>
-        <span className="absolute text-xs text-slate-400 font-medium">No Data</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="relative flex items-center justify-center w-40 h-40 shrink-0">
-      <svg className="w-full h-full transform -rotate-90" viewBox={`0 0 ${size} ${size}`}>
-        {data.map((item, index) => {
-          const percentage = item.value / total;
-          const strokeDashoffset = circumference - percentage * circumference;
-          const rotation = accumulatedAngle;
-          accumulatedAngle += percentage * 360;
-
-          return (
-            <circle
-              key={index}
-              cx={center}
-              cy={center}
-              r={radius}
-              stroke={item.color}
-              strokeWidth={strokeWidth}
-              strokeDasharray={circumference}
-              strokeDashoffset={strokeDashoffset}
-              strokeLinecap="round"
-              fill="transparent"
-              style={{
-                transformOrigin: 'center',
-                transform: `rotate(${rotation}deg)`,
-                transition: 'stroke-dashoffset 0.8s ease-in-out, transform 0.8s ease-in-out',
-              }}
-            />
-          );
-        })}
-      </svg>
-      <div className="absolute flex flex-col items-center justify-center text-center">
-        <span className="text-2xl font-extrabold text-slate-900 tracking-tight">{total}</span>
-        <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Total</span>
-      </div>
-    </div>
-  );
-}
-
-interface OverviewStats {
-  totalLeads: number;
-  leadsByStatus: Record<string, number>;
-  activeProjects: number;
-  projectsByStatus: Record<string, number>;
-  openTickets: number;
-  ticketsByPriority: Record<string, number>;
-  totalEmployees: number;
-  employeesByDept: Record<string, number>;
-  recentActivities: { title: string; time: string; type: string }[];
-}
-
-export default function OverviewPage() {
-  const [stats, setStats] = useState<OverviewStats>({
-    totalLeads: 0,
-    leadsByStatus: {},
-    activeProjects: 0,
-    projectsByStatus: {},
-    openTickets: 0,
-    ticketsByPriority: {},
-    totalEmployees: 0,
-    employeesByDept: {},
-    recentActivities: [],
-  });
-
-  const [loading, setLoading] = useState(true);
-  const [dateRange, setDateRange] = useState<'all' | 'weekly' | 'monthly' | 'annually' | 'custom'>('all');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-
-  const fetchOverviewData = useCallback(async () => {
-    setLoading(true);
-
-    const [leadsRes, projectsRes, ticketsRes, employeesRes] = await Promise.all([
-      supabase.from('leads').select('id, name, status, created_at'),
-      supabase.from('projects').select('id, project_name, status, created_at'),
-      supabase.from('tickets').select('id, title, priority, status, created_at'),
-      supabase.from('employees').select('id, full_name, department, status, joined_date'),
-    ]);
-
-    let leads = leadsRes.data || [];
-    let projects = projectsRes.data || [];
-    let tickets = ticketsRes.data || [];
-    let employees = employeesRes.data || [];
-
-    // Date Range Filtering Logic
-    const filterByDate = (items: any[], dateField: string = 'created_at') => {
-      if (dateRange === 'all') return items;
-      const now = new Date();
-
-      return items.filter((item) => {
-        if (!item[dateField]) return true;
-        const itemDate = new Date(item[dateField]);
-
-        if (dateRange === 'weekly') {
-          const oneWeekAgo = new Date();
-          oneWeekAgo.setDate(now.getDate() - 7);
-          return itemDate >= oneWeekAgo;
-        }
-        if (dateRange === 'monthly') {
-          return itemDate.getMonth() === now.getMonth() && itemDate.getFullYear() === now.getFullYear();
-        }
-        if (dateRange === 'annually') {
-          return itemDate.getFullYear() === now.getFullYear();
-        }
-        if (dateRange === 'custom') {
-          if (!startDate || !endDate) return true;
-          const start = new Date(startDate);
-          const end = new Date(endDate);
-          end.setHours(23, 59, 59, 999);
-          return itemDate >= start && itemDate <= end;
-        }
-        return true;
-      });
-    };
-
-    leads = filterByDate(leads);
-    projects = filterByDate(projects);
-    tickets = filterByDate(tickets);
-    employees = filterByDate(employees, 'joined_date');
-
-    // Calculate Lead status distribution
-    const leadsByStatus = leads.reduce((acc, curr) => {
-      const st = curr.status || 'New';
-      acc[st] = (acc[st] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    // Calculate Project status distribution & active count
-    const projectsByStatus = projects.reduce((acc, curr) => {
-      const st = curr.status || 'Planning';
-      acc[st] = (acc[st] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    const activeProjects = projects.filter((p) => p.status !== 'Completed').length;
-
-    // Calculate Open Tickets and Priority breakdown
-    const openTicketsList = tickets.filter(
-      (t) => t.status !== 'Closed' && t.status !== 'Resolved'
-    );
-    const ticketsByPriority = openTicketsList.reduce((acc, curr) => {
-      const prio = curr.priority || 'Medium';
-      acc[prio] = (acc[prio] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    // Calculate Staff distribution
-    const activeEmployees = employees.filter((e) => e.status === 'Active');
-    const employeesByDept = activeEmployees.reduce((acc, curr) => {
-      const dept = curr.department || 'Engineering';
-      acc[dept] = (acc[dept] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    // Recent Operations Timeline Build
-    const recentActivities = [
-      ...leads.slice(0, 3).map((l) => ({
-        title: `New Lead: ${l.name}`,
-        time: new Date(l.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        type: 'Lead',
-      })),
-      ...projects.slice(0, 3).map((p) => ({
-        title: `Project: ${p.project_name}`,
-        time: new Date(p.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        type: 'Project',
-      })),
-      ...tickets.slice(0, 3).map((t) => ({
-        title: `Ticket: ${t.title}`,
-        time: new Date(t.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        type: 'Ticket',
-      })),
-    ].slice(0, 5);
-
-    setStats({
-      totalLeads: leads.length,
-      leadsByStatus,
-      activeProjects,
-      projectsByStatus,
-      openTickets: openTicketsList.length,
-      ticketsByPriority,
-      totalEmployees: activeEmployees.length,
-      employeesByDept,
-      recentActivities,
-    });
-
-    setLoading(false);
-  }, [dateRange, startDate, endDate]);
-
-  useEffect(() => {
-    fetchOverviewData();
-  }, [fetchOverviewData]);
-
-  // Donut chart color setup for Leads & Operations
-  const leadDonutData = useMemo(() => {
-    const palette = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4'];
-    const keys = Object.keys(stats.leadsByStatus);
-    return keys.map((key, idx) => ({
-      label: key,
-      value: stats.leadsByStatus[key],
-      color: palette[idx % palette.length],
-    }));
-  }, [stats.leadsByStatus]);
-
-  const projectStatusList = ['Planning', 'In Progress', 'Testing', 'On Hold', 'Completed'];
-
-  return (
-    <div className="max-w-7xl mx-auto space-y-6 font-sans pb-12">
-      {/* Dynamic Header Section */}
-      <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="absolute -top-12 -right-12 w-60 h-60 bg-gradient-to-br from-blue-500/10 via-indigo-500/5 to-transparent rounded-full blur-2xl pointer-events-none" />
-        
-        <div className="relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border border-blue-500/20 text-blue-600 font-semibold text-xs mb-3">
-            <Sparkles className="w-3.5 h-3.5 text-blue-600 animate-pulse" />
-            <span>Unified Executive Dashboard</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
-            Operations & Technical Command Center
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-xl leading-relaxed">
-            Real-time pipeline analytics, project lifecycle metrics, support desk workload, and operational throughput.
-          </p>
-        </div>
-
-        <button
-          onClick={fetchOverviewData}
-          className="relative z-10 self-start md:self-auto bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold px-4 py-2.5 rounded-2xl flex items-center gap-2 transition-all shadow-sm hover:shadow-md cursor-pointer shrink-0"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          <span>Refresh Analytics</span>
-        </button>
-      </div>
-
-      {/* Date Filter Bar */}
-      <div className="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-xs flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
-            <Calendar className="w-4 h-4" />
-          </div>
-          <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Timeline Filter:</span>
-          
-          <div className="flex flex-wrap bg-slate-100/80 p-1 rounded-2xl text-xs font-medium">
-            {(['all', 'weekly', 'monthly', 'annually', 'custom'] as const).map((r) => (
-              <button
-                key={r}
-                onClick={() => setDateRange(r)}
-                className={`px-3.5 py-1.5 rounded-xl capitalize transition-all cursor-pointer ${
-                  dateRange === r
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                {r === 'all' ? 'All Time' : r}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {dateRange === 'custom' && (
-          <div className="flex items-center gap-2 text-xs w-full sm:w-auto">
-            <input
-              type="date"
-              className="p-2 border border-slate-200 rounded-xl bg-slate-50 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-            <span className="text-slate-400 font-bold">to</span>
-            <input
-              type="date"
-              className="p-2 border border-slate-200 rounded-xl bg-slate-50 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
-          </div>
-        )}
-      </div>
-
-      {/* High Impact KPI Cards (Ultra-Modern Gradients) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* KPI 1: Total Leads */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-blue-300 transition-all">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-blue-500/10 to-indigo-500/10 rounded-bl-full pointer-events-none group-hover:scale-110 transition-transform" />
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Lead Acquisition</span>
-            <div className="p-2.5 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white rounded-2xl shadow-sm">
-              <Target className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <h3 className="text-3xl font-black text-slate-900 tracking-tight">{stats.totalLeads}</h3>
-            <span className="text-xs font-bold text-blue-600 flex items-center">
-              <TrendingUp className="w-3.5 h-3.5 mr-0.5" /> Pipeline
-            </span>
-          </div>
-          <p className="text-xs text-slate-400 mt-1 font-medium">Inquiries & converted leads</p>
-        </div>
-
-        {/* KPI 2: Active Projects */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-emerald-300 transition-all">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 rounded-bl-full pointer-events-none group-hover:scale-110 transition-transform" />
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Deliveries</span>
-            <div className="p-2.5 bg-gradient-to-tr from-emerald-500 to-teal-600 text-white rounded-2xl shadow-sm">
-              <FolderKanban className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <h3 className="text-3xl font-black text-slate-900 tracking-tight">{stats.activeProjects}</h3>
-            <span className="text-xs font-bold text-emerald-600 flex items-center">
-              <Zap className="w-3.5 h-3.5 mr-0.5" /> Operations
-            </span>
-          </div>
-          <p className="text-xs text-slate-400 mt-1 font-medium">Planning, active or in QA</p>
-        </div>
-
-        {/* KPI 3: Open Tickets */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-amber-300 transition-all">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-bl-full pointer-events-none group-hover:scale-110 transition-transform" />
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Service Desk SLA</span>
-            <div className="p-2.5 bg-gradient-to-tr from-amber-500 to-orange-600 text-white rounded-2xl shadow-sm">
-              <Ticket className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <h3 className="text-3xl font-black text-slate-900 tracking-tight">{stats.openTickets}</h3>
-            <span className="text-xs font-bold text-amber-600 flex items-center">
-              <Clock className="w-3.5 h-3.5 mr-0.5" /> Active Desk
-            </span>
-          </div>
-          <p className="text-xs text-slate-400 mt-1 font-medium">Pending client resolutions</p>
-        </div>
-
-        {/* KPI 4: Active Workforce */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-purple-300 transition-all">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-purple-500/10 to-indigo-500/10 rounded-bl-full pointer-events-none group-hover:scale-110 transition-transform" />
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Engineering Staff</span>
-            <div className="p-2.5 bg-gradient-to-tr from-purple-600 to-indigo-600 text-white rounded-2xl shadow-sm">
-              <Users className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <h3 className="text-3xl font-black text-slate-900 tracking-tight">{stats.totalEmployees}</h3>
-            <span className="text-xs font-bold text-purple-600 flex items-center">
-              <Briefcase className="w-3.5 h-3.5 mr-0.5" /> Allocated
-            </span>
-          </div>
-          <p className="text-xs text-slate-400 mt-1 font-medium">Active IT specialists</p>
-        </div>
-      </div>
-
-      {/* Operational Workflow Architecture Banner */}
-      <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-          <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
-              <Workflow className="w-4 h-4" />
-            </div>
-            End-to-End Enterprise Delivery Pipeline
-          </h2>
-          <span className="text-[11px] font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full uppercase tracking-wider">
-            Operational Lifecycle
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
-          <div className="p-4 rounded-2xl bg-gradient-to-b from-blue-50/60 to-slate-50 border border-blue-100 flex flex-col items-center text-center space-y-1 hover:border-blue-300 transition-all">
-            <Target className="w-6 h-6 text-blue-600 mb-1" />
-            <span className="font-bold text-sm text-slate-900">1. Acquisition</span>
-            <span className="text-[11px] text-slate-500">Capture & classify inquiries</span>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-gradient-to-b from-indigo-50/60 to-slate-50 border border-indigo-100 flex flex-col items-center text-center space-y-1 hover:border-indigo-300 transition-all">
-            <Users className="w-6 h-6 text-indigo-600 mb-1" />
-            <span className="font-bold text-sm text-slate-900">2. Staff Allocation</span>
-            <span className="text-[11px] text-slate-500">Assign leads & tech teams</span>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-gradient-to-b from-emerald-50/60 to-slate-50 border border-emerald-100 flex flex-col items-center text-center space-y-1 hover:border-emerald-300 transition-all">
-            <FolderKanban className="w-6 h-6 text-emerald-600 mb-1" />
-            <span className="font-bold text-sm text-slate-900">3. Execution</span>
-            <span className="text-[11px] text-slate-500">Milestone builds & releases</span>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-gradient-to-b from-amber-50/60 to-slate-50 border border-amber-100 flex flex-col items-center text-center space-y-1 hover:border-amber-300 transition-all">
-            <Ticket className="w-6 h-6 text-amber-600 mb-1" />
-            <span className="font-bold text-sm text-slate-900">4. Support SLA</span>
-            <span className="text-[11px] text-slate-500">Maintain & resolve tickets</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Modern Analytics Section (Donut Chart & Horizontal Bars) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        {/* Circle Diagram: Lead Pipeline Distribution */}
-        <div className="lg:col-span-5 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-              <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
-                  <BarChart3 className="w-4 h-4" />
-                </div>
-                Lead Pipeline breakdown
-              </h2>
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-center justify-around gap-6 my-4">
-              <ModernDonutChart data={leadDonutData} total={stats.totalLeads} />
-
-              <div className="space-y-2 w-full sm:w-auto">
-                {leadDonutData.map((item) => (
-                  <div key={item.label} className="flex items-center justify-between gap-4 text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                      <span className="font-medium text-slate-700">{item.label}</span>
-                    </div>
-                    <span className="font-bold text-slate-900">{item.value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 text-[11px] text-slate-500 flex items-center gap-2">
-            <ArrowUpRight className="w-4 h-4 text-blue-600 shrink-0" />
-            <span>Interactive Lead flow tracking synchronized with CRM database.</span>
-          </div>
-        </div>
-
-        {/* Project Lifecycle Graph */}
-        <div className="lg:col-span-7 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-              <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
-                  <Activity className="w-4 h-4" />
-                </div>
-                Project Delivery Lifecycle Analytics
-              </h2>
-            </div>
-
-            <div className="space-y-4 pt-2">
-              {projectStatusList.map((status) => {
-                const count = stats.projectsByStatus[status] || 0;
-                const maxCount = Math.max(...Object.values(stats.projectsByStatus), 1);
-                const percentage = Math.round((count / maxCount) * 100);
-
-                return (
-                  <div key={status} className="space-y-1.5">
-                    <div className="flex justify-between text-xs font-semibold text-slate-700">
-                      <span>{status}</span>
-                      <span className="text-slate-900 font-bold">{count} Projects</span>
-                    </div>
-                    <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden p-0.5">
-                      <div
-                        className="bg-gradient-to-r from-emerald-500 to-teal-600 h-full rounded-full transition-all duration-700 shadow-xs"
-                        style={{ width: `${Math.max(percentage, 6)}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
-            <span>Real-time milestone tracking</span>
-            <span className="font-semibold text-emerald-600">{stats.activeProjects} Active Works</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Support Ticket Priorities & Live Operations Timeline */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        {/* Support Tickets Breakdown */}
-        <div className="lg:col-span-6 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-            <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-              <div className="p-2 bg-orange-50 text-orange-600 rounded-xl">
-                <AlertTriangle className="w-4 h-4" />
-              </div>
-              Incident Support Tickets by Priority
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-4 bg-gradient-to-br from-red-50 to-red-100/30 rounded-2xl border border-red-200/60 flex flex-col justify-between">
-              <span className="text-[11px] font-extrabold text-red-700 uppercase tracking-wider">Urgent SLA</span>
-              <div className="flex items-baseline justify-between mt-3">
-                <span className="text-3xl font-black text-red-900">
-                  {stats.ticketsByPriority['Urgent'] || 0}
-                </span>
-                <Clock className="w-5 h-5 text-red-500" />
-              </div>
-            </div>
-
-            <div className="p-4 bg-gradient-to-br from-orange-50 to-orange-100/30 rounded-2xl border border-orange-200/60 flex flex-col justify-between">
-              <span className="text-[11px] font-extrabold text-orange-700 uppercase tracking-wider">High Priority</span>
-              <div className="flex items-baseline justify-between mt-3">
-                <span className="text-3xl font-black text-orange-900">
-                  {stats.ticketsByPriority['High'] || 0}
-                </span>
-                <AlertTriangle className="w-5 h-5 text-orange-500" />
-              </div>
-            </div>
-
-            <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100/30 rounded-2xl border border-blue-200/60 flex flex-col justify-between">
-              <span className="text-[11px] font-extrabold text-blue-700 uppercase tracking-wider">Medium</span>
-              <div className="flex items-baseline justify-between mt-3">
-                <span className="text-3xl font-black text-blue-900">
-                  {stats.ticketsByPriority['Medium'] || 0}
-                </span>
-                <Activity className="w-5 h-5 text-blue-500" />
-              </div>
-            </div>
-
-            <div className="p-4 bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-2xl border border-slate-200 flex flex-col justify-between">
-              <span className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">Low</span>
-              <div className="flex items-baseline justify-between mt-3">
-                <span className="text-3xl font-black text-slate-900">
-                  {stats.ticketsByPriority['Low'] || 0}
-                </span>
-                <CheckCircle2 className="w-5 h-5 text-slate-400" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Live Operational Activity Log */}
-        <div className="lg:col-span-6 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-              <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                <div className="p-2 bg-purple-50 text-purple-600 rounded-xl">
-                  <Clock className="w-4 h-4" />
-                </div>
-                Recent Activity Log
-              </h2>
-            </div>
-
-            <div className="space-y-3">
-              {stats.recentActivities.length === 0 ? (
-                <p className="text-xs text-slate-400 italic">No recent operational activity recorded.</p>
-              ) : (
-                stats.recentActivities.map((act, index) => (
-                  <div
-                    key={index}
-                    className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <span className="w-2 h-2 rounded-full bg-blue-600" />
-                      <span className="text-xs font-semibold text-slate-800">{act.title}</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-slate-400 bg-white px-2 py-0.5 rounded-lg border border-slate-100">
-                      {act.time}
-                    </span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          <div className="pt-3 border-t border-slate-100 text-right">
-            <span className="text-[11px] text-slate-400 font-medium">Auto-updated via Supabase Realtime</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Staff Department Allocation */}
-      <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
-              <Users className="w-4 h-4" />
-            </div>
-            Department Work Force Distribution
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
-          {Object.entries(stats.employeesByDept).map(([dept, count]) => (
-            <div
-              key={dept}
-              className="p-4 rounded-2xl bg-gradient-to-br from-slate-50 to-indigo-50/20 border border-slate-200/60 hover:border-indigo-300 transition-all"
-            >
-              <span className="text-xs font-semibold text-slate-500 block truncate">{dept}</span>
-              <span className="text-2xl font-black text-slate-900 mt-1 block">{count} Staff</span>
-            </div>
-          ))}
-
-          {Object.keys(stats.employeesByDept).length === 0 && (
-            <div className="text-xs text-slate-400 italic col-span-4">No active department allocations found.</div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-</file>
-
-<file path="src/app/dashboard/projects/page.tsx">
+<file path="src/app/dashboard/tickets/page.tsx">
 'use client';
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Plus, Trash2, FolderKanban, Edit, Calendar, UserCheck } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
-interface Project {
+interface Ticket {
   id: string;
-  project_name: string;
+  title: string;
   client_name: string;
-  budget: number;
+  priority: string;
   status: string;
-  assigned_employee_id?: string;
-  start_date?: string;
-  due_date?: string;
-  description?: string;
 }
 
-interface Employee {
-  id: string;
-  full_name: string;
-}
-
-export default function ProjectsPage() {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function TicketsPage() {
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [showModal, setShowModal] = useState(false);
-  const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [formData, setFormData] = useState({ title: '', client_name: '', priority: 'Medium', status: 'Open' });
 
-  const [formData, setFormData] = useState({
-    project_name: '',
-    client_name: '',
-    budget: 0,
-    status: 'Planning',
-    assigned_employee_id: '',
-    start_date: new Date().toISOString().slice(0, 10),
-    due_date: '',
-    description: '',
-  });
-
-  const fetchData = async () => {
-    const { data: projData } = await supabase
-      .from('projects')
-      .select('*')
-      .order('created_at', { ascending: false });
-    const { data: empData } = await supabase.from('employees').select('id, full_name');
-
-    if (projData) setProjects(projData);
-    if (empData) setEmployees(empData);
-    setLoading(false);
+  const fetchTickets = async () => {
+    const { data } = await supabase.from('tickets').select('*').order('created_at', { ascending: false });
+    if (data) setTickets(data);
   };
 
   useEffect(() => {
-    fetchData();
+    fetchTickets();
   }, []);
 
-  const openCreateModal = () => {
-    setEditingProject(null);
-    setFormData({
-      project_name: '',
-      client_name: '',
-      budget: 0,
-      status: 'Planning',
-      assigned_employee_id: '',
-      start_date: new Date().toISOString().slice(0, 10),
-      due_date: '',
-      description: '',
-    });
-    setShowModal(true);
-  };
-
-  const openEditModal = (proj: Project) => {
-    setEditingProject(proj);
-    setFormData({
-      project_name: proj.project_name || '',
-      client_name: proj.client_name || '',
-      budget: proj.budget || 0,
-      status: proj.status || 'Planning',
-      assigned_employee_id: proj.assigned_employee_id || '',
-      start_date: proj.start_date || new Date().toISOString().slice(0, 10),
-      due_date: proj.due_date || '',
-      description: proj.description || '',
-    });
-    setShowModal(true);
-  };
-
-  const saveProject = async (e: React.FormEvent) => {
+  const createTicket = async (e: React.FormEvent) => {
     e.preventDefault();
-    const payload = {
-      ...formData,
-      assigned_employee_id: formData.assigned_employee_id || null,
-      due_date: formData.due_date || null,
-    };
-
-    if (editingProject) {
-      const { data, error } = await supabase
-        .from('projects')
-        .update(payload)
-        .eq('id', editingProject.id)
-        .select();
-
-      if (!error && data) {
-        setProjects(projects.map((p) => (p.id === editingProject.id ? data[0] : p)));
-        setShowModal(false);
-      }
-    } else {
-      const { data, error } = await supabase.from('projects').insert([payload]).select();
-      if (!error && data) {
-        setProjects([data[0], ...projects]);
-        setShowModal(false);
-      }
+    const { data, error } = await supabase.from('tickets').insert([formData]).select();
+    if (!error && data) {
+      setTickets([data[0], ...tickets]);
+      setShowModal(false);
+      setFormData({ title: '', client_name: '', priority: 'Medium', status: 'Open' });
     }
   };
 
-  const deleteProject = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this project?')) return;
-    await supabase.from('projects').delete().eq('id', id);
-    setProjects(projects.filter((p) => p.id !== id));
-  };
-
   return (
-    <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <FolderKanban className="w-6 h-6 text-blue-600 shrink-0" /> IT Projects & ERP Operations
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500">
-            Schedule projects, assign tech teams, set milestones, and track deliveries
-          </p>
+    <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6 bg-[#040D0C] text-[#E0E2EC] min-h-screen p-2 sm:p-4 md:p-6 font-sans">
+      {/* Responsive Header Section */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#0B1E1C]/90 p-5 rounded-2xl border border-[#183B36] shadow-2xl relative overflow-hidden">
+        <div className="absolute -right-10 -top-10 w-40 h-40 bg-gradient-to-br from-[#1A5248]/30 via-[#277D6C]/10 to-transparent rounded-full blur-2xl pointer-events-none" />
+        <div className="relative z-10">
+          <h1 className="text-xl sm:text-2xl font-bold text-[#F0F2F5]">IT Service Desk & Helpdesk</h1>
+          <p className="text-xs sm:text-sm text-[#8DA09D]">Track client support tickets and incident resolutions</p>
         </div>
         <button
-          onClick={openCreateModal}
-          className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 text-sm shadow-xs transition-colors shrink-0 cursor-pointer"
+          onClick={() => setShowModal(true)}
+          className="w-full sm:w-auto relative z-10 bg-gradient-to-r from-[#5BE3CA] via-[#34A08B] to-[#257A6A] hover:from-[#72F5DE] hover:to-[#34A08B] text-[#051815] font-bold px-4 py-2.5 sm:py-2 rounded-xl flex items-center justify-center gap-2 text-sm shadow-lg shadow-[#000000]/50 transition-all border border-[#8BFFEC]/40 shrink-0 cursor-pointer"
         >
-          <Plus className="w-4 h-4" /> Create & Schedule Project
+          <Plus className="w-4 h-4 text-[#051815]" /> Create Incident Ticket
         </button>
       </div>
 
+      {/* Responsive Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <form
-            onSubmit={saveProject}
-            className="bg-white rounded-xl p-5 sm:p-6 w-full max-w-lg space-y-4 shadow-xl my-auto"
-          >
-            <h2 className="text-lg font-bold text-slate-900 border-b pb-3">
-              {editingProject ? 'Edit Project Schedule' : 'Schedule New Project'}
-            </h2>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-semibold text-slate-600 block mb-1">Project Name *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="ERP System Migration"
-                  className="w-full p-2.5 border rounded-lg text-sm bg-white text-slate-900 focus:ring-2 focus:ring-blue-600"
-                  value={formData.project_name}
-                  onChange={(e) => setFormData({ ...formData, project_name: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-600 block mb-1">Client Name *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Enterprise Client Corp"
-                  className="w-full p-2.5 border rounded-lg text-sm bg-white text-slate-900 focus:ring-2 focus:ring-blue-600"
-                  value={formData.client_name}
-                  onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-semibold text-slate-600 block mb-1">Start Date</label>
-                <input
-                  type="date"
-                  className="w-full p-2.5 border rounded-lg text-sm bg-white text-slate-900 focus:ring-2 focus:ring-blue-600"
-                  value={formData.start_date}
-                  onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-600 block mb-1">Due Date</label>
-                <input
-                  type="date"
-                  className="w-full p-2.5 border rounded-lg text-sm bg-white text-slate-900 focus:ring-2 focus:ring-blue-600"
-                  value={formData.due_date}
-                  onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-semibold text-slate-600 block mb-1">Budget ($)</label>
-                <input
-                  type="number"
-                  placeholder="15000"
-                  className="w-full p-2.5 border rounded-lg text-sm bg-white text-slate-900 focus:ring-2 focus:ring-blue-600"
-                  value={formData.budget || ''}
-                  onChange={(e) => setFormData({ ...formData, budget: Number(e.target.value) })}
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-600 block mb-1">Status</label>
-                <select
-                  className="w-full p-2.5 border rounded-lg text-sm bg-white text-slate-900 focus:ring-2 focus:ring-blue-600"
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                >
-                  <option value="Planning">Planning</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Testing">Testing</option>
-                  <option value="Completed">Completed</option>
-                  <option value="On Hold">On Hold</option>
-                </select>
-              </div>
-            </div>
-
+        <div className="fixed inset-0 bg-[#020807]/80 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <form onSubmit={createTicket} className="bg-[#0B1E1C] rounded-3xl p-5 sm:p-6 w-full max-w-md space-y-4 shadow-2xl my-auto border border-[#1E4B43] text-[#E0E2EC]">
+            <h2 className="text-lg font-bold text-[#F0F2F5] border-b border-[#163833] pb-3">New Incident Ticket</h2>
             <div>
-              <label className="text-xs font-semibold text-slate-600 block mb-1">Assigned Employee</label>
-              <select
-                className="w-full p-2.5 border rounded-lg text-sm bg-white text-slate-900 focus:ring-2 focus:ring-blue-600"
-                value={formData.assigned_employee_id}
-                onChange={(e) => setFormData({ ...formData, assigned_employee_id: e.target.value })}
-              >
-                <option value="">-- Unassigned --</option>
-                {employees.map((emp) => (
-                  <option key={emp.id} value={emp.id}>
-                    {emp.full_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-slate-600 block mb-1">Project Instructions</label>
-              <textarea
-                rows={3}
-                placeholder="Details & deliverable requirements..."
-                className="w-full p-2.5 border rounded-lg text-sm bg-white text-slate-900 focus:ring-2 focus:ring-blue-600"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              <label className="text-xs font-semibold text-[#8DA09D] block mb-1">Ticket Title</label>
+              <input
+                type="text"
+                placeholder="Ticket Title / Issue Description"
+                required
+                className="w-full p-2.5 sm:p-2 border border-[#1E4B43] rounded-xl text-sm bg-[#061513] text-[#E0E2EC] placeholder-[#5B736F] focus:bg-[#0E2824] focus:ring-2 focus:ring-[#277D6C] focus:outline-none transition-all"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               />
             </div>
-
-            <div className="flex justify-end gap-2 pt-2 border-t">
+            <div>
+              <label className="text-xs font-semibold text-[#8DA09D] block mb-1">Client Company</label>
+              <input
+                type="text"
+                placeholder="Client Company Name"
+                required
+                className="w-full p-2.5 sm:p-2 border border-[#1E4B43] rounded-xl text-sm bg-[#061513] text-[#E0E2EC] placeholder-[#5B736F] focus:bg-[#0E2824] focus:ring-2 focus:ring-[#277D6C] focus:outline-none transition-all"
+                value={formData.client_name}
+                onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-[#8DA09D] block mb-1">Priority</label>
+              <select
+                className="w-full p-2.5 sm:p-2 border border-[#1E4B43] rounded-xl text-sm bg-[#061513] text-[#E0E2EC] focus:bg-[#0E2824] focus:ring-2 focus:ring-[#277D6C] focus:outline-none transition-all cursor-pointer"
+                value={formData.priority}
+                onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+              >
+                <option value="Low" className="bg-[#0B1E1C] text-[#E0E2EC]">Low Priority</option>
+                <option value="Medium" className="bg-[#0B1E1C] text-[#E0E2EC]">Medium Priority</option>
+                <option value="High" className="bg-[#0B1E1C] text-[#E0E2EC]">High Priority</option>
+                <option value="Urgent" className="bg-[#0B1E1C] text-[#E0E2EC]">Urgent Priority</option>
+              </select>
+            </div>
+            <div className="flex justify-end gap-2 pt-2 border-t border-[#163833]">
               <button
                 type="button"
                 onClick={() => setShowModal(false)}
-                className="px-4 py-2 border rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"
+                className="px-4 py-2 border border-[#1E4B43] rounded-xl text-sm font-semibold text-[#8DA09D] hover:bg-[#143B35] hover:text-[#E0E2EC] transition-all cursor-pointer"
               >
                 Cancel
               </button>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
-              >
-                Save Project
+              <button type="submit" className="px-4 py-2 bg-gradient-to-r from-[#18453E] via-[#225F56] to-[#2B7D70] border border-[#277D6C]/60 text-[#72F5DE] rounded-xl text-sm font-bold hover:opacity-90 transition-all shadow-md cursor-pointer">
+                Submit Ticket
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Responsive Table / Card View */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
-        {loading ? (
-          <div className="p-8 text-center text-slate-500 text-sm">Loading projects database...</div>
-        ) : projects.length === 0 ? (
-          <div className="p-8 text-center text-slate-500 text-sm">No projects active.</div>
+      {/* Tickets Container */}
+      <div className="bg-[#0B1E1C]/90 rounded-2xl border border-[#183B36] shadow-2xl overflow-hidden">
+        {tickets.length === 0 ? (
+          <div className="p-8 text-center text-[#8DA09D] text-sm">No tickets found.</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[850px]">
-              <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase text-xs">
-                <tr>
-                  <th className="p-4">Project / Client</th>
-                  <th className="p-4">Assigned Employee</th>
-                  <th className="p-4">Schedule Dates</th>
-                  <th className="p-4">Budget</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-sm">
-                {projects.map((project) => {
-                  const assignedStaff = employees.find((e) => e.id === project.assigned_employee_id);
-                  return (
-                    <tr key={project.id} className="hover:bg-slate-50 transition-colors">
+          <>
+            {/* Desktop & Tablet Table View (Hidden on Small Screens) */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[600px]">
+                <thead className="bg-[#061513] border-b border-[#163833] text-[#8DA09D] font-semibold uppercase text-xs">
+                  <tr>
+                    <th className="p-4">Ticket</th>
+                    <th className="p-4">Client</th>
+                    <th className="p-4">Priority</th>
+                    <th className="p-4">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#14312B] text-sm">
+                  {tickets.map((t) => (
+                    <tr key={t.id} className="hover:bg-[#112E29]/60 transition-colors">
+                      <td className="p-4 font-semibold text-[#F0F2F5]">{t.title}</td>
+                      <td className="p-4 text-[#C2D6D3]">{t.client_name}</td>
                       <td className="p-4">
-                        <div className="font-bold text-slate-900">{project.project_name}</div>
-                        <div className="text-xs text-slate-500 font-medium">{project.client_name}</div>
-                      </td>
-                      <td className="p-4">
-                        {assignedStaff ? (
-                          <span className="font-semibold text-slate-800 flex items-center gap-1">
-                            <UserCheck className="w-3.5 h-3.5 text-blue-600" />
-                            {assignedStaff.full_name}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-slate-400 italic">Unassigned</span>
-                        )}
-                      </td>
-                      <td className="p-4 text-xs font-medium text-slate-600">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                          <span>
-                            {project.start_date || 'N/A'} → {project.due_date || 'No Due Date'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="p-4 font-bold text-slate-900">${project.budget?.toLocaleString()}</td>
-                      <td className="p-4">
-                        <span className="bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-md text-xs font-semibold text-slate-800">
-                          {project.status}
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-semibold ${
+                            t.priority === 'Urgent'
+                              ? 'bg-[#3D1414] text-[#FF8B8B] border border-[#662222]'
+                              : t.priority === 'High'
+                              ? 'bg-[#3B2510] text-[#FFB366] border border-[#66401A]'
+                              : 'bg-[#123630] text-[#6CE5D0] border border-[#23685C]'
+                          }`}
+                        >
+                          {t.priority}
                         </span>
                       </td>
-                      <td className="p-4 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            onClick={() => openEditModal(project)}
-                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Edit Project"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => deleteProject(project.id)}
-                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Delete Project"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
+                      <td className="p-4 font-medium text-[#A6B8B5]">{t.status}</td>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card Layout (Visible on Small Screens) */}
+            <div className="block md:hidden divide-y divide-[#14312B]">
+              {tickets.map((t) => (
+                <div key={t.id} className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="font-semibold text-[#F0F2F5] text-base">{t.title}</div>
+                    <span
+                      className={`px-2 py-0.5 rounded text-xs font-semibold shrink-0 ${
+                        t.priority === 'Urgent'
+                          ? 'bg-[#3D1414] text-[#FF8B8B] border border-[#662222]'
+                          : t.priority === 'High'
+                          ? 'bg-[#3B2510] text-[#FFB366] border border-[#66401A]'
+                          : 'bg-[#123630] text-[#6CE5D0] border border-[#23685C]'
+                      }`}
+                    >
+                      {t.priority}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs pt-1">
+                    <span className="text-[#8DA09D] font-medium">Client: <span className="text-[#F0F2F5] font-semibold">{t.client_name}</span></span>
+                    <span className="font-medium text-[#6CE5D0] bg-[#061513] px-2 py-1 rounded border border-[#183B36]">{t.status}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
     </div>
@@ -2505,225 +887,1018 @@ export default function LoginPage() {
 }
 </file>
 
-<file path="src/app/dashboard/hr/page.tsx">
+<file path="src/app/dashboard/overview/page.tsx">
+'use client';
+
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import { supabase } from '@/lib/supabase';
+import {
+  BarChart3,
+  Users,
+  FolderKanban,
+  Ticket,
+  Target,
+  CheckCircle2,
+  AlertTriangle,
+  Clock,
+  Activity,
+  Workflow,
+  Calendar,
+  Sparkles,
+  TrendingUp,
+  ArrowUpRight,
+  RefreshCw,
+  Zap,
+  Briefcase
+} from 'lucide-react';
+
+// Custom SVG Donut Diagram Component
+function ModernDonutChart({
+  data,
+  total,
+}: {
+  data: { label: string; value: number; color: string }[];
+  total: number;
+}) {
+  const size = 160;
+  const strokeWidth = 24;
+  const center = size / 2;
+  const radius = center - strokeWidth;
+  const circumference = 2 * Math.PI * radius;
+
+  let accumulatedAngle = 0;
+
+  if (total === 0) {
+    return (
+      <div className="relative flex items-center justify-center w-40 h-40">
+        <svg className="w-full h-full transform -rotate-90" viewBox={`0 0 ${size} ${size}`}>
+          <circle
+            cx={center}
+            cy={center}
+            r={radius}
+            className="stroke-[#132a2f]"
+            strokeWidth={strokeWidth}
+            fill="transparent"
+          />
+        </svg>
+        <span className="absolute text-xs text-[#527d7d] font-medium">No Data</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative flex items-center justify-center w-40 h-40 shrink-0">
+      <svg className="w-full h-full transform -rotate-90" viewBox={`0 0 ${size} ${size}`}>
+        {data.map((item, index) => {
+          const percentage = item.value / total;
+          const strokeDashoffset = circumference - percentage * circumference;
+          const rotation = accumulatedAngle;
+          accumulatedAngle += percentage * 360;
+
+          return (
+            <circle
+              key={index}
+              cx={center}
+              cy={center}
+              r={radius}
+              stroke={item.color}
+              strokeWidth={strokeWidth}
+              strokeDasharray={circumference}
+              strokeDashoffset={strokeDashoffset}
+              strokeLinecap="round"
+              fill="transparent"
+              style={{
+                transformOrigin: 'center',
+                transform: `rotate(${rotation}deg)`,
+                transition: 'stroke-dashoffset 0.8s ease-in-out, transform 0.8s ease-in-out',
+              }}
+            />
+          );
+        })}
+      </svg>
+      <div className="absolute flex flex-col items-center justify-center text-center">
+        <span className="text-2xl font-extrabold text-[#e2f3f3] tracking-tight">{total}</span>
+        <span className="text-[10px] font-bold uppercase text-[#527d7d] tracking-wider">Total</span>
+      </div>
+    </div>
+  );
+}
+
+interface OverviewStats {
+  totalLeads: number;
+  leadsByStatus: Record<string, number>;
+  activeProjects: number;
+  projectsByStatus: Record<string, number>;
+  openTickets: number;
+  ticketsByPriority: Record<string, number>;
+  totalEmployees: number;
+  employeesByDept: Record<string, number>;
+  recentActivities: { title: string; time: string; type: string }[];
+}
+
+export default function OverviewPage() {
+  const [stats, setStats] = useState<OverviewStats>({
+    totalLeads: 0,
+    leadsByStatus: {},
+    activeProjects: 0,
+    projectsByStatus: {},
+    openTickets: 0,
+    ticketsByPriority: {},
+    totalEmployees: 0,
+    employeesByDept: {},
+    recentActivities: [],
+  });
+
+  const [loading, setLoading] = useState(true);
+  const [dateRange, setDateRange] = useState<'all' | 'weekly' | 'monthly' | 'annually' | 'custom'>('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  const fetchOverviewData = useCallback(async () => {
+    setLoading(true);
+
+    const [leadsRes, projectsRes, ticketsRes, employeesRes] = await Promise.all([
+      supabase.from('leads').select('id, name, status, created_at'),
+      supabase.from('projects').select('id, project_name, status, created_at'),
+      supabase.from('tickets').select('id, title, priority, status, created_at'),
+      supabase.from('employees').select('id, full_name, department, status, joined_date'),
+    ]);
+
+    let leads = leadsRes.data || [];
+    let projects = projectsRes.data || [];
+    let tickets = ticketsRes.data || [];
+    let employees = employeesRes.data || [];
+
+    // Date Range Filtering Logic
+    const filterByDate = (items: any[], dateField: string = 'created_at') => {
+      if (dateRange === 'all') return items;
+      const now = new Date();
+
+      return items.filter((item) => {
+        if (!item[dateField]) return true;
+        const itemDate = new Date(item[dateField]);
+
+        if (dateRange === 'weekly') {
+          const oneWeekAgo = new Date();
+          oneWeekAgo.setDate(now.getDate() - 7);
+          return itemDate >= oneWeekAgo;
+        }
+        if (dateRange === 'monthly') {
+          return itemDate.getMonth() === now.getMonth() && itemDate.getFullYear() === now.getFullYear();
+        }
+        if (dateRange === 'annually') {
+          return itemDate.getFullYear() === now.getFullYear();
+        }
+        if (dateRange === 'custom') {
+          if (!startDate || !endDate) return true;
+          const start = new Date(startDate);
+          const end = new Date(endDate);
+          end.setHours(23, 59, 59, 999);
+          return itemDate >= start && itemDate <= end;
+        }
+        return true;
+      });
+    };
+
+    leads = filterByDate(leads);
+    projects = filterByDate(projects);
+    tickets = filterByDate(tickets);
+    employees = filterByDate(employees, 'joined_date');
+
+    // Calculate Lead status distribution
+    const leadsByStatus = leads.reduce((acc, curr) => {
+      const st = curr.status || 'New';
+      acc[st] = (acc[st] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Calculate Project status distribution & active count
+    const projectsByStatus = projects.reduce((acc, curr) => {
+      const st = curr.status || 'Planning';
+      acc[st] = (acc[st] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const activeProjects = projects.filter((p) => p.status !== 'Completed').length;
+
+    // Calculate Open Tickets and Priority breakdown
+    const openTicketsList = tickets.filter(
+      (t) => t.status !== 'Closed' && t.status !== 'Resolved'
+    );
+    const ticketsByPriority = openTicketsList.reduce((acc, curr) => {
+      const prio = curr.priority || 'Medium';
+      acc[prio] = (acc[prio] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Calculate Staff distribution
+    const activeEmployees = employees.filter((e) => e.status === 'Active');
+    const employeesByDept = activeEmployees.reduce((acc, curr) => {
+      const dept = curr.department || 'Engineering';
+      acc[dept] = (acc[dept] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Recent Operations Timeline Build
+    const recentActivities = [
+      ...leads.slice(0, 3).map((l) => ({
+        title: `New Lead: ${l.name}`,
+        time: new Date(l.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        type: 'Lead',
+      })),
+      ...projects.slice(0, 3).map((p) => ({
+        title: `Project: ${p.project_name}`,
+        time: new Date(p.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        type: 'Project',
+      })),
+      ...tickets.slice(0, 3).map((t) => ({
+        title: `Ticket: ${t.title}`,
+        time: new Date(t.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        type: 'Ticket',
+      })),
+    ].slice(0, 5);
+
+    setStats({
+      totalLeads: leads.length,
+      leadsByStatus,
+      activeProjects,
+      projectsByStatus,
+      openTickets: openTicketsList.length,
+      ticketsByPriority,
+      totalEmployees: activeEmployees.length,
+      employeesByDept,
+      recentActivities,
+    });
+
+    setLoading(false);
+  }, [dateRange, startDate, endDate]);
+
+  useEffect(() => {
+    fetchOverviewData();
+  }, [fetchOverviewData]);
+
+  // Donut chart color setup tailored for dark teal palette
+  const leadDonutData = useMemo(() => {
+    const palette = ['#4fd1c5', '#38b2ac', '#319795', '#2b6cb0', '#dd6b20', '#3182ce'];
+    const keys = Object.keys(stats.leadsByStatus);
+    return keys.map((key, idx) => ({
+      label: key,
+      value: stats.leadsByStatus[key],
+      color: palette[idx % palette.length],
+    }));
+  }, [stats.leadsByStatus]);
+
+  const projectStatusList = ['Planning', 'In Progress', 'Testing', 'On Hold', 'Completed'];
+
+  return (
+    <div className="max-w-7xl mx-auto space-y-6 font-sans pb-12 text-[#b0c4c4] bg-[#071317] p-6 rounded-3xl min-h-screen">
+      {/* Dynamic Header Section */}
+      <div className="bg-[#0e2126] p-6 rounded-3xl border border-[#1a383f] shadow-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="absolute -top-12 -right-12 w-60 h-60 bg-gradient-to-br from-[#1cd2ad]/10 via-[#27535b]/20 to-transparent rounded-full blur-2xl pointer-events-none" />
+        
+        <div className="relative z-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#16363d] border border-[#23535d] text-[#2dd4bf] font-semibold text-xs mb-3">
+            <Sparkles className="w-3.5 h-3.5 text-[#2dd4bf] animate-pulse" />
+            <span>Unified Executive Dashboard</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#f0fdfa] tracking-tight flex items-center gap-3">
+            Operations & Technical Command Center
+          </h1>
+          <p className="text-xs sm:text-sm text-[#81a3a3] mt-1 max-w-xl leading-relaxed">
+            Real-time pipeline analytics, project lifecycle metrics, support desk workload, and operational throughput.
+          </p>
+        </div>
+
+        <button
+          onClick={fetchOverviewData}
+          className="relative z-10 self-start md:self-auto bg-[#173a42] hover:bg-[#1e4852] text-[#e2f3f3] border border-[#2b5d69] text-xs font-semibold px-4 py-2.5 rounded-2xl flex items-center gap-2 transition-all shadow-sm hover:shadow-md cursor-pointer shrink-0"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 text-[#2dd4bf] ${loading ? 'animate-spin' : ''}`} />
+          <span>Refresh Analytics</span>
+        </button>
+      </div>
+
+      {/* Date Filter Bar */}
+      <div className="bg-[#0e2126] p-4 rounded-3xl border border-[#1a383f] shadow-xl flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="p-2 bg-[#17383f] text-[#2dd4bf] rounded-xl border border-[#25525d]">
+            <Calendar className="w-4 h-4" />
+          </div>
+          <span className="text-xs font-bold text-[#81a3a3] uppercase tracking-wider">Timeline Filter:</span>
+          
+          <div className="flex flex-wrap bg-[#08171b] p-1 rounded-2xl border border-[#16343b] text-xs font-medium">
+            {(['all', 'weekly', 'monthly', 'annually', 'custom'] as const).map((r) => (
+              <button
+                key={r}
+                onClick={() => setDateRange(r)}
+                className={`px-3.5 py-1.5 rounded-xl capitalize transition-all cursor-pointer ${
+                  dateRange === r
+                    ? 'bg-[#1b434c] text-[#f0fdfa] border border-[#2b6471] shadow-xs font-bold'
+                    : 'text-[#81a3a3] hover:text-[#f0fdfa]'
+                }`}
+              >
+                {r === 'all' ? 'All Time' : r}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {dateRange === 'custom' && (
+          <div className="flex items-center gap-2 text-xs w-full sm:w-auto">
+            <input
+              type="date"
+              className="p-2 border border-[#234d57] rounded-xl bg-[#08171b] text-[#e2f3f3] focus:outline-none focus:ring-2 focus:ring-[#2dd4bf]"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+            />
+            <span className="text-[#527d7d] font-bold">to</span>
+            <input
+              type="date"
+              className="p-2 border border-[#234d57] rounded-xl bg-[#08171b] text-[#e2f3f3] focus:outline-none focus:ring-2 focus:ring-[#2dd4bf]"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* High Impact KPI Cards (Ultra-Modern Dark Teal Gradients) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* KPI 1: Total Leads */}
+        <div className="bg-[#0e2126] p-6 rounded-3xl border border-[#1a383f] shadow-xl relative overflow-hidden group hover:border-[#2b616d] transition-all">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-[#2dd4bf]/10 to-transparent rounded-bl-full pointer-events-none group-hover:scale-110 transition-transform" />
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-bold text-[#81a3a3] uppercase tracking-wider">Lead Acquisition</span>
+            <div className="p-2.5 bg-[#173a42] text-[#2dd4bf] rounded-2xl border border-[#23535d] shadow-sm">
+              <Target className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <h3 className="text-3xl font-black text-[#f0fdfa] tracking-tight">{stats.totalLeads}</h3>
+            <span className="text-xs font-bold text-[#2dd4bf] flex items-center">
+              <TrendingUp className="w-3.5 h-3.5 mr-0.5" /> Pipeline
+            </span>
+          </div>
+          <p className="text-xs text-[#527d7d] mt-1 font-medium">Inquiries & converted leads</p>
+        </div>
+
+        {/* KPI 2: Active Projects */}
+        <div className="bg-[#0e2126] p-6 rounded-3xl border border-[#1a383f] shadow-xl relative overflow-hidden group hover:border-[#2b616d] transition-all">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-[#10b981]/10 to-transparent rounded-bl-full pointer-events-none group-hover:scale-110 transition-transform" />
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-bold text-[#81a3a3] uppercase tracking-wider">Active Deliveries</span>
+            <div className="p-2.5 bg-[#143632] text-[#34d399] rounded-2xl border border-[#1f544e] shadow-sm">
+              <FolderKanban className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <h3 className="text-3xl font-black text-[#f0fdfa] tracking-tight">{stats.activeProjects}</h3>
+            <span className="text-xs font-bold text-[#34d399] flex items-center">
+              <Zap className="w-3.5 h-3.5 mr-0.5" /> Operations
+            </span>
+          </div>
+          <p className="text-xs text-[#527d7d] mt-1 font-medium">Planning, active or in QA</p>
+        </div>
+
+        {/* KPI 3: Open Tickets */}
+        <div className="bg-[#0e2126] p-6 rounded-3xl border border-[#1a383f] shadow-xl relative overflow-hidden group hover:border-[#2b616d] transition-all">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-[#f59e0b]/10 to-transparent rounded-bl-full pointer-events-none group-hover:scale-110 transition-transform" />
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-bold text-[#81a3a3] uppercase tracking-wider">Service Desk SLA</span>
+            <div className="p-2.5 bg-[#362a14] text-[#fbbf24] rounded-2xl border border-[#52411f] shadow-sm">
+              <Ticket className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <h3 className="text-3xl font-black text-[#f0fdfa] tracking-tight">{stats.openTickets}</h3>
+            <span className="text-xs font-bold text-[#fbbf24] flex items-center">
+              <Clock className="w-3.5 h-3.5 mr-0.5" /> Active Desk
+            </span>
+          </div>
+          <p className="text-xs text-[#527d7d] mt-1 font-medium">Pending client resolutions</p>
+        </div>
+
+        {/* KPI 4: Active Workforce */}
+        <div className="bg-[#0e2126] p-6 rounded-3xl border border-[#1a383f] shadow-xl relative overflow-hidden group hover:border-[#2b616d] transition-all">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-[#8b5cf6]/10 to-transparent rounded-bl-full pointer-events-none group-hover:scale-110 transition-transform" />
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-bold text-[#81a3a3] uppercase tracking-wider">Engineering Staff</span>
+            <div className="p-2.5 bg-[#251a38] text-[#a78bfa] rounded-2xl border border-[#3c2a59] shadow-sm">
+              <Users className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <h3 className="text-3xl font-black text-[#f0fdfa] tracking-tight">{stats.totalEmployees}</h3>
+            <span className="text-xs font-bold text-[#a78bfa] flex items-center">
+              <Briefcase className="w-3.5 h-3.5 mr-0.5" /> Allocated
+            </span>
+          </div>
+          <p className="text-xs text-[#527d7d] mt-1 font-medium">Active IT specialists</p>
+        </div>
+      </div>
+
+      {/* Operational Workflow Architecture Banner */}
+      <div className="bg-[#0e2126] p-6 rounded-3xl border border-[#1a383f] shadow-xl space-y-4">
+        <div className="flex items-center justify-between border-b border-[#18363d] pb-4">
+          <h2 className="text-base font-extrabold text-[#f0fdfa] flex items-center gap-2">
+            <div className="p-2 bg-[#17383f] text-[#2dd4bf] rounded-xl border border-[#25525d]">
+              <Workflow className="w-4 h-4" />
+            </div>
+            End-to-End Enterprise Delivery Pipeline
+          </h2>
+          <span className="text-[11px] font-bold text-[#2dd4bf] bg-[#16363d] border border-[#23535d] px-3 py-1 rounded-full uppercase tracking-wider">
+            Operational Lifecycle
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
+          <div className="p-4 rounded-2xl bg-[#0a181c] border border-[#183a42] flex flex-col items-center text-center space-y-1 hover:border-[#275d69] transition-all">
+            <Target className="w-6 h-6 text-[#2dd4bf] mb-1" />
+            <span className="font-bold text-sm text-[#e2f3f3]">1. Acquisition</span>
+            <span className="text-[11px] text-[#81a3a3]">Capture & classify inquiries</span>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-[#0a181c] border border-[#183a42] flex flex-col items-center text-center space-y-1 hover:border-[#275d69] transition-all">
+            <Users className="w-6 h-6 text-[#38b2ac] mb-1" />
+            <span className="font-bold text-sm text-[#e2f3f3]">2. Staff Allocation</span>
+            <span className="text-[11px] text-[#81a3a3]">Assign leads & tech teams</span>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-[#0a181c] border border-[#183a42] flex flex-col items-center text-center space-y-1 hover:border-[#275d69] transition-all">
+            <FolderKanban className="w-6 h-6 text-[#34d399] mb-1" />
+            <span className="font-bold text-sm text-[#e2f3f3]">3. Execution</span>
+            <span className="text-[11px] text-[#81a3a3]">Milestone builds & releases</span>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-[#0a181c] border border-[#183a42] flex flex-col items-center text-center space-y-1 hover:border-[#275d69] transition-all">
+            <Ticket className="w-6 h-6 text-[#fbbf24] mb-1" />
+            <span className="font-bold text-sm text-[#e2f3f3]">4. Support SLA</span>
+            <span className="text-[11px] text-[#81a3a3]">Maintain & resolve tickets</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Modern Analytics Section (Donut Chart & Horizontal Bars) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        {/* Circle Diagram: Lead Pipeline Distribution */}
+        <div className="lg:col-span-5 bg-[#0e2126] p-6 rounded-3xl border border-[#1a383f] shadow-xl flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between border-b border-[#18363d] pb-3 mb-4">
+              <h2 className="text-base font-extrabold text-[#f0fdfa] flex items-center gap-2">
+                <div className="p-2 bg-[#17383f] text-[#2dd4bf] rounded-xl border border-[#25525d]">
+                  <BarChart3 className="w-4 h-4" />
+                </div>
+                Lead Pipeline breakdown
+              </h2>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-around gap-6 my-4">
+              <ModernDonutChart data={leadDonutData} total={stats.totalLeads} />
+
+              <div className="space-y-2 w-full sm:w-auto">
+                {leadDonutData.map((item) => (
+                  <div key={item.label} className="flex items-center justify-between gap-4 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                      <span className="font-medium text-[#a0c2c2]">{item.label}</span>
+                    </div>
+                    <span className="font-bold text-[#f0fdfa]">{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="p-3 bg-[#08171b] rounded-2xl border border-[#18363d] text-[11px] text-[#81a3a3] flex items-center gap-2">
+            <ArrowUpRight className="w-4 h-4 text-[#2dd4bf] shrink-0" />
+            <span>Interactive Lead flow tracking synchronized with CRM database.</span>
+          </div>
+        </div>
+
+        {/* Project Lifecycle Graph */}
+        <div className="lg:col-span-7 bg-[#0e2126] p-6 rounded-3xl border border-[#1a383f] shadow-xl flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between border-b border-[#18363d] pb-3 mb-4">
+              <h2 className="text-base font-extrabold text-[#f0fdfa] flex items-center gap-2">
+                <div className="p-2 bg-[#143632] text-[#34d399] rounded-xl border border-[#1f544e]">
+                  <Activity className="w-4 h-4" />
+                </div>
+                Project Delivery Lifecycle Analytics
+              </h2>
+            </div>
+
+            <div className="space-y-4 pt-2">
+              {projectStatusList.map((status) => {
+                const count = stats.projectsByStatus[status] || 0;
+                const maxCount = Math.max(...Object.values(stats.projectsByStatus), 1);
+                const percentage = Math.round((count / maxCount) * 100);
+
+                return (
+                  <div key={status} className="space-y-1.5">
+                    <div className="flex justify-between text-xs font-semibold text-[#a0c2c2]">
+                      <span>{status}</span>
+                      <span className="text-[#f0fdfa] font-bold">{count} Projects</span>
+                    </div>
+                    <div className="w-full bg-[#08171b] rounded-full h-3 overflow-hidden p-0.5 border border-[#18363d]">
+                      <div
+                        className="bg-gradient-to-r from-[#1fb89a] to-[#2dd4bf] h-full rounded-full transition-all duration-700 shadow-xs"
+                        style={{ width: `${Math.max(percentage, 6)}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="pt-4 mt-4 border-t border-[#18363d] flex items-center justify-between text-xs text-[#527d7d]">
+            <span>Real-time milestone tracking</span>
+            <span className="font-semibold text-[#34d399]">{stats.activeProjects} Active Works</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Support Ticket Priorities & Live Operations Timeline */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        {/* Support Tickets Breakdown */}
+        <div className="lg:col-span-6 bg-[#0e2126] p-6 rounded-3xl border border-[#1a383f] shadow-xl">
+          <div className="flex items-center justify-between border-b border-[#18363d] pb-3 mb-4">
+            <h2 className="text-base font-extrabold text-[#f0fdfa] flex items-center gap-2">
+              <div className="p-2 bg-[#362a14] text-[#fbbf24] rounded-xl border border-[#52411f]">
+                <AlertTriangle className="w-4 h-4" />
+              </div>
+              Incident Support Tickets by Priority
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="p-4 bg-[#231215] rounded-2xl border border-[#481c21] flex flex-col justify-between">
+              <span className="text-[11px] font-extrabold text-[#f87171] uppercase tracking-wider">Urgent SLA</span>
+              <div className="flex items-baseline justify-between mt-3">
+                <span className="text-3xl font-black text-[#fca5a5]">
+                  {stats.ticketsByPriority['Urgent'] || 0}
+                </span>
+                <Clock className="w-5 h-5 text-[#f87171]" />
+              </div>
+            </div>
+
+            <div className="p-4 bg-[#291e12] rounded-2xl border border-[#523719] flex flex-col justify-between">
+              <span className="text-[11px] font-extrabold text-[#fb923c] uppercase tracking-wider">High Priority</span>
+              <div className="flex items-baseline justify-between mt-3">
+                <span className="text-3xl font-black text-[#fdba74]">
+                  {stats.ticketsByPriority['High'] || 0}
+                </span>
+                <AlertTriangle className="w-5 h-5 text-[#fb923c]" />
+              </div>
+            </div>
+
+            <div className="p-4 bg-[#11242d] rounded-2xl border border-[#1e4859] flex flex-col justify-between">
+              <span className="text-[11px] font-extrabold text-[#38bdf8] uppercase tracking-wider">Medium</span>
+              <div className="flex items-baseline justify-between mt-3">
+                <span className="text-3xl font-black text-[#7dd3fc]">
+                  {stats.ticketsByPriority['Medium'] || 0}
+                </span>
+                <Activity className="w-5 h-5 text-[#38bdf8]" />
+              </div>
+            </div>
+
+            <div className="p-4 bg-[#0a181c] rounded-2xl border border-[#183a42] flex flex-col justify-between">
+              <span className="text-[11px] font-extrabold text-[#81a3a3] uppercase tracking-wider">Low</span>
+              <div className="flex items-baseline justify-between mt-3">
+                <span className="text-3xl font-black text-[#f0fdfa]">
+                  {stats.ticketsByPriority['Low'] || 0}
+                </span>
+                <CheckCircle2 className="w-5 h-5 text-[#527d7d]" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Live Operational Activity Log */}
+        <div className="lg:col-span-6 bg-[#0e2126] p-6 rounded-3xl border border-[#1a383f] shadow-xl flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between border-b border-[#18363d] pb-3 mb-4">
+              <h2 className="text-base font-extrabold text-[#f0fdfa] flex items-center gap-2">
+                <div className="p-2 bg-[#251a38] text-[#a78bfa] rounded-xl border border-[#3c2a59]">
+                  <Clock className="w-4 h-4" />
+                </div>
+                Recent Activity Log
+              </h2>
+            </div>
+
+            <div className="space-y-3">
+              {stats.recentActivities.length === 0 ? (
+                <p className="text-xs text-[#527d7d] italic">No recent operational activity recorded.</p>
+              ) : (
+                stats.recentActivities.map((act, index) => (
+                  <div
+                    key={index}
+                    className="p-3 bg-[#08171b] rounded-2xl border border-[#18363d] flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="w-2 h-2 rounded-full bg-[#2dd4bf]" />
+                      <span className="text-xs font-semibold text-[#e2f3f3]">{act.title}</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-[#81a3a3] bg-[#0e2126] px-2 py-0.5 rounded-lg border border-[#18363d]">
+                      {act.time}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="pt-3 border-t border-[#18363d] text-right">
+            <span className="text-[11px] text-[#527d7d] font-medium">Auto-updated via Supabase Realtime</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Staff Department Allocation */}
+      <div className="bg-[#0e2126] p-6 rounded-3xl border border-[#1a383f] shadow-xl space-y-4">
+        <div className="flex items-center justify-between border-b border-[#18363d] pb-3">
+          <h2 className="text-base font-extrabold text-[#f0fdfa] flex items-center gap-2">
+            <div className="p-2 bg-[#17383f] text-[#2dd4bf] rounded-xl border border-[#25525d]">
+              <Users className="w-4 h-4" />
+            </div>
+            Department Work Force Distribution
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
+          {Object.entries(stats.employeesByDept).map(([dept, count]) => (
+            <div
+              key={dept}
+              className="p-4 rounded-2xl bg-[#0a181c] border border-[#183a42] hover:border-[#275d69] transition-all"
+            >
+              <span className="text-xs font-semibold text-[#81a3a3] block truncate">{dept}</span>
+              <span className="text-2xl font-black text-[#f0fdfa] mt-1 block">{count} Staff</span>
+            </div>
+          ))}
+
+          {Object.keys(stats.employeesByDept).length === 0 && (
+            <div className="text-xs text-[#527d7d] italic col-span-4">No active department allocations found.</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/app/dashboard/projects/page.tsx">
 'use client';
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Plus, Trash2, UserCheck, ShieldCheck, Mail, Lock } from 'lucide-react';
+import { Plus, Trash2, FolderKanban, Edit, Calendar, UserCheck } from 'lucide-react';
+
+interface Project {
+  id: string;
+  project_name: string;
+  client_name: string;
+  budget: number;
+  status: string;
+  assigned_employee_id?: string;
+  start_date?: string;
+  due_date?: string;
+  description?: string;
+}
 
 interface Employee {
   id: string;
   full_name: string;
-  email: string;
-  role: string;
-  department: string;
-  status: string;
-  password?: string;
 }
 
-export default function HRPage() {
+export default function ProjectsPage() {
+  const [projects, setProjects] = useState<Project[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
+
   const [formData, setFormData] = useState({
-    full_name: '',
-    email: '',
-    password: '',
-    role: 'Software Engineer',
-    department: 'Engineering',
-    status: 'Active',
+    project_name: '',
+    client_name: '',
+    budget: 0,
+    status: 'Planning',
+    assigned_employee_id: '',
+    start_date: new Date().toISOString().slice(0, 10),
+    due_date: '',
+    description: '',
   });
 
-  const fetchEmployees = async () => {
-    const { data } = await supabase
-      .from('employees')
+  const fetchData = async () => {
+    const { data: projData } = await supabase
+      .from('projects')
       .select('*')
-      .order('joined_date', { ascending: false });
-    if (data) setEmployees(data);
+      .order('created_at', { ascending: false });
+    const { data: empData } = await supabase.from('employees').select('id, full_name');
+
+    if (projData) setProjects(projData);
+    if (empData) setEmployees(empData);
+    setLoading(false);
   };
 
   useEffect(() => {
-    fetchEmployees();
+    fetchData();
   }, []);
 
-  const createEmployee = async (e: React.FormEvent) => {
+  const openCreateModal = () => {
+    setEditingProject(null);
+    setFormData({
+      project_name: '',
+      client_name: '',
+      budget: 0,
+      status: 'Planning',
+      assigned_employee_id: '',
+      start_date: new Date().toISOString().slice(0, 10),
+      due_date: '',
+      description: '',
+    });
+    setShowModal(true);
+  };
+
+  const openEditModal = (proj: Project) => {
+    setEditingProject(proj);
+    setFormData({
+      project_name: proj.project_name || '',
+      client_name: proj.client_name || '',
+      budget: proj.budget || 0,
+      status: proj.status || 'Planning',
+      assigned_employee_id: proj.assigned_employee_id || '',
+      start_date: proj.start_date || new Date().toISOString().slice(0, 10),
+      due_date: proj.due_date || '',
+      description: proj.description || '',
+    });
+    setShowModal(true);
+  };
+
+  const saveProject = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { data, error } = await supabase.from('employees').insert([formData]).select();
-    if (error) {
-      alert(`Error creating employee: ${error.message}`);
-      return;
-    }
-    if (data) {
-      setEmployees([data[0], ...employees]);
-      setShowModal(false);
-      setFormData({
-        full_name: '',
-        email: '',
-        password: '',
-        role: 'Software Engineer',
-        department: 'Engineering',
-        status: 'Active',
-      });
+    const payload = {
+      ...formData,
+      assigned_employee_id: formData.assigned_employee_id || null,
+      due_date: formData.due_date || null,
+    };
+
+    if (editingProject) {
+      const { data, error } = await supabase
+        .from('projects')
+        .update(payload)
+        .eq('id', editingProject.id)
+        .select();
+
+      if (!error && data) {
+        setProjects(projects.map((p) => (p.id === editingProject.id ? data[0] : p)));
+        setShowModal(false);
+      }
+    } else {
+      const { data, error } = await supabase.from('projects').insert([payload]).select();
+      if (!error && data) {
+        setProjects([data[0], ...projects]);
+        setShowModal(false);
+      }
     }
   };
 
-  const deleteEmployee = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this employee?')) return;
-    await supabase.from('employees').delete().eq('id', id);
-    setEmployees(employees.filter((e) => e.id !== id));
+  const deleteProject = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this project?')) return;
+    await supabase.from('projects').delete().eq('id', id);
+    setProjects(projects.filter((p) => p.id !== id));
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <UserCheck className="w-6 h-6 text-blue-600 shrink-0" /> Employee & User Accounts
+    <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 bg-[#040D0C] text-[#E0E2EC] min-h-screen p-2 sm:p-4 md:p-6 font-sans">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#0B1E1C]/90 p-5 rounded-2xl border border-[#183B36] shadow-2xl relative overflow-hidden">
+        <div className="absolute -right-10 -top-10 w-40 h-40 bg-gradient-to-br from-[#1A5248]/30 via-[#277D6C]/10 to-transparent rounded-full blur-2xl pointer-events-none" />
+        <div className="relative z-10">
+          <h1 className="text-xl sm:text-2xl font-bold text-[#F0F2F5] flex items-center gap-2">
+            <FolderKanban className="w-6 h-6 text-[#6CE5D0] shrink-0" /> IT Projects & ERP Operations
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500">
-            Create employee portal credentials and manage IT department roles
+          <p className="text-xs sm:text-sm text-[#8DA09D]">
+            Schedule projects, assign tech teams, set milestones, and track deliveries
           </p>
         </div>
         <button
-          onClick={() => setShowModal(true)}
-          className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 text-sm shadow-xs transition-colors shrink-0 cursor-pointer"
+          onClick={openCreateModal}
+          className="w-full sm:w-auto relative z-10 bg-gradient-to-r from-[#5BE3CA] via-[#34A08B] to-[#257A6A] hover:from-[#72F5DE] hover:to-[#34A08B] text-[#051815] font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 text-sm shadow-lg shadow-[#000000]/50 transition-all border border-[#8BFFEC]/40 shrink-0 cursor-pointer"
         >
-          <Plus className="w-4 h-4" /> Add Employee User
+          <Plus className="w-4 h-4 text-[#051815]" /> Create & Schedule Project
         </button>
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+        <div className="fixed inset-0 bg-[#020807]/80 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
           <form
-            onSubmit={createEmployee}
-            className="bg-white rounded-xl p-5 sm:p-6 w-full max-w-md space-y-4 shadow-xl my-auto"
+            onSubmit={saveProject}
+            className="bg-[#0B1E1C] rounded-3xl p-5 sm:p-6 w-full max-w-lg space-y-4 shadow-2xl my-auto border border-[#1E4B43] text-[#E0E2EC]"
           >
-            <h2 className="text-lg font-bold text-slate-900 border-b pb-3">Create Employee Account</h2>
-            
-            <div>
-              <label className="text-xs font-semibold text-slate-600 block mb-1">Full Name *</label>
-              <input
-                type="text"
-                required
-                placeholder="John Doe"
-                className="w-full p-2.5 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:ring-2 focus:ring-blue-600"
-                value={formData.full_name}
-                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-              />
-            </div>
+            <h2 className="text-lg font-bold text-[#F0F2F5] border-b border-[#163833] pb-3">
+              {editingProject ? 'Edit Project Schedule' : 'Schedule New Project'}
+            </h2>
 
-            <div>
-              <label className="text-xs font-semibold text-slate-600 block mb-1">Work Email *</label>
-              <div className="relative">
-                <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="email"
-                  required
-                  placeholder="employee@itcompany.com"
-                  className="w-full pl-9 p-2.5 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:ring-2 focus:ring-blue-600"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-slate-600 block mb-1">Portal Login Password *</label>
-              <div className="relative">
-                <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="password"
-                  required
-                  placeholder="••••••••"
-                  className="w-full pl-9 p-2.5 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:ring-2 focus:ring-blue-600"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-semibold text-slate-600 block mb-1">Role</label>
+                <label className="text-xs font-semibold text-[#8DA09D] block mb-1">Project Name *</label>
                 <input
                   type="text"
                   required
-                  placeholder="Frontend Developer"
-                  className="w-full p-2.5 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:ring-2 focus:ring-blue-600"
-                  value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  placeholder="ERP System Migration"
+                  className="w-full p-2.5 border border-[#1E4B43] rounded-xl text-sm bg-[#061513] text-[#E0E2EC] placeholder-[#5B736F] focus:bg-[#0E2824] focus:ring-2 focus:ring-[#277D6C] focus:outline-none transition-all"
+                  value={formData.project_name}
+                  onChange={(e) => setFormData({ ...formData, project_name: e.target.value })}
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-600 block mb-1">Department</label>
+                <label className="text-xs font-semibold text-[#8DA09D] block mb-1">Client Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Enterprise Client Corp"
+                  className="w-full p-2.5 border border-[#1E4B43] rounded-xl text-sm bg-[#061513] text-[#E0E2EC] placeholder-[#5B736F] focus:bg-[#0E2824] focus:ring-2 focus:ring-[#277D6C] focus:outline-none transition-all"
+                  value={formData.client_name}
+                  onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-[#8DA09D] block mb-1">Start Date</label>
+                <input
+                  type="date"
+                  className="w-full p-2.5 border border-[#1E4B43] rounded-xl text-sm bg-[#061513] text-[#E0E2EC] focus:bg-[#0E2824] focus:ring-2 focus:ring-[#277D6C] focus:outline-none transition-all"
+                  value={formData.start_date}
+                  onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-[#8DA09D] block mb-1">Due Date</label>
+                <input
+                  type="date"
+                  className="w-full p-2.5 border border-[#1E4B43] rounded-xl text-sm bg-[#061513] text-[#E0E2EC] focus:bg-[#0E2824] focus:ring-2 focus:ring-[#277D6C] focus:outline-none transition-all"
+                  value={formData.due_date}
+                  onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-[#8DA09D] block mb-1">Budget ($)</label>
+                <input
+                  type="number"
+                  placeholder="15000"
+                  className="w-full p-2.5 border border-[#1E4B43] rounded-xl text-sm bg-[#061513] text-[#E0E2EC] placeholder-[#5B736F] focus:bg-[#0E2824] focus:ring-2 focus:ring-[#277D6C] focus:outline-none transition-all"
+                  value={formData.budget || ''}
+                  onChange={(e) => setFormData({ ...formData, budget: Number(e.target.value) })}
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-[#8DA09D] block mb-1">Status</label>
                 <select
-                  className="w-full p-2.5 border border-slate-200 rounded-lg text-sm bg-white text-slate-900 focus:ring-2 focus:ring-blue-600"
-                  value={formData.department}
-                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                  className="w-full p-2.5 border border-[#1E4B43] rounded-xl text-sm bg-[#061513] text-[#E0E2EC] focus:bg-[#0E2824] focus:ring-2 focus:ring-[#277D6C] focus:outline-none transition-all cursor-pointer"
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                 >
-                  <option value="Engineering">Engineering</option>
-                  <option value="Cybersecurity">Cybersecurity</option>
-                  <option value="Infrastructure">Infrastructure</option>
-                  <option value="DevOps">DevOps</option>
-                  <option value="UI/UX Design">UI/UX Design</option>
+                  <option value="Planning" className="bg-[#0B1E1C] text-[#E0E2EC]">Planning</option>
+                  <option value="In Progress" className="bg-[#0B1E1C] text-[#E0E2EC]">In Progress</option>
+                  <option value="Testing" className="bg-[#0B1E1C] text-[#E0E2EC]">Testing</option>
+                  <option value="Completed" className="bg-[#0B1E1C] text-[#E0E2EC]">Completed</option>
+                  <option value="On Hold" className="bg-[#0B1E1C] text-[#E0E2EC]">On Hold</option>
                 </select>
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t">
+            <div>
+              <label className="text-xs font-semibold text-[#8DA09D] block mb-1">Assigned Employee</label>
+              <select
+                className="w-full p-2.5 border border-[#1E4B43] rounded-xl text-sm bg-[#061513] text-[#E0E2EC] focus:bg-[#0E2824] focus:ring-2 focus:ring-[#277D6C] focus:outline-none transition-all cursor-pointer"
+                value={formData.assigned_employee_id}
+                onChange={(e) => setFormData({ ...formData, assigned_employee_id: e.target.value })}
+              >
+                <option value="" className="bg-[#0B1E1C] text-[#E0E2EC]">-- Unassigned --</option>
+                {employees.map((emp) => (
+                  <option key={emp.id} value={emp.id} className="bg-[#0B1E1C] text-[#E0E2EC]">
+                    {emp.full_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-[#8DA09D] block mb-1">Project Instructions</label>
+              <textarea
+                rows={3}
+                placeholder="Details & deliverable requirements..."
+                className="w-full p-2.5 border border-[#1E4B43] rounded-xl text-sm bg-[#061513] text-[#E0E2EC] placeholder-[#5B736F] focus:bg-[#0E2824] focus:ring-2 focus:ring-[#277D6C] focus:outline-none transition-all"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-[#163833]">
               <button
                 type="button"
                 onClick={() => setShowModal(false)}
-                className="px-4 py-2 border rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"
+                className="px-4 py-2 border border-[#1E4B43] rounded-xl text-sm font-semibold text-[#8DA09D] hover:bg-[#143B35] hover:text-[#E0E2EC] transition-all cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                className="px-4 py-2 bg-gradient-to-r from-[#18453E] via-[#225F56] to-[#2B7D70] border border-[#277D6C]/60 text-[#72F5DE] rounded-xl text-sm font-bold hover:opacity-90 transition-all shadow-md cursor-pointer"
               >
-                Create Account
+                Save Project
               </button>
             </div>
           </form>
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {employees.map((emp) => (
-          <div
-            key={emp.id}
-            className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs relative group flex flex-col justify-between space-y-4"
-          >
-            <div>
-              <div className="flex items-start justify-between pr-6">
-                <div>
-                  <h3 className="font-bold text-base text-slate-900">{emp.full_name}</h3>
-                  <p className="text-xs text-blue-600 font-semibold">{emp.role}</p>
-                </div>
-                <button
-                  onClick={() => deleteEmployee(emp.id)}
-                  className="text-slate-400 hover:text-red-500 p-1 rounded-md transition-colors"
-                  title="Delete User Account"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-              <p className="text-xs text-slate-500 mt-2 flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                <span className="truncate">{emp.email}</span>
-              </p>
-            </div>
-
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-              <span className="font-medium text-slate-600">{emp.department}</span>
-              <span className="bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-md font-semibold">
-                {emp.status}
-              </span>
-            </div>
+      {/* Responsive Table / Card View */}
+      <div className="bg-[#0B1E1C]/90 rounded-2xl border border-[#183B36] shadow-2xl overflow-hidden">
+        {loading ? (
+          <div className="p-8 text-center text-[#8DA09D] text-sm">Loading projects database...</div>
+        ) : projects.length === 0 ? (
+          <div className="p-8 text-center text-[#8DA09D] text-sm">No projects active.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[850px]">
+              <thead className="bg-[#061513] border-b border-[#163833] text-[#8DA09D] font-semibold uppercase text-xs">
+                <tr>
+                  <th className="p-4">Project / Client</th>
+                  <th className="p-4">Assigned Employee</th>
+                  <th className="p-4">Schedule Dates</th>
+                  <th className="p-4">Budget</th>
+                  <th className="p-4">Status</th>
+                  <th className="p-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#14312B] text-sm">
+                {projects.map((project) => {
+                  const assignedStaff = employees.find((e) => e.id === project.assigned_employee_id);
+                  return (
+                    <tr key={project.id} className="hover:bg-[#112E29]/60 transition-colors">
+                      <td className="p-4">
+                        <div className="font-bold text-[#F0F2F5]">{project.project_name}</div>
+                        <div className="text-xs text-[#8DA09D] font-medium">{project.client_name}</div>
+                      </td>
+                      <td className="p-4">
+                        {assignedStaff ? (
+                          <span className="font-semibold text-[#C2D6D3] flex items-center gap-1">
+                            <UserCheck className="w-3.5 h-3.5 text-[#6CE5D0]" />
+                            {assignedStaff.full_name}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-[#5B736F] italic">Unassigned</span>
+                        )}
+                      </td>
+                      <td className="p-4 text-xs font-medium text-[#8DA09D]">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3.5 h-3.5 text-[#5B736F]" />
+                          <span>
+                            {project.start_date || 'N/A'} → {project.due_date || 'No Due Date'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="p-4 font-bold text-[#F0F2F5]">${project.budget?.toLocaleString()}</td>
+                      <td className="p-4">
+                        <span className="bg-[#123630] border border-[#23685C] px-2.5 py-1 rounded-md text-xs font-bold text-[#6CE5D0]">
+                          {project.status}
+                        </span>
+                      </td>
+                      <td className="p-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => openEditModal(project)}
+                            className="p-1.5 text-[#8DA09D] hover:text-[#6CE5D0] hover:bg-[#143B35] rounded-lg transition-colors cursor-pointer"
+                            title="Edit Project"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => deleteProject(project.id)}
+                            className="p-1.5 text-[#8DA09D] hover:text-[#FF8B8B] hover:bg-[#3D1414] rounded-lg transition-colors cursor-pointer"
+                            title="Delete Project"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-        ))}
+        )}
       </div>
     </div>
   );
@@ -2891,7 +2066,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import {
   Download, Calendar, CheckCircle2, FileText,
-  Bot, UserCheck, Trash2, Edit, Eye, X, Filter, Sparkles, ChevronRight
+  Bot, UserCheck, Trash2, Edit, Eye, X, Filter, Sparkles, ChevronRight, User
 } from 'lucide-react';
 
 interface Lead {
@@ -3116,55 +2291,55 @@ export default function WebsiteContactFormEnquiriesPage() {
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-6 font-sans pb-12 px-2 sm:px-4 md:px-6">
+    <div className="w-full max-w-7xl mx-auto space-y-6 font-sans pb-12 px-2 sm:px-4 md:px-6 bg-[#040D0C] text-[#E0E2EC] min-h-screen">
       
       {/* 1. Header Container */}
-      <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-300 relative overflow-hidden">
-        <div className="absolute -right-10 -top-10 w-40 h-40 bg-gradient-to-br from-blue-500/10 via-indigo-500/5 to-transparent rounded-full blur-2xl pointer-events-none" />
+      <div className="bg-[#0B1E1C]/90 p-5 sm:p-6 rounded-3xl border border-[#183B36] shadow-2xl relative overflow-hidden">
+        <div className="absolute -right-10 -top-10 w-40 h-40 bg-gradient-to-br from-[#1A5248]/30 via-[#277D6C]/10 to-transparent rounded-full blur-2xl pointer-events-none" />
         
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 relative z-10">
           <div className="space-y-1.5 max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50/80 border border-blue-100 text-blue-600 text-xs font-semibold">
-              <Sparkles className="w-3.5 h-3.5" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#143B35] border border-[#277D6C]/50 text-[#6CE5D0] text-xs font-semibold">
+              <Sparkles className="w-3.5 h-3.5 text-[#6CE5D0]" />
               <span>Inbound Web Leads Engine</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
-              <div className="p-2.5 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 text-white shadow-md shadow-blue-500/20 shrink-0">
-                <UserCheck className="w-6 h-6" />
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#F0F2F5] tracking-tight flex items-center gap-3">
+              <div className="p-2.5 rounded-2xl bg-gradient-to-tr from-[#164940] via-[#22685B] to-[#34A08B] text-[#E0E2EC] shadow-md shadow-[#000000]/40 shrink-0 border border-[#277D6C]/40">
+                <UserCheck className="w-6 h-6 text-[#72F5DE]" />
               </div>
               Website Contact Form Enquiries
             </h1>
-            <p className="text-xs sm:text-sm text-slate-500 leading-relaxed pt-1">
-              Displaying only website contact form enquiries. Select <span className="font-semibold text-slate-800 bg-slate-100 px-2 py-0.5 rounded-md">assign to leads</span> to route an enquiry into the main Sales Lead Pipeline.
+            <p className="text-xs sm:text-sm text-[#8DA09D] leading-relaxed pt-1">
+              Displaying only website contact form enquiries. Select <span className="font-semibold text-[#6CE5D0] bg-[#12312C] px-2 py-0.5 rounded-md border border-[#1D4A42]">assign to leads</span> to route an enquiry into the main Sales Lead Pipeline.
             </p>
           </div>
 
           <button
             onClick={exportCSV}
-            className="group relative inline-flex items-center justify-center gap-2.5 px-5 py-3 rounded-2xl font-semibold text-xs sm:text-sm text-white shadow-lg shadow-emerald-600/20 bg-gradient-to-r from-emerald-500 via-teal-600 to-emerald-700 hover:from-emerald-600 hover:to-teal-800 active:scale-[0.98] transition-all duration-200 cursor-pointer shrink-0 border border-emerald-400/30 overflow-hidden"
+            className="group relative inline-flex items-center justify-center gap-2.5 px-5 py-3 rounded-2xl font-semibold text-xs sm:text-sm text-[#051815] shadow-lg shadow-[#000000]/50 bg-gradient-to-r from-[#5BE3CA] via-[#34A08B] to-[#257A6A] hover:from-[#72F5DE] hover:to-[#34A08B] active:scale-[0.98] transition-all duration-200 cursor-pointer shrink-0 border border-[#8BFFEC]/40 overflow-hidden font-bold"
           >
-            <Download className="w-4 h-4 transition-transform group-hover:-translate-y-0.5" />
+            <Download className="w-4 h-4 transition-transform group-hover:-translate-y-0.5 text-[#051815]" />
             <span>Export Enquiries CSV</span>
           </button>
         </div>
       </div>
 
       {/* 2. Date Filter Bar Container */}
-      <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+      <div className="bg-[#0B1E1C]/90 p-4 sm:p-5 rounded-3xl border border-[#183B36] shadow-xl flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full md:w-auto">
-          <div className="flex items-center gap-2 text-slate-800 font-bold text-xs uppercase tracking-wider shrink-0">
-            <Filter className="w-4 h-4 text-blue-600" />
+          <div className="flex items-center gap-2 text-[#8DA09D] font-bold text-xs uppercase tracking-wider shrink-0">
+            <Filter className="w-4 h-4 text-[#6CE5D0]" />
             <span>Date Range:</span>
           </div>
-          <div className="flex flex-wrap bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/60 text-xs font-semibold w-full sm:w-auto">
+          <div className="flex flex-wrap bg-[#061513] p-1.5 rounded-2xl border border-[#163833] text-xs font-semibold w-full sm:w-auto">
             {(['all', 'daily', 'weekly', 'monthly', 'custom'] as const).map((r) => (
               <button
                 key={r}
                 onClick={() => setDateRange(r)}
                 className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl capitalize transition-all duration-200 cursor-pointer text-center ${
                   dateRange === r
-                    ? 'bg-white text-blue-600 shadow-sm font-bold border border-slate-200/50'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+                    ? 'bg-[#18453E] text-[#72F5DE] shadow-sm font-bold border border-[#277D6C]/60'
+                    : 'text-[#8DA09D] hover:text-[#E0E2EC] hover:bg-[#0E2824]'
                 }`}
               >
                 {r === 'all' ? 'All Enquiries' : r}
@@ -3174,18 +2349,18 @@ export default function WebsiteContactFormEnquiriesPage() {
         </div>
 
         {dateRange === 'custom' && (
-          <div className="flex items-center gap-2 text-xs bg-slate-50 p-2 rounded-2xl border border-slate-200/80">
-            <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
+          <div className="flex items-center gap-2 text-xs bg-[#061513] p-2 rounded-2xl border border-[#163833]">
+            <Calendar className="w-4 h-4 text-[#8DA09D] shrink-0" />
             <input
               type="date"
-              className="px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              className="px-2.5 py-1.5 rounded-xl border border-[#1E4B43] bg-[#0E2824] text-[#E0E2EC] font-medium focus:outline-none focus:ring-2 focus:ring-[#277D6C]"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
             />
-            <span className="text-slate-400 font-medium">to</span>
+            <span className="text-[#8DA09D] font-medium">to</span>
             <input
               type="date"
-              className="px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              className="px-2.5 py-1.5 rounded-xl border border-[#1E4B43] bg-[#0E2824] text-[#E0E2EC] font-medium focus:outline-none focus:ring-2 focus:ring-[#277D6C]"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
             />
@@ -3195,13 +2370,13 @@ export default function WebsiteContactFormEnquiriesPage() {
 
       {/* 3. View Tabs Navigation */}
       <div className="w-full overflow-x-auto no-scrollbar py-1">
-        <div className="inline-flex items-center gap-2 p-1.5 bg-white rounded-2xl border border-slate-200/80 shadow-xs max-w-full min-w-max">
+        <div className="inline-flex items-center gap-2 p-1.5 bg-[#0B1E1C]/90 rounded-2xl border border-[#183B36] shadow-xl max-w-full min-w-max">
           <button
             onClick={() => setActiveTab('details')}
             className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 cursor-pointer flex items-center gap-2 ${
               activeTab === 'details'
-                ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white shadow-md shadow-blue-500/20'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                ? 'bg-[#18453E] text-[#72F5DE] shadow-md border border-[#277D6C]/60'
+                : 'text-[#8DA09D] hover:text-[#E0E2EC] hover:bg-[#0E2824]'
             }`}
           >
             Detailed Enquiry Table
@@ -3210,8 +2385,8 @@ export default function WebsiteContactFormEnquiriesPage() {
             onClick={() => setActiveTab('pipeline')}
             className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 cursor-pointer flex items-center gap-2 ${
               activeTab === 'pipeline'
-                ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white shadow-md shadow-blue-500/20'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                ? 'bg-[#18453E] text-[#72F5DE] shadow-md border border-[#277D6C]/60'
+                : 'text-[#8DA09D] hover:text-[#E0E2EC] hover:bg-[#0E2824]'
             }`}
           >
             Visual Enquiry Pipeline
@@ -3220,8 +2395,8 @@ export default function WebsiteContactFormEnquiriesPage() {
             onClick={() => setActiveTab('automation')}
             className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 cursor-pointer flex items-center gap-2 ${
               activeTab === 'automation'
-                ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white shadow-md shadow-blue-500/20'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                ? 'bg-[#18453E] text-[#72F5DE] shadow-md border border-[#277D6C]/60'
+                : 'text-[#8DA09D] hover:text-[#E0E2EC] hover:bg-[#0E2824]'
             }`}
           >
             Form AI & Webhook Automation
@@ -3231,29 +2406,29 @@ export default function WebsiteContactFormEnquiriesPage() {
 
       {/* Requirements Full Text Zoom Modal */}
       {viewRequirements && (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl p-6 sm:p-7 w-full max-w-lg space-y-5 shadow-2xl my-auto relative border border-slate-200/80 animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
+        <div className="fixed inset-0 bg-[#020807]/80 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-[#0B1E1C] rounded-3xl p-6 sm:p-7 w-full max-w-lg space-y-5 shadow-2xl my-auto relative border border-[#1E4B43] animate-in zoom-in-95 duration-200 text-[#E0E2EC]">
+            <div className="flex items-center justify-between border-b border-[#163833] pb-4">
+              <h3 className="text-base font-bold text-[#F0F2F5] flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-[#143B35] text-[#6CE5D0]">
                   <FileText className="w-5 h-5" />
                 </div>
                 Enquiry Requirements & Details
               </h3>
               <button
                 onClick={() => setViewRequirements(null)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                className="p-1.5 rounded-xl text-[#8DA09D] hover:text-[#E0E2EC] hover:bg-[#143B35] transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="max-h-[60vh] overflow-y-auto p-4 sm:p-5 bg-slate-50/80 rounded-2xl border border-slate-200/70 text-sm text-slate-800 whitespace-pre-wrap leading-relaxed font-sans">
+            <div className="max-h-[60vh] overflow-y-auto p-4 sm:p-5 bg-[#061513] rounded-2xl border border-[#163833] text-sm text-[#D3E4E0] whitespace-pre-wrap leading-relaxed font-sans">
               {viewRequirements}
             </div>
             <div className="flex justify-end pt-2">
               <button
                 onClick={() => setViewRequirements(null)}
-                className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold transition-all duration-150 shadow-sm cursor-pointer"
+                className="px-5 py-2.5 bg-[#18453E] hover:bg-[#225F56] text-[#72F5DE] border border-[#277D6C]/60 rounded-xl text-xs font-semibold transition-all duration-150 shadow-sm cursor-pointer"
               >
                 Close View
               </button>
@@ -3264,20 +2439,20 @@ export default function WebsiteContactFormEnquiriesPage() {
 
       {/* TAB 1: Detailed Enquiry Table */}
       {activeTab === 'details' && (
-        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
+        <div className="bg-[#0B1E1C]/90 rounded-3xl border border-[#183B36] shadow-xl overflow-hidden">
           {loading ? (
-            <div className="p-12 text-center text-slate-500 text-sm font-medium flex flex-col items-center justify-center gap-3">
-              <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            <div className="p-12 text-center text-[#8DA09D] text-sm font-medium flex flex-col items-center justify-center gap-3">
+              <div className="w-8 h-8 border-3 border-[#6CE5D0] border-t-transparent rounded-full animate-spin" />
               <span>Loading website contact form enquiries...</span>
             </div>
           ) : filteredLeads.length === 0 ? (
-            <div className="p-12 text-center text-slate-500 text-sm font-medium">
+            <div className="p-12 text-center text-[#8DA09D] text-sm font-medium">
               No website contact enquiries found for this filter.
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[1100px]">
-                <thead className="bg-slate-50/80 border-b border-slate-200/80 text-slate-500 font-bold uppercase text-[11px] tracking-wider">
+                <thead className="bg-[#061513] border-b border-[#163833] text-[#8DA09D] font-bold uppercase text-[11px] tracking-wider">
                   <tr>
                     <th className="py-4 px-5">Name</th>
                     <th className="py-4 px-5">Contact Details</th>
@@ -3291,52 +2466,57 @@ export default function WebsiteContactFormEnquiriesPage() {
                     <th className="py-4 px-5 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-xs">
+                <tbody className="divide-y divide-[#14312B] text-xs">
                   {filteredLeads.map((lead) => {
                     const isAssigned = lead.assigned_to === 'assigned' || lead.assigned_to === 'Assigned';
                     const formattedDate = formatDateDDMMYYYY(lead.created_at);
 
                     return (
-                      <tr key={lead.id} className="hover:bg-blue-50/30 transition-colors group">
-                        <td className="py-4 px-5 font-bold text-slate-900 whitespace-nowrap">{lead.name}</td>
-                        <td className="py-4 px-5 font-medium text-slate-700 whitespace-pre-line leading-relaxed">
+                      <tr key={lead.id} className="hover:bg-[#112E29]/60 transition-colors group">
+                        <td className="py-4 px-5 font-bold text-[#F0F2F5] whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <User className="w-4 h-4 text-[#6CE5D0] shrink-0" />
+                            <span>{lead.name}</span>
+                          </div>
+                        </td>
+                        <td className="py-4 px-5 font-medium text-[#C2D6D3] whitespace-pre-line leading-relaxed">
                           {lead.contact_info || (
                             <>
-                              {lead.email && <div className="text-slate-800">{lead.email}</div>}
-                              {lead.phone && <div className="text-slate-500 text-[11px]">{lead.phone}</div>}
+                              {lead.email && <div className="text-[#E0E2EC]">{lead.email}</div>}
+                              {lead.phone && <div className="text-[#8DA09D] text-[11px]">{lead.phone}</div>}
                             </>
                           )}
                         </td>
-                        <td className="py-4 px-5 text-slate-600 font-medium whitespace-nowrap">{lead.company || '-'}</td>
+                        <td className="py-4 px-5 text-[#A2B8B4] font-medium whitespace-nowrap">{lead.company || '-'}</td>
                         <td className="py-4 px-5 whitespace-nowrap">
-                          <span className="inline-flex items-center bg-blue-50 text-blue-700 border border-blue-200/80 px-2.5 py-1 rounded-lg text-[11px] font-bold">
+                          <span className="inline-flex items-center bg-[#123630] text-[#6CE5D0] border border-[#23685C] px-2.5 py-1 rounded-lg text-[11px] font-bold">
                             {lead.source || 'Website'}
                           </span>
                         </td>
-                        <td className="py-4 px-5 text-slate-500 whitespace-nowrap">{lead.campaign_name || 'Website Contact Form'}</td>
+                        <td className="py-4 px-5 text-[#8DA09D] whitespace-nowrap">{lead.campaign_name || 'Website Contact Form'}</td>
                         <td className="py-4 px-5 max-w-xs">
                           {lead.requirements ? (
                             <div className="flex items-center gap-2">
-                              <span className="truncate text-slate-700 block max-w-[180px]">
+                              <span className="truncate text-[#C2D6D3] block max-w-[180px]">
                                 {lead.requirements}
                               </span>
                               <button
                                 onClick={() => setViewRequirements(lead.requirements || '')}
-                                className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors shrink-0 cursor-pointer"
+                                className="p-1 text-[#6CE5D0] hover:text-[#8BFFEC] hover:bg-[#18453E] rounded-lg transition-colors shrink-0 cursor-pointer"
                                 title="Zoom / View Full Requirements"
                               >
                                 <Eye className="w-4 h-4" />
                               </button>
                             </div>
                           ) : (
-                            <span className="text-slate-400 italic">No notes</span>
+                            <span className="text-[#5B736F] italic">No notes</span>
                           )}
                         </td>
                         <td className="py-4 px-5 whitespace-nowrap">
                           <span className={`px-3 py-1 rounded-full text-[11px] font-bold inline-block border ${
-                            lead.status === 'Converted' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                            lead.status === 'Assigned' ? 'bg-purple-50 text-purple-700 border-purple-200' :
-                            'bg-slate-100 text-slate-700 border-slate-200'
+                            lead.status === 'Converted' ? 'bg-[#123A31] text-[#6CE5D0] border-[#257A6A]' :
+                            lead.status === 'Assigned' ? 'bg-[#2A2140] text-[#D0B3FF] border-[#533980]' :
+                            'bg-[#122A26] text-[#A2B8B4] border-[#1D4A42]'
                           }`}>
                             {lead.status}
                           </span>
@@ -3345,29 +2525,29 @@ export default function WebsiteContactFormEnquiriesPage() {
                           <select
                             className={`px-3 py-1.5 rounded-xl border text-xs font-bold cursor-pointer transition-all duration-150 focus:outline-none ${
                               isAssigned
-                                ? 'bg-purple-50 border-purple-200 text-purple-700 shadow-xs'
-                                : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-white'
+                                ? 'bg-[#2A2140] border-[#533980] text-[#D0B3FF] shadow-xs'
+                                : 'bg-[#0E2824] border-[#1E4B43] text-[#8DA09D] hover:bg-[#143B35]'
                             }`}
                             value={isAssigned ? 'assigned' : 'not_assigned'}
                             onChange={(e) => updateAssignment(lead.id, e.target.value)}
                           >
-                            <option value="not_assigned">not assign to leads</option>
-                            <option value="assigned">assign to leads</option>
+                            <option value="not_assigned" className="bg-[#0B1E1C] text-[#E0E2EC]">not assign to leads</option>
+                            <option value="assigned" className="bg-[#0B1E1C] text-[#E0E2EC]">assign to leads</option>
                           </select>
                         </td>
-                        <td className="py-4 px-5 font-semibold text-slate-500 whitespace-nowrap">{formattedDate}</td>
+                        <td className="py-4 px-5 font-semibold text-[#8DA09D] whitespace-nowrap">{formattedDate}</td>
                         <td className="py-4 px-5 text-right whitespace-nowrap">
                           <div className="flex items-center justify-end gap-1">
                             <button
                               onClick={() => openEditModal(lead)}
-                              className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                              className="p-1.5 text-[#8DA09D] hover:text-[#6CE5D0] hover:bg-[#143B35] rounded-lg transition-colors cursor-pointer"
                               title="Edit Enquiry"
                             >
                               <Edit className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => deleteLead(lead.id)}
-                              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                              className="p-1.5 text-[#8DA09D] hover:text-[#FF8B8B] hover:bg-[#3D1414] rounded-lg transition-colors cursor-pointer"
                               title="Delete Enquiry"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -3390,26 +2570,26 @@ export default function WebsiteContactFormEnquiriesPage() {
           {leadFlow.map((stage) => {
             const stageLeads = filteredLeads.filter((l) => l.status === stage);
             return (
-              <div key={stage} className="bg-slate-50/80 p-3.5 rounded-3xl border border-slate-200/80 min-w-[220px] flex flex-col justify-between">
+              <div key={stage} className="bg-[#0B1E1C]/90 p-3.5 rounded-3xl border border-[#183B36] min-w-[220px] flex flex-col justify-between">
                 <div>
-                  <div className="flex justify-between items-center border-b border-slate-200/80 pb-3 mb-3">
-                    <span className="font-extrabold text-xs text-slate-800 tracking-tight">{stage}</span>
-                    <span className="bg-white border border-slate-200 text-slate-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-2xs">
+                  <div className="flex justify-between items-center border-b border-[#163833] pb-3 mb-3">
+                    <span className="font-extrabold text-xs text-[#E0E2EC] tracking-tight">{stage}</span>
+                    <span className="bg-[#12312C] border border-[#23685C] text-[#6CE5D0] text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-2xs">
                       {stageLeads.length}
                     </span>
                   </div>
 
                   <div className="space-y-2.5">
                     {stageLeads.map((l) => (
-                      <div key={l.id} className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-xs transition-all duration-200 space-y-2">
-                        <div className="font-bold text-xs text-slate-900 truncate">{l.name}</div>
-                        <div className="text-[11px] text-slate-500 truncate">{l.company || l.email}</div>
-                        <div className="text-[10px] text-slate-400 flex justify-between items-center pt-2 border-t border-slate-100">
+                      <div key={l.id} className="bg-[#061513] p-3.5 rounded-2xl border border-[#183B36] shadow-2xs hover:border-[#277D6C]/60 transition-all duration-200 space-y-2">
+                        <div className="font-bold text-xs text-[#F0F2F5] truncate">{l.name}</div>
+                        <div className="text-[11px] text-[#8DA09D] truncate">{l.company || l.email}</div>
+                        <div className="text-[10px] text-[#5B736F] flex justify-between items-center pt-2 border-t border-[#122A26]">
                           <span className="font-medium">{formatDateDDMMYYYY(l.created_at)}</span>
                           {l.requirements && (
                             <button
                               onClick={() => setViewRequirements(l.requirements || '')}
-                              className="text-blue-600 hover:text-blue-800 font-bold cursor-pointer inline-flex items-center gap-0.5"
+                              className="text-[#6CE5D0] hover:text-[#8BFFEC] font-bold cursor-pointer inline-flex items-center gap-0.5"
                             >
                               <span>View</span>
                               <ChevronRight className="w-3 h-3" />
@@ -3429,21 +2609,21 @@ export default function WebsiteContactFormEnquiriesPage() {
       {/* TAB 3: Automation & Form Webhooks */}
       {activeTab === 'automation' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white p-6 sm:p-7 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2.5 border-b border-slate-100 pb-4">
-              <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
+          <div className="bg-[#0B1E1C]/90 p-6 sm:p-7 rounded-3xl border border-[#183B36] shadow-xl space-y-4">
+            <h3 className="text-base font-bold text-[#F0F2F5] flex items-center gap-2.5 border-b border-[#163833] pb-4">
+              <div className="p-2 rounded-xl bg-[#143B35] text-[#6CE5D0]">
                 <Bot className="w-5 h-5" />
               </div>
               Website Contact Form Webhook Integration
             </h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Connect your external marketing site contact form directly to this CRM via API. Enquiries automatically post with source <span className="font-semibold text-slate-800 bg-slate-100 px-2 py-0.5 rounded-md">&quot;Website&quot;</span>.
+            <p className="text-xs text-[#8DA09D] leading-relaxed">
+              Connect your external marketing site contact form directly to this CRM via API. Enquiries automatically post with source <span className="font-semibold text-[#6CE5D0] bg-[#12312C] px-2 py-0.5 rounded-md border border-[#1D4A42]">&quot;Website&quot;</span>.
             </p>
-            <div className="bg-slate-950 text-slate-200 p-5 rounded-2xl text-xs font-mono overflow-x-auto space-y-2 border border-slate-800 shadow-inner">
-              <div className="text-emerald-400 font-semibold">// Endpoint URL</div>
-              <div className="text-slate-300">POST https://your-crm-domain.com/api/contact</div>
-              <div className="text-emerald-400 font-semibold pt-2">// Request Payload JSON</div>
-              <div className="text-slate-300 leading-relaxed">
+            <div className="bg-[#030B0A] text-[#D0E5E1] p-5 rounded-2xl text-xs font-mono overflow-x-auto space-y-2 border border-[#143B35] shadow-inner">
+              <div className="text-[#6CE5D0] font-semibold">// Endpoint URL</div>
+              <div className="text-[#8DA09D]">POST https://your-crm-domain.com/api/contact</div>
+              <div className="text-[#6CE5D0] font-semibold pt-2">// Request Payload JSON</div>
+              <div className="text-[#C2D6D3] leading-relaxed">
                 {`{
   "name": "Jane Doe",
   "email": "jane@company.com",
@@ -3455,21 +2635,21 @@ export default function WebsiteContactFormEnquiriesPage() {
             </div>
           </div>
 
-          <div className="bg-white p-6 sm:p-7 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2.5 border-b border-slate-100 pb-4">
-              <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
+          <div className="bg-[#0B1E1C]/90 p-6 sm:p-7 rounded-3xl border border-[#183B36] shadow-xl space-y-4">
+            <h3 className="text-base font-bold text-[#F0F2F5] flex items-center gap-2.5 border-b border-[#163833] pb-4">
+              <div className="p-2 rounded-xl bg-[#143B35] text-[#6CE5D0]">
                 <CheckCircle2 className="w-5 h-5" />
               </div>
               Automated Enquiry Routing Rules
             </h3>
             <div className="space-y-3 text-xs">
-              <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80 space-y-1">
-                <span className="font-bold text-slate-800">1. Instant Status Tagging</span>
-                <p className="text-slate-500 leading-relaxed">Every submission from the website contact form is created with default status &quot;New&quot;.</p>
+              <div className="p-4 bg-[#061513] rounded-2xl border border-[#163833] space-y-1">
+                <span className="font-bold text-[#E0E2EC]">1. Instant Status Tagging</span>
+                <p className="text-[#8DA09D] leading-relaxed">Every submission from the website contact form is created with default status &quot;New&quot;.</p>
               </div>
-              <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80 space-y-1">
-                <span className="font-bold text-slate-800">2. Single-Click Sales Pipeline Promotion</span>
-                <p className="text-slate-500 leading-relaxed">Changing &quot;Assign Lead&quot; to &quot;assign to leads&quot; instantly changes status to &quot;Assigned&quot; and includes it in team lead assignments.</p>
+              <div className="p-4 bg-[#061513] rounded-2xl border border-[#163833] space-y-1">
+                <span className="font-bold text-[#E0E2EC]">2. Single-Click Sales Pipeline Promotion</span>
+                <p className="text-[#8DA09D] leading-relaxed">Changing &quot;Assign Lead&quot; to &quot;assign to leads&quot; instantly changes status to &quot;Assigned&quot; and includes it in team lead assignments.</p>
               </div>
             </div>
           </div>
@@ -3478,17 +2658,17 @@ export default function WebsiteContactFormEnquiriesPage() {
 
       {/* Edit Modal */}
       {showModal && editingLead && (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-[#020807]/80 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto animate-in fade-in duration-200">
           <form
             onSubmit={saveLead}
-            className="bg-white rounded-3xl p-6 sm:p-7 w-full max-w-lg space-y-4 shadow-2xl my-auto border border-slate-200/80 animate-in zoom-in-95 duration-200"
+            className="bg-[#0B1E1C] rounded-3xl p-6 sm:p-7 w-full max-w-lg space-y-4 shadow-2xl my-auto border border-[#1E4B43] animate-in zoom-in-95 duration-200 text-[#E0E2EC]"
           >
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h2 className="text-base font-bold text-slate-900">Edit Contact Form Enquiry</h2>
+            <div className="flex items-center justify-between border-b border-[#163833] pb-3">
+              <h2 className="text-base font-bold text-[#F0F2F5]">Edit Contact Form Enquiry</h2>
               <button
                 type="button"
                 onClick={closeModal}
-                className="p-1 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                className="p-1 rounded-xl text-[#8DA09D] hover:text-[#E0E2EC] hover:bg-[#143B35] transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -3496,21 +2676,21 @@ export default function WebsiteContactFormEnquiriesPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-semibold text-slate-600 block mb-1">Full Name *</label>
+                <label className="text-xs font-semibold text-[#8DA09D] block mb-1">Full Name *</label>
                 <input
                   type="text"
                   required
-                  className="w-full p-2.5 border border-slate-200 rounded-xl text-xs bg-slate-50/50 text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  className="w-full p-2.5 border border-[#1E4B43] rounded-xl text-xs bg-[#061513] text-[#E0E2EC] focus:bg-[#0E2824] focus:ring-2 focus:ring-[#277D6C] focus:border-[#277D6C] transition-all"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-600 block mb-1">Company</label>
+                <label className="text-xs font-semibold text-[#8DA09D] block mb-1">Company</label>
                 <input
                   type="text"
-                  className="w-full p-2.5 border border-slate-200 rounded-xl text-xs bg-slate-50/50 text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  className="w-full p-2.5 border border-[#1E4B43] rounded-xl text-xs bg-[#061513] text-[#E0E2EC] focus:bg-[#0E2824] focus:ring-2 focus:ring-[#277D6C] focus:border-[#277D6C] transition-all"
                   value={formData.company}
                   onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                 />
@@ -3518,10 +2698,10 @@ export default function WebsiteContactFormEnquiriesPage() {
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-slate-600 block mb-1">Contact Details (Email & Phone)</label>
+              <label className="text-xs font-semibold text-[#8DA09D] block mb-1">Contact Details (Email & Phone)</label>
               <textarea
                 rows={2}
-                className="w-full p-2.5 border border-slate-200 rounded-xl text-xs bg-slate-50/50 text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                className="w-full p-2.5 border border-[#1E4B43] rounded-xl text-xs bg-[#061513] text-[#E0E2EC] focus:bg-[#0E2824] focus:ring-2 focus:ring-[#277D6C] focus:border-[#277D6C] transition-all"
                 value={formData.contact_info}
                 onChange={(e) => setFormData({ ...formData, contact_info: e.target.value })}
               />
@@ -3529,52 +2709,52 @@ export default function WebsiteContactFormEnquiriesPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-semibold text-slate-600 block mb-1">Status</label>
+                <label className="text-xs font-semibold text-[#8DA09D] block mb-1">Status</label>
                 <select
-                  className="w-full p-2.5 border border-slate-200 rounded-xl text-xs bg-slate-50/50 text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer"
+                  className="w-full p-2.5 border border-[#1E4B43] rounded-xl text-xs bg-[#061513] text-[#E0E2EC] focus:bg-[#0E2824] focus:ring-2 focus:ring-[#277D6C] focus:border-[#277D6C] transition-all cursor-pointer"
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                 >
                   {leadFlow.map((s) => (
-                    <option key={s} value={s}>{s}</option>
+                    <option key={s} value={s} className="bg-[#0B1E1C] text-[#E0E2EC]">{s}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-600 block mb-1">Assign Lead</label>
+                <label className="text-xs font-semibold text-[#8DA09D] block mb-1">Assign Lead</label>
                 <select
-                  className="w-full p-2.5 border border-slate-200 rounded-xl text-xs bg-slate-50/50 text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer"
+                  className="w-full p-2.5 border border-[#1E4B43] rounded-xl text-xs bg-[#061513] text-[#E0E2EC] focus:bg-[#0E2824] focus:ring-2 focus:ring-[#277D6C] focus:border-[#277D6C] transition-all cursor-pointer"
                   value={formData.assigned_to}
                   onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
                 >
-                  <option value="not_assigned">not assign to leads</option>
-                  <option value="assigned">assign to leads</option>
+                  <option value="not_assigned" className="bg-[#0B1E1C] text-[#E0E2EC]">not assign to leads</option>
+                  <option value="assigned" className="bg-[#0B1E1C] text-[#E0E2EC]">assign to leads</option>
                 </select>
               </div>
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-slate-600 block mb-1">Requirements</label>
+              <label className="text-xs font-semibold text-[#8DA09D] block mb-1">Requirements</label>
               <textarea
                 rows={3}
-                className="w-full p-2.5 border border-slate-200 rounded-xl text-xs bg-slate-50/50 text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                className="w-full p-2.5 border border-[#1E4B43] rounded-xl text-xs bg-[#061513] text-[#E0E2EC] focus:bg-[#0E2824] focus:ring-2 focus:ring-[#277D6C] focus:border-[#277D6C] transition-all"
                 value={formData.requirements}
                 onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
               />
             </div>
 
-            <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+            <div className="flex justify-end gap-2 pt-3 border-t border-[#163833]">
               <button
                 type="button"
                 onClick={closeModal}
-                className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-all cursor-pointer"
+                className="px-4 py-2 border border-[#1E4B43] rounded-xl text-xs font-semibold text-[#8DA09D] hover:bg-[#143B35] hover:text-[#E0E2EC] transition-all cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white rounded-xl text-xs font-semibold hover:opacity-90 transition-all shadow-md shadow-blue-500/20 cursor-pointer"
+                className="px-5 py-2 bg-gradient-to-r from-[#18453E] via-[#225F56] to-[#2B7D70] border border-[#277D6C]/60 text-[#72F5DE] rounded-xl text-xs font-semibold hover:opacity-90 transition-all shadow-md cursor-pointer"
               >
                 Save Changes
               </button>
@@ -5049,9 +4229,6 @@ export default function DashboardLayout({
     { name: 'Leads Management', path: '/dashboard/leads', icon: Target },
     { name: 'IT Projects', path: '/dashboard/projects', icon: FolderKanban },
     { name: 'Service Tickets', path: '/dashboard/tickets', icon: Ticket },
-    { name: 'HR & Users', path: '/dashboard/hr', icon: UserCheck },
-    { name: 'Employee Workspace', path: '/dashboard/employee-portal', icon: Briefcase },
-    { name: 'ERP Chat', path: '/dashboard/chat', icon: MessageSquare },
   ];
 
   const currentSidebarWidth = isCollapsed ? COLLAPSED_WIDTH : sidebarWidth;

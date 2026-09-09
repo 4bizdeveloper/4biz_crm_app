@@ -158,7 +158,6 @@ export default function DashboardLayout({
 
   const menuItems = [
     { name: 'Overview', path: '/dashboard/overview', icon: LayoutDashboard },
-    { name: 'Website Enquiries', path: '/dashboard/website-contact-form-enquiries', icon: Globe },
     { name: 'Leads Management', path: '/dashboard/leads', icon: Target },
     { name: 'IT Projects', path: '/dashboard/projects', icon: FolderKanban },
     { name: 'Service Tickets', path: '/dashboard/tickets', icon: Ticket },
