@@ -17,3 +17,31 @@ body {
   font-family: var(--font-poppins), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
+
+/* Custom Scrollbar Styles for Theme Matching */
+
+/* WebKit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #04110d; /* Dark background matching sidebar/theme */
+}
+
+::-webkit-scrollbar-thumb {
+  background: #134037; /* Dark emerald tint matching default theme */
+  border-radius: 9999px;
+  border: 2px solid #04110d; /* Creates a clean padded effect */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2dd4bf; /* Vibrant teal/cyan glow on hover */
+}
+
+/* Firefox Support */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #134037 #04110d;
+}
