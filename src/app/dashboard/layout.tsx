@@ -162,9 +162,6 @@ export default function DashboardLayout({
     { name: 'Leads Management', path: '/dashboard/leads', icon: Target },
     { name: 'IT Projects', path: '/dashboard/projects', icon: FolderKanban },
     { name: 'Service Tickets', path: '/dashboard/tickets', icon: Ticket },
-    { name: 'HR & Users', path: '/dashboard/hr', icon: UserCheck },
-    { name: 'Employee Workspace', path: '/dashboard/employee-portal', icon: Briefcase },
-    { name: 'ERP Chat', path: '/dashboard/chat', icon: MessageSquare },
   ];
 
   const currentSidebarWidth = isCollapsed ? COLLAPSED_WIDTH : sidebarWidth;
