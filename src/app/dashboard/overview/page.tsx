@@ -46,12 +46,12 @@ function ModernDonutChart({
             cx={center}
             cy={center}
             r={radius}
-            className="stroke-slate-100"
+            className="stroke-[#132a2f]"
             strokeWidth={strokeWidth}
             fill="transparent"
           />
         </svg>
-        <span className="absolute text-xs text-slate-400 font-medium">No Data</span>
+        <span className="absolute text-xs text-[#527d7d] font-medium">No Data</span>
       </div>
     );
   }
@@ -87,8 +87,8 @@ function ModernDonutChart({
         })}
       </svg>
       <div className="absolute flex flex-col items-center justify-center text-center">
-        <span className="text-2xl font-extrabold text-slate-900 tracking-tight">{total}</span>
-        <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Total</span>
+        <span className="text-2xl font-extrabold text-[#e2f3f3] tracking-tight">{total}</span>
+        <span className="text-[10px] font-bold uppercase text-[#527d7d] tracking-wider">Total</span>
       </div>
     </div>
   );
@@ -247,9 +247,9 @@ export default function OverviewPage() {
     fetchOverviewData();
   }, [fetchOverviewData]);
 
-  // Donut chart color setup for Leads & Operations
+  // Donut chart color setup tailored for dark teal palette
   const leadDonutData = useMemo(() => {
-    const palette = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4'];
+    const palette = ['#4fd1c5', '#38b2ac', '#319795', '#2b6cb0', '#dd6b20', '#3182ce'];
     const keys = Object.keys(stats.leadsByStatus);
     return keys.map((key, idx) => ({
       label: key,
@@ -261,50 +261,50 @@ export default function OverviewPage() {
   const projectStatusList = ['Planning', 'In Progress', 'Testing', 'On Hold', 'Completed'];
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 font-sans pb-12">
+    <div className="max-w-7xl mx-auto space-y-6 font-sans pb-12 text-[#b0c4c4] bg-[#071317] p-6 rounded-3xl min-h-screen">
       {/* Dynamic Header Section */}
-      <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="absolute -top-12 -right-12 w-60 h-60 bg-gradient-to-br from-blue-500/10 via-indigo-500/5 to-transparent rounded-full blur-2xl pointer-events-none" />
+      <div className="bg-[#0e2126] p-6 rounded-3xl border border-[#1a383f] shadow-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="absolute -top-12 -right-12 w-60 h-60 bg-gradient-to-br from-[#1cd2ad]/10 via-[#27535b]/20 to-transparent rounded-full blur-2xl pointer-events-none" />
         
         <div className="relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border border-blue-500/20 text-blue-600 font-semibold text-xs mb-3">
-            <Sparkles className="w-3.5 h-3.5 text-blue-600 animate-pulse" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#16363d] border border-[#23535d] text-[#2dd4bf] font-semibold text-xs mb-3">
+            <Sparkles className="w-3.5 h-3.5 text-[#2dd4bf] animate-pulse" />
             <span>Unified Executive Dashboard</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#f0fdfa] tracking-tight flex items-center gap-3">
             Operations & Technical Command Center
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-xl leading-relaxed">
+          <p className="text-xs sm:text-sm text-[#81a3a3] mt-1 max-w-xl leading-relaxed">
             Real-time pipeline analytics, project lifecycle metrics, support desk workload, and operational throughput.
           </p>
         </div>
 
         <button
           onClick={fetchOverviewData}
-          className="relative z-10 self-start md:self-auto bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold px-4 py-2.5 rounded-2xl flex items-center gap-2 transition-all shadow-sm hover:shadow-md cursor-pointer shrink-0"
+          className="relative z-10 self-start md:self-auto bg-[#173a42] hover:bg-[#1e4852] text-[#e2f3f3] border border-[#2b5d69] text-xs font-semibold px-4 py-2.5 rounded-2xl flex items-center gap-2 transition-all shadow-sm hover:shadow-md cursor-pointer shrink-0"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-3.5 h-3.5 text-[#2dd4bf] ${loading ? 'animate-spin' : ''}`} />
           <span>Refresh Analytics</span>
         </button>
       </div>
 
       {/* Date Filter Bar */}
-      <div className="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-xs flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-[#0e2126] p-4 rounded-3xl border border-[#1a383f] shadow-xl flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+          <div className="p-2 bg-[#17383f] text-[#2dd4bf] rounded-xl border border-[#25525d]">
             <Calendar className="w-4 h-4" />
           </div>
-          <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Timeline Filter:</span>
+          <span className="text-xs font-bold text-[#81a3a3] uppercase tracking-wider">Timeline Filter:</span>
           
-          <div className="flex flex-wrap bg-slate-100/80 p-1 rounded-2xl text-xs font-medium">
+          <div className="flex flex-wrap bg-[#08171b] p-1 rounded-2xl border border-[#16343b] text-xs font-medium">
             {(['all', 'weekly', 'monthly', 'annually', 'custom'] as const).map((r) => (
               <button
                 key={r}
                 onClick={() => setDateRange(r)}
                 className={`px-3.5 py-1.5 rounded-xl capitalize transition-all cursor-pointer ${
                   dateRange === r
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-[#1b434c] text-[#f0fdfa] border border-[#2b6471] shadow-xs font-bold'
+                    : 'text-[#81a3a3] hover:text-[#f0fdfa]'
                 }`}
               >
                 {r === 'all' ? 'All Time' : r}
@@ -317,14 +317,14 @@ export default function OverviewPage() {
           <div className="flex items-center gap-2 text-xs w-full sm:w-auto">
             <input
               type="date"
-              className="p-2 border border-slate-200 rounded-xl bg-slate-50 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="p-2 border border-[#234d57] rounded-xl bg-[#08171b] text-[#e2f3f3] focus:outline-none focus:ring-2 focus:ring-[#2dd4bf]"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
             />
-            <span className="text-slate-400 font-bold">to</span>
+            <span className="text-[#527d7d] font-bold">to</span>
             <input
               type="date"
-              className="p-2 border border-slate-200 rounded-xl bg-slate-50 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="p-2 border border-[#234d57] rounded-xl bg-[#08171b] text-[#e2f3f3] focus:outline-none focus:ring-2 focus:ring-[#2dd4bf]"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
             />
@@ -332,118 +332,118 @@ export default function OverviewPage() {
         )}
       </div>
 
-      {/* High Impact KPI Cards (Ultra-Modern Gradients) */}
+      {/* High Impact KPI Cards (Ultra-Modern Dark Teal Gradients) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* KPI 1: Total Leads */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-blue-300 transition-all">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-blue-500/10 to-indigo-500/10 rounded-bl-full pointer-events-none group-hover:scale-110 transition-transform" />
+        <div className="bg-[#0e2126] p-6 rounded-3xl border border-[#1a383f] shadow-xl relative overflow-hidden group hover:border-[#2b616d] transition-all">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-[#2dd4bf]/10 to-transparent rounded-bl-full pointer-events-none group-hover:scale-110 transition-transform" />
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Lead Acquisition</span>
-            <div className="p-2.5 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white rounded-2xl shadow-sm">
+            <span className="text-xs font-bold text-[#81a3a3] uppercase tracking-wider">Lead Acquisition</span>
+            <div className="p-2.5 bg-[#173a42] text-[#2dd4bf] rounded-2xl border border-[#23535d] shadow-sm">
               <Target className="w-4 h-4" />
             </div>
           </div>
           <div className="flex items-baseline gap-2">
-            <h3 className="text-3xl font-black text-slate-900 tracking-tight">{stats.totalLeads}</h3>
-            <span className="text-xs font-bold text-blue-600 flex items-center">
+            <h3 className="text-3xl font-black text-[#f0fdfa] tracking-tight">{stats.totalLeads}</h3>
+            <span className="text-xs font-bold text-[#2dd4bf] flex items-center">
               <TrendingUp className="w-3.5 h-3.5 mr-0.5" /> Pipeline
             </span>
           </div>
-          <p className="text-xs text-slate-400 mt-1 font-medium">Inquiries & converted leads</p>
+          <p className="text-xs text-[#527d7d] mt-1 font-medium">Inquiries & converted leads</p>
         </div>
 
         {/* KPI 2: Active Projects */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-emerald-300 transition-all">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 rounded-bl-full pointer-events-none group-hover:scale-110 transition-transform" />
+        <div className="bg-[#0e2126] p-6 rounded-3xl border border-[#1a383f] shadow-xl relative overflow-hidden group hover:border-[#2b616d] transition-all">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-[#10b981]/10 to-transparent rounded-bl-full pointer-events-none group-hover:scale-110 transition-transform" />
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Deliveries</span>
-            <div className="p-2.5 bg-gradient-to-tr from-emerald-500 to-teal-600 text-white rounded-2xl shadow-sm">
+            <span className="text-xs font-bold text-[#81a3a3] uppercase tracking-wider">Active Deliveries</span>
+            <div className="p-2.5 bg-[#143632] text-[#34d399] rounded-2xl border border-[#1f544e] shadow-sm">
               <FolderKanban className="w-4 h-4" />
             </div>
           </div>
           <div className="flex items-baseline gap-2">
-            <h3 className="text-3xl font-black text-slate-900 tracking-tight">{stats.activeProjects}</h3>
-            <span className="text-xs font-bold text-emerald-600 flex items-center">
+            <h3 className="text-3xl font-black text-[#f0fdfa] tracking-tight">{stats.activeProjects}</h3>
+            <span className="text-xs font-bold text-[#34d399] flex items-center">
               <Zap className="w-3.5 h-3.5 mr-0.5" /> Operations
             </span>
           </div>
-          <p className="text-xs text-slate-400 mt-1 font-medium">Planning, active or in QA</p>
+          <p className="text-xs text-[#527d7d] mt-1 font-medium">Planning, active or in QA</p>
         </div>
 
         {/* KPI 3: Open Tickets */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-amber-300 transition-all">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-bl-full pointer-events-none group-hover:scale-110 transition-transform" />
+        <div className="bg-[#0e2126] p-6 rounded-3xl border border-[#1a383f] shadow-xl relative overflow-hidden group hover:border-[#2b616d] transition-all">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-[#f59e0b]/10 to-transparent rounded-bl-full pointer-events-none group-hover:scale-110 transition-transform" />
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Service Desk SLA</span>
-            <div className="p-2.5 bg-gradient-to-tr from-amber-500 to-orange-600 text-white rounded-2xl shadow-sm">
+            <span className="text-xs font-bold text-[#81a3a3] uppercase tracking-wider">Service Desk SLA</span>
+            <div className="p-2.5 bg-[#362a14] text-[#fbbf24] rounded-2xl border border-[#52411f] shadow-sm">
               <Ticket className="w-4 h-4" />
             </div>
           </div>
           <div className="flex items-baseline gap-2">
-            <h3 className="text-3xl font-black text-slate-900 tracking-tight">{stats.openTickets}</h3>
-            <span className="text-xs font-bold text-amber-600 flex items-center">
+            <h3 className="text-3xl font-black text-[#f0fdfa] tracking-tight">{stats.openTickets}</h3>
+            <span className="text-xs font-bold text-[#fbbf24] flex items-center">
               <Clock className="w-3.5 h-3.5 mr-0.5" /> Active Desk
             </span>
           </div>
-          <p className="text-xs text-slate-400 mt-1 font-medium">Pending client resolutions</p>
+          <p className="text-xs text-[#527d7d] mt-1 font-medium">Pending client resolutions</p>
         </div>
 
         {/* KPI 4: Active Workforce */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-purple-300 transition-all">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-purple-500/10 to-indigo-500/10 rounded-bl-full pointer-events-none group-hover:scale-110 transition-transform" />
+        <div className="bg-[#0e2126] p-6 rounded-3xl border border-[#1a383f] shadow-xl relative overflow-hidden group hover:border-[#2b616d] transition-all">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-[#8b5cf6]/10 to-transparent rounded-bl-full pointer-events-none group-hover:scale-110 transition-transform" />
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Engineering Staff</span>
-            <div className="p-2.5 bg-gradient-to-tr from-purple-600 to-indigo-600 text-white rounded-2xl shadow-sm">
+            <span className="text-xs font-bold text-[#81a3a3] uppercase tracking-wider">Engineering Staff</span>
+            <div className="p-2.5 bg-[#251a38] text-[#a78bfa] rounded-2xl border border-[#3c2a59] shadow-sm">
               <Users className="w-4 h-4" />
             </div>
           </div>
           <div className="flex items-baseline gap-2">
-            <h3 className="text-3xl font-black text-slate-900 tracking-tight">{stats.totalEmployees}</h3>
-            <span className="text-xs font-bold text-purple-600 flex items-center">
+            <h3 className="text-3xl font-black text-[#f0fdfa] tracking-tight">{stats.totalEmployees}</h3>
+            <span className="text-xs font-bold text-[#a78bfa] flex items-center">
               <Briefcase className="w-3.5 h-3.5 mr-0.5" /> Allocated
             </span>
           </div>
-          <p className="text-xs text-slate-400 mt-1 font-medium">Active IT specialists</p>
+          <p className="text-xs text-[#527d7d] mt-1 font-medium">Active IT specialists</p>
         </div>
       </div>
 
       {/* Operational Workflow Architecture Banner */}
-      <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-          <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+      <div className="bg-[#0e2126] p-6 rounded-3xl border border-[#1a383f] shadow-xl space-y-4">
+        <div className="flex items-center justify-between border-b border-[#18363d] pb-4">
+          <h2 className="text-base font-extrabold text-[#f0fdfa] flex items-center gap-2">
+            <div className="p-2 bg-[#17383f] text-[#2dd4bf] rounded-xl border border-[#25525d]">
               <Workflow className="w-4 h-4" />
             </div>
             End-to-End Enterprise Delivery Pipeline
           </h2>
-          <span className="text-[11px] font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full uppercase tracking-wider">
+          <span className="text-[11px] font-bold text-[#2dd4bf] bg-[#16363d] border border-[#23535d] px-3 py-1 rounded-full uppercase tracking-wider">
             Operational Lifecycle
           </span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
-          <div className="p-4 rounded-2xl bg-gradient-to-b from-blue-50/60 to-slate-50 border border-blue-100 flex flex-col items-center text-center space-y-1 hover:border-blue-300 transition-all">
-            <Target className="w-6 h-6 text-blue-600 mb-1" />
-            <span className="font-bold text-sm text-slate-900">1. Acquisition</span>
-            <span className="text-[11px] text-slate-500">Capture & classify inquiries</span>
+          <div className="p-4 rounded-2xl bg-[#0a181c] border border-[#183a42] flex flex-col items-center text-center space-y-1 hover:border-[#275d69] transition-all">
+            <Target className="w-6 h-6 text-[#2dd4bf] mb-1" />
+            <span className="font-bold text-sm text-[#e2f3f3]">1. Acquisition</span>
+            <span className="text-[11px] text-[#81a3a3]">Capture & classify inquiries</span>
           </div>
 
-          <div className="p-4 rounded-2xl bg-gradient-to-b from-indigo-50/60 to-slate-50 border border-indigo-100 flex flex-col items-center text-center space-y-1 hover:border-indigo-300 transition-all">
-            <Users className="w-6 h-6 text-indigo-600 mb-1" />
-            <span className="font-bold text-sm text-slate-900">2. Staff Allocation</span>
-            <span className="text-[11px] text-slate-500">Assign leads & tech teams</span>
+          <div className="p-4 rounded-2xl bg-[#0a181c] border border-[#183a42] flex flex-col items-center text-center space-y-1 hover:border-[#275d69] transition-all">
+            <Users className="w-6 h-6 text-[#38b2ac] mb-1" />
+            <span className="font-bold text-sm text-[#e2f3f3]">2. Staff Allocation</span>
+            <span className="text-[11px] text-[#81a3a3]">Assign leads & tech teams</span>
           </div>
 
-          <div className="p-4 rounded-2xl bg-gradient-to-b from-emerald-50/60 to-slate-50 border border-emerald-100 flex flex-col items-center text-center space-y-1 hover:border-emerald-300 transition-all">
-            <FolderKanban className="w-6 h-6 text-emerald-600 mb-1" />
-            <span className="font-bold text-sm text-slate-900">3. Execution</span>
-            <span className="text-[11px] text-slate-500">Milestone builds & releases</span>
+          <div className="p-4 rounded-2xl bg-[#0a181c] border border-[#183a42] flex flex-col items-center text-center space-y-1 hover:border-[#275d69] transition-all">
+            <FolderKanban className="w-6 h-6 text-[#34d399] mb-1" />
+            <span className="font-bold text-sm text-[#e2f3f3]">3. Execution</span>
+            <span className="text-[11px] text-[#81a3a3]">Milestone builds & releases</span>
           </div>
 
-          <div className="p-4 rounded-2xl bg-gradient-to-b from-amber-50/60 to-slate-50 border border-amber-100 flex flex-col items-center text-center space-y-1 hover:border-amber-300 transition-all">
-            <Ticket className="w-6 h-6 text-amber-600 mb-1" />
-            <span className="font-bold text-sm text-slate-900">4. Support SLA</span>
-            <span className="text-[11px] text-slate-500">Maintain & resolve tickets</span>
+          <div className="p-4 rounded-2xl bg-[#0a181c] border border-[#183a42] flex flex-col items-center text-center space-y-1 hover:border-[#275d69] transition-all">
+            <Ticket className="w-6 h-6 text-[#fbbf24] mb-1" />
+            <span className="font-bold text-sm text-[#e2f3f3]">4. Support SLA</span>
+            <span className="text-[11px] text-[#81a3a3]">Maintain & resolve tickets</span>
           </div>
         </div>
       </div>
@@ -452,11 +452,11 @@ export default function OverviewPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Circle Diagram: Lead Pipeline Distribution */}
-        <div className="lg:col-span-5 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-5 bg-[#0e2126] p-6 rounded-3xl border border-[#1a383f] shadow-xl flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-              <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+            <div className="flex items-center justify-between border-b border-[#18363d] pb-3 mb-4">
+              <h2 className="text-base font-extrabold text-[#f0fdfa] flex items-center gap-2">
+                <div className="p-2 bg-[#17383f] text-[#2dd4bf] rounded-xl border border-[#25525d]">
                   <BarChart3 className="w-4 h-4" />
                 </div>
                 Lead Pipeline breakdown
@@ -471,27 +471,27 @@ export default function OverviewPage() {
                   <div key={item.label} className="flex items-center justify-between gap-4 text-xs">
                     <div className="flex items-center gap-2">
                       <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                      <span className="font-medium text-slate-700">{item.label}</span>
+                      <span className="font-medium text-[#a0c2c2]">{item.label}</span>
                     </div>
-                    <span className="font-bold text-slate-900">{item.value}</span>
+                    <span className="font-bold text-[#f0fdfa]">{item.value}</span>
                   </div>
                 ))}
               </div>
             </div>
           </div>
 
-          <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 text-[11px] text-slate-500 flex items-center gap-2">
-            <ArrowUpRight className="w-4 h-4 text-blue-600 shrink-0" />
+          <div className="p-3 bg-[#08171b] rounded-2xl border border-[#18363d] text-[11px] text-[#81a3a3] flex items-center gap-2">
+            <ArrowUpRight className="w-4 h-4 text-[#2dd4bf] shrink-0" />
             <span>Interactive Lead flow tracking synchronized with CRM database.</span>
           </div>
         </div>
 
         {/* Project Lifecycle Graph */}
-        <div className="lg:col-span-7 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-7 bg-[#0e2126] p-6 rounded-3xl border border-[#1a383f] shadow-xl flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-              <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+            <div className="flex items-center justify-between border-b border-[#18363d] pb-3 mb-4">
+              <h2 className="text-base font-extrabold text-[#f0fdfa] flex items-center gap-2">
+                <div className="p-2 bg-[#143632] text-[#34d399] rounded-xl border border-[#1f544e]">
                   <Activity className="w-4 h-4" />
                 </div>
                 Project Delivery Lifecycle Analytics
@@ -506,13 +506,13 @@ export default function OverviewPage() {
 
                 return (
                   <div key={status} className="space-y-1.5">
-                    <div className="flex justify-between text-xs font-semibold text-slate-700">
+                    <div className="flex justify-between text-xs font-semibold text-[#a0c2c2]">
                       <span>{status}</span>
-                      <span className="text-slate-900 font-bold">{count} Projects</span>
+                      <span className="text-[#f0fdfa] font-bold">{count} Projects</span>
                     </div>
-                    <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden p-0.5">
+                    <div className="w-full bg-[#08171b] rounded-full h-3 overflow-hidden p-0.5 border border-[#18363d]">
                       <div
-                        className="bg-gradient-to-r from-emerald-500 to-teal-600 h-full rounded-full transition-all duration-700 shadow-xs"
+                        className="bg-gradient-to-r from-[#1fb89a] to-[#2dd4bf] h-full rounded-full transition-all duration-700 shadow-xs"
                         style={{ width: `${Math.max(percentage, 6)}%` }}
                       />
                     </div>
@@ -522,9 +522,9 @@ export default function OverviewPage() {
             </div>
           </div>
 
-          <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+          <div className="pt-4 mt-4 border-t border-[#18363d] flex items-center justify-between text-xs text-[#527d7d]">
             <span>Real-time milestone tracking</span>
-            <span className="font-semibold text-emerald-600">{stats.activeProjects} Active Works</span>
+            <span className="font-semibold text-[#34d399]">{stats.activeProjects} Active Works</span>
           </div>
         </div>
       </div>
@@ -533,10 +533,10 @@ export default function OverviewPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Support Tickets Breakdown */}
-        <div className="lg:col-span-6 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-            <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-              <div className="p-2 bg-orange-50 text-orange-600 rounded-xl">
+        <div className="lg:col-span-6 bg-[#0e2126] p-6 rounded-3xl border border-[#1a383f] shadow-xl">
+          <div className="flex items-center justify-between border-b border-[#18363d] pb-3 mb-4">
+            <h2 className="text-base font-extrabold text-[#f0fdfa] flex items-center gap-2">
+              <div className="p-2 bg-[#362a14] text-[#fbbf24] rounded-xl border border-[#52411f]">
                 <AlertTriangle className="w-4 h-4" />
               </div>
               Incident Support Tickets by Priority
@@ -544,54 +544,54 @@ export default function OverviewPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="p-4 bg-gradient-to-br from-red-50 to-red-100/30 rounded-2xl border border-red-200/60 flex flex-col justify-between">
-              <span className="text-[11px] font-extrabold text-red-700 uppercase tracking-wider">Urgent SLA</span>
+            <div className="p-4 bg-[#231215] rounded-2xl border border-[#481c21] flex flex-col justify-between">
+              <span className="text-[11px] font-extrabold text-[#f87171] uppercase tracking-wider">Urgent SLA</span>
               <div className="flex items-baseline justify-between mt-3">
-                <span className="text-3xl font-black text-red-900">
+                <span className="text-3xl font-black text-[#fca5a5]">
                   {stats.ticketsByPriority['Urgent'] || 0}
                 </span>
-                <Clock className="w-5 h-5 text-red-500" />
+                <Clock className="w-5 h-5 text-[#f87171]" />
               </div>
             </div>
 
-            <div className="p-4 bg-gradient-to-br from-orange-50 to-orange-100/30 rounded-2xl border border-orange-200/60 flex flex-col justify-between">
-              <span className="text-[11px] font-extrabold text-orange-700 uppercase tracking-wider">High Priority</span>
+            <div className="p-4 bg-[#291e12] rounded-2xl border border-[#523719] flex flex-col justify-between">
+              <span className="text-[11px] font-extrabold text-[#fb923c] uppercase tracking-wider">High Priority</span>
               <div className="flex items-baseline justify-between mt-3">
-                <span className="text-3xl font-black text-orange-900">
+                <span className="text-3xl font-black text-[#fdba74]">
                   {stats.ticketsByPriority['High'] || 0}
                 </span>
-                <AlertTriangle className="w-5 h-5 text-orange-500" />
+                <AlertTriangle className="w-5 h-5 text-[#fb923c]" />
               </div>
             </div>
 
-            <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100/30 rounded-2xl border border-blue-200/60 flex flex-col justify-between">
-              <span className="text-[11px] font-extrabold text-blue-700 uppercase tracking-wider">Medium</span>
+            <div className="p-4 bg-[#11242d] rounded-2xl border border-[#1e4859] flex flex-col justify-between">
+              <span className="text-[11px] font-extrabold text-[#38bdf8] uppercase tracking-wider">Medium</span>
               <div className="flex items-baseline justify-between mt-3">
-                <span className="text-3xl font-black text-blue-900">
+                <span className="text-3xl font-black text-[#7dd3fc]">
                   {stats.ticketsByPriority['Medium'] || 0}
                 </span>
-                <Activity className="w-5 h-5 text-blue-500" />
+                <Activity className="w-5 h-5 text-[#38bdf8]" />
               </div>
             </div>
 
-            <div className="p-4 bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-2xl border border-slate-200 flex flex-col justify-between">
-              <span className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">Low</span>
+            <div className="p-4 bg-[#0a181c] rounded-2xl border border-[#183a42] flex flex-col justify-between">
+              <span className="text-[11px] font-extrabold text-[#81a3a3] uppercase tracking-wider">Low</span>
               <div className="flex items-baseline justify-between mt-3">
-                <span className="text-3xl font-black text-slate-900">
+                <span className="text-3xl font-black text-[#f0fdfa]">
                   {stats.ticketsByPriority['Low'] || 0}
                 </span>
-                <CheckCircle2 className="w-5 h-5 text-slate-400" />
+                <CheckCircle2 className="w-5 h-5 text-[#527d7d]" />
               </div>
             </div>
           </div>
         </div>
 
         {/* Live Operational Activity Log */}
-        <div className="lg:col-span-6 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-6 bg-[#0e2126] p-6 rounded-3xl border border-[#1a383f] shadow-xl flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-              <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                <div className="p-2 bg-purple-50 text-purple-600 rounded-xl">
+            <div className="flex items-center justify-between border-b border-[#18363d] pb-3 mb-4">
+              <h2 className="text-base font-extrabold text-[#f0fdfa] flex items-center gap-2">
+                <div className="p-2 bg-[#251a38] text-[#a78bfa] rounded-xl border border-[#3c2a59]">
                   <Clock className="w-4 h-4" />
                 </div>
                 Recent Activity Log
@@ -600,18 +600,18 @@ export default function OverviewPage() {
 
             <div className="space-y-3">
               {stats.recentActivities.length === 0 ? (
-                <p className="text-xs text-slate-400 italic">No recent operational activity recorded.</p>
+                <p className="text-xs text-[#527d7d] italic">No recent operational activity recorded.</p>
               ) : (
                 stats.recentActivities.map((act, index) => (
                   <div
                     key={index}
-                    className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between"
+                    className="p-3 bg-[#08171b] rounded-2xl border border-[#18363d] flex items-center justify-between"
                   >
                     <div className="flex items-center gap-2.5">
-                      <span className="w-2 h-2 rounded-full bg-blue-600" />
-                      <span className="text-xs font-semibold text-slate-800">{act.title}</span>
+                      <span className="w-2 h-2 rounded-full bg-[#2dd4bf]" />
+                      <span className="text-xs font-semibold text-[#e2f3f3]">{act.title}</span>
                     </div>
-                    <span className="text-[10px] font-bold text-slate-400 bg-white px-2 py-0.5 rounded-lg border border-slate-100">
+                    <span className="text-[10px] font-bold text-[#81a3a3] bg-[#0e2126] px-2 py-0.5 rounded-lg border border-[#18363d]">
                       {act.time}
                     </span>
                   </div>
@@ -620,17 +620,17 @@ export default function OverviewPage() {
             </div>
           </div>
 
-          <div className="pt-3 border-t border-slate-100 text-right">
-            <span className="text-[11px] text-slate-400 font-medium">Auto-updated via Supabase Realtime</span>
+          <div className="pt-3 border-t border-[#18363d] text-right">
+            <span className="text-[11px] text-[#527d7d] font-medium">Auto-updated via Supabase Realtime</span>
           </div>
         </div>
       </div>
 
       {/* Staff Department Allocation */}
-      <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+      <div className="bg-[#0e2126] p-6 rounded-3xl border border-[#1a383f] shadow-xl space-y-4">
+        <div className="flex items-center justify-between border-b border-[#18363d] pb-3">
+          <h2 className="text-base font-extrabold text-[#f0fdfa] flex items-center gap-2">
+            <div className="p-2 bg-[#17383f] text-[#2dd4bf] rounded-xl border border-[#25525d]">
               <Users className="w-4 h-4" />
             </div>
             Department Work Force Distribution
@@ -641,15 +641,15 @@ export default function OverviewPage() {
           {Object.entries(stats.employeesByDept).map(([dept, count]) => (
             <div
               key={dept}
-              className="p-4 rounded-2xl bg-gradient-to-br from-slate-50 to-indigo-50/20 border border-slate-200/60 hover:border-indigo-300 transition-all"
+              className="p-4 rounded-2xl bg-[#0a181c] border border-[#183a42] hover:border-[#275d69] transition-all"
             >
-              <span className="text-xs font-semibold text-slate-500 block truncate">{dept}</span>
-              <span className="text-2xl font-black text-slate-900 mt-1 block">{count} Staff</span>
+              <span className="text-xs font-semibold text-[#81a3a3] block truncate">{dept}</span>
+              <span className="text-2xl font-black text-[#f0fdfa] mt-1 block">{count} Staff</span>
             </div>
           ))}
 
           {Object.keys(stats.employeesByDept).length === 0 && (
-            <div className="text-xs text-slate-400 italic col-span-4">No active department allocations found.</div>
+            <div className="text-xs text-[#527d7d] italic col-span-4">No active department allocations found.</div>
           )}
         </div>
       </div>
