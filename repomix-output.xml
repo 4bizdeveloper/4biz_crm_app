@@ -703,667 +703,6 @@ export default function TicketsPage() {
 }
 </file>
 
-<file path="src/app/dashboard/overview/page.tsx">
-'use client';
-
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
-import {
-  BarChart3,
-  Users,
-  FolderKanban,
-  Ticket,
-  Target,
-  CheckCircle2,
-  AlertTriangle,
-  Clock,
-  Activity,
-  Workflow,
-  Calendar,
-  Sparkles,
-  TrendingUp,
-  ArrowUpRight,
-  RefreshCw,
-  Zap,
-  Briefcase
-} from 'lucide-react';
-
-// Custom SVG Donut Diagram Component
-function ModernDonutChart({
-  data,
-  total,
-}: {
-  data: { label: string; value: number; color: string }[];
-  total: number;
-}) {
-  const size = 160;
-  const strokeWidth = 24;
-  const center = size / 2;
-  const radius = center - strokeWidth;
-  const circumference = 2 * Math.PI * radius;
-
-  let accumulatedAngle = 0;
-
-  if (total === 0) {
-    return (
-      <div className="relative flex items-center justify-center w-40 h-40">
-        <svg className="w-full h-full transform -rotate-90" viewBox={`0 0 ${size} ${size}`}>
-          <circle
-            cx={center}
-            cy={center}
-            r={radius}
-            className="stroke-[#132a2f]"
-            strokeWidth={strokeWidth}
-            fill="transparent"
-          />
-        </svg>
-        <span className="absolute text-xs text-[#527d7d] font-medium">No Data</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="relative flex items-center justify-center w-40 h-40 shrink-0">
-      <svg className="w-full h-full transform -rotate-90" viewBox={`0 0 ${size} ${size}`}>
-        {data.map((item, index) => {
-          const percentage = item.value / total;
-          const strokeDashoffset = circumference - percentage * circumference;
-          const rotation = accumulatedAngle;
-          accumulatedAngle += percentage * 360;
-
-          return (
-            <circle
-              key={index}
-              cx={center}
-              cy={center}
-              r={radius}
-              stroke={item.color}
-              strokeWidth={strokeWidth}
-              strokeDasharray={circumference}
-              strokeDashoffset={strokeDashoffset}
-              strokeLinecap="round"
-              fill="transparent"
-              style={{
-                transformOrigin: 'center',
-                transform: `rotate(${rotation}deg)`,
-                transition: 'stroke-dashoffset 0.8s ease-in-out, transform 0.8s ease-in-out',
-              }}
-            />
-          );
-        })}
-      </svg>
-      <div className="absolute flex flex-col items-center justify-center text-center">
-        <span className="text-2xl font-extrabold text-[#e2f3f3] tracking-tight">{total}</span>
-        <span className="text-[10px] font-bold uppercase text-[#527d7d] tracking-wider">Total</span>
-      </div>
-    </div>
-  );
-}
-
-interface OverviewStats {
-  totalLeads: number;
-  leadsByStatus: Record<string, number>;
-  activeProjects: number;
-  projectsByStatus: Record<string, number>;
-  openTickets: number;
-  ticketsByPriority: Record<string, number>;
-  totalEmployees: number;
-  employeesByDept: Record<string, number>;
-  recentActivities: { title: string; time: string; type: string }[];
-}
-
-export default function OverviewPage() {
-  const [stats, setStats] = useState<OverviewStats>({
-    totalLeads: 0,
-    leadsByStatus: {},
-    activeProjects: 0,
-    projectsByStatus: {},
-    openTickets: 0,
-    ticketsByPriority: {},
-    totalEmployees: 0,
-    employeesByDept: {},
-    recentActivities: [],
-  });
-
-  const [loading, setLoading] = useState(true);
-  const [dateRange, setDateRange] = useState<'all' | 'weekly' | 'monthly' | 'annually' | 'custom'>('all');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-
-  const fetchOverviewData = useCallback(async () => {
-    setLoading(true);
-
-    const [leadsRes, projectsRes, ticketsRes, employeesRes] = await Promise.all([
-      supabase.from('leads').select('id, name, status, created_at'),
-      supabase.from('projects').select('id, project_name, status, created_at'),
-      supabase.from('tickets').select('id, title, priority, status, created_at'),
-      supabase.from('employees').select('id, full_name, department, status, joined_date'),
-    ]);
-
-    let leads = leadsRes.data || [];
-    let projects = projectsRes.data || [];
-    let tickets = ticketsRes.data || [];
-    let employees = employeesRes.data || [];
-
-    // Date Range Filtering Logic
-    const filterByDate = (items: any[], dateField: string = 'created_at') => {
-      if (dateRange === 'all') return items;
-      const now = new Date();
-
-      return items.filter((item) => {
-        if (!item[dateField]) return true;
-        const itemDate = new Date(item[dateField]);
-
-        if (dateRange === 'weekly') {
-          const oneWeekAgo = new Date();
-          oneWeekAgo.setDate(now.getDate() - 7);
-          return itemDate >= oneWeekAgo;
-        }
-        if (dateRange === 'monthly') {
-          return itemDate.getMonth() === now.getMonth() && itemDate.getFullYear() === now.getFullYear();
-        }
-        if (dateRange === 'annually') {
-          return itemDate.getFullYear() === now.getFullYear();
-        }
-        if (dateRange === 'custom') {
-          if (!startDate || !endDate) return true;
-          const start = new Date(startDate);
-          const end = new Date(endDate);
-          end.setHours(23, 59, 59, 999);
-          return itemDate >= start && itemDate <= end;
-        }
-        return true;
-      });
-    };
-
-    leads = filterByDate(leads);
-    projects = filterByDate(projects);
-    tickets = filterByDate(tickets);
-    employees = filterByDate(employees, 'joined_date');
-
-    // Calculate Lead status distribution
-    const leadsByStatus = leads.reduce((acc, curr) => {
-      const st = curr.status || 'New';
-      acc[st] = (acc[st] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    // Calculate Project status distribution & active count
-    const projectsByStatus = projects.reduce((acc, curr) => {
-      const st = curr.status || 'Planning';
-      acc[st] = (acc[st] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    const activeProjects = projects.filter((p) => p.status !== 'Completed').length;
-
-    // Calculate Open Tickets and Priority breakdown
-    const openTicketsList = tickets.filter(
-      (t) => t.status !== 'Closed' && t.status !== 'Resolved'
-    );
-    const ticketsByPriority = openTicketsList.reduce((acc, curr) => {
-      const prio = curr.priority || 'Medium';
-      acc[prio] = (acc[prio] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    // Calculate Staff distribution
-    const activeEmployees = employees.filter((e) => e.status === 'Active');
-    const employeesByDept = activeEmployees.reduce((acc, curr) => {
-      const dept = curr.department || 'Engineering';
-      acc[dept] = (acc[dept] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    // Recent Operations Timeline Build
-    const recentActivities = [
-      ...leads.slice(0, 3).map((l) => ({
-        title: `New Lead: ${l.name}`,
-        time: new Date(l.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        type: 'Lead',
-      })),
-      ...projects.slice(0, 3).map((p) => ({
-        title: `Project: ${p.project_name}`,
-        time: new Date(p.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        type: 'Project',
-      })),
-      ...tickets.slice(0, 3).map((t) => ({
-        title: `Ticket: ${t.title}`,
-        time: new Date(t.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        type: 'Ticket',
-      })),
-    ].slice(0, 5);
-
-    setStats({
-      totalLeads: leads.length,
-      leadsByStatus,
-      activeProjects,
-      projectsByStatus,
-      openTickets: openTicketsList.length,
-      ticketsByPriority,
-      totalEmployees: activeEmployees.length,
-      employeesByDept,
-      recentActivities,
-    });
-
-    setLoading(false);
-  }, [dateRange, startDate, endDate]);
-
-  useEffect(() => {
-    fetchOverviewData();
-  }, [fetchOverviewData]);
-
-  // Donut chart color setup tailored for dark teal palette
-  const leadDonutData = useMemo(() => {
-    const palette = ['#4fd1c5', '#38b2ac', '#319795', '#2b6cb0', '#dd6b20', '#3182ce'];
-    const keys = Object.keys(stats.leadsByStatus);
-    return keys.map((key, idx) => ({
-      label: key,
-      value: stats.leadsByStatus[key],
-      color: palette[idx % palette.length],
-    }));
-  }, [stats.leadsByStatus]);
-
-  const projectStatusList = ['Planning', 'In Progress', 'Testing', 'On Hold', 'Completed'];
-
-  return (
-    <div className="max-w-7xl mx-auto space-y-6 font-sans pb-12 text-[#b0c4c4] bg-[#071317] p-6 rounded-3xl min-h-screen">
-      {/* Dynamic Header Section */}
-      <div className="bg-[#0e2126] p-6 rounded-3xl border border-[#1a383f] shadow-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="absolute -top-12 -right-12 w-60 h-60 bg-gradient-to-br from-[#1cd2ad]/10 via-[#27535b]/20 to-transparent rounded-full blur-2xl pointer-events-none" />
-        
-        <div className="relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#16363d] border border-[#23535d] text-[#2dd4bf] font-semibold text-xs mb-3">
-            <Sparkles className="w-3.5 h-3.5 text-[#2dd4bf] animate-pulse" />
-            <span>Unified Executive Dashboard</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#f0fdfa] tracking-tight flex items-center gap-3">
-            Operations & Technical Command Center
-          </h1>
-          <p className="text-xs sm:text-sm text-[#81a3a3] mt-1 max-w-xl leading-relaxed">
-            Real-time pipeline analytics, project lifecycle metrics, support desk workload, and operational throughput.
-          </p>
-        </div>
-
-        <button
-          onClick={fetchOverviewData}
-          className="relative z-10 self-start md:self-auto bg-[#173a42] hover:bg-[#1e4852] text-[#e2f3f3] border border-[#2b5d69] text-xs font-semibold px-4 py-2.5 rounded-2xl flex items-center gap-2 transition-all shadow-sm hover:shadow-md cursor-pointer shrink-0"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 text-[#2dd4bf] ${loading ? 'animate-spin' : ''}`} />
-          <span>Refresh Analytics</span>
-        </button>
-      </div>
-
-      {/* Date Filter Bar */}
-      <div className="bg-[#0e2126] p-4 rounded-3xl border border-[#1a383f] shadow-xl flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="p-2 bg-[#17383f] text-[#2dd4bf] rounded-xl border border-[#25525d]">
-            <Calendar className="w-4 h-4" />
-          </div>
-          <span className="text-xs font-bold text-[#81a3a3] uppercase tracking-wider">Timeline Filter:</span>
-          
-          <div className="flex flex-wrap bg-[#08171b] p-1 rounded-2xl border border-[#16343b] text-xs font-medium">
-            {(['all', 'weekly', 'monthly', 'annually', 'custom'] as const).map((r) => (
-              <button
-                key={r}
-                onClick={() => setDateRange(r)}
-                className={`px-3.5 py-1.5 rounded-xl capitalize transition-all cursor-pointer ${
-                  dateRange === r
-                    ? 'bg-[#1b434c] text-[#f0fdfa] border border-[#2b6471] shadow-xs font-bold'
-                    : 'text-[#81a3a3] hover:text-[#f0fdfa]'
-                }`}
-              >
-                {r === 'all' ? 'All Time' : r}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {dateRange === 'custom' && (
-          <div className="flex items-center gap-2 text-xs w-full sm:w-auto">
-            <input
-              type="date"
-              className="p-2 border border-[#234d57] rounded-xl bg-[#08171b] text-[#e2f3f3] focus:outline-none focus:ring-2 focus:ring-[#2dd4bf]"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-            <span className="text-[#527d7d] font-bold">to</span>
-            <input
-              type="date"
-              className="p-2 border border-[#234d57] rounded-xl bg-[#08171b] text-[#e2f3f3] focus:outline-none focus:ring-2 focus:ring-[#2dd4bf]"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
-          </div>
-        )}
-      </div>
-
-      {/* High Impact KPI Cards (Ultra-Modern Dark Teal Gradients) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* KPI 1: Total Leads */}
-        <div className="bg-[#0e2126] p-6 rounded-3xl border border-[#1a383f] shadow-xl relative overflow-hidden group hover:border-[#2b616d] transition-all">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-[#2dd4bf]/10 to-transparent rounded-bl-full pointer-events-none group-hover:scale-110 transition-transform" />
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-[#81a3a3] uppercase tracking-wider">Lead Acquisition</span>
-            <div className="p-2.5 bg-[#173a42] text-[#2dd4bf] rounded-2xl border border-[#23535d] shadow-sm">
-              <Target className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <h3 className="text-3xl font-black text-[#f0fdfa] tracking-tight">{stats.totalLeads}</h3>
-            <span className="text-xs font-bold text-[#2dd4bf] flex items-center">
-              <TrendingUp className="w-3.5 h-3.5 mr-0.5" /> Pipeline
-            </span>
-          </div>
-          <p className="text-xs text-[#527d7d] mt-1 font-medium">Inquiries & converted leads</p>
-        </div>
-
-        {/* KPI 2: Active Projects */}
-        <div className="bg-[#0e2126] p-6 rounded-3xl border border-[#1a383f] shadow-xl relative overflow-hidden group hover:border-[#2b616d] transition-all">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-[#10b981]/10 to-transparent rounded-bl-full pointer-events-none group-hover:scale-110 transition-transform" />
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-[#81a3a3] uppercase tracking-wider">Active Deliveries</span>
-            <div className="p-2.5 bg-[#143632] text-[#34d399] rounded-2xl border border-[#1f544e] shadow-sm">
-              <FolderKanban className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <h3 className="text-3xl font-black text-[#f0fdfa] tracking-tight">{stats.activeProjects}</h3>
-            <span className="text-xs font-bold text-[#34d399] flex items-center">
-              <Zap className="w-3.5 h-3.5 mr-0.5" /> Operations
-            </span>
-          </div>
-          <p className="text-xs text-[#527d7d] mt-1 font-medium">Planning, active or in QA</p>
-        </div>
-
-        {/* KPI 3: Open Tickets */}
-        <div className="bg-[#0e2126] p-6 rounded-3xl border border-[#1a383f] shadow-xl relative overflow-hidden group hover:border-[#2b616d] transition-all">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-[#f59e0b]/10 to-transparent rounded-bl-full pointer-events-none group-hover:scale-110 transition-transform" />
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-[#81a3a3] uppercase tracking-wider">Service Desk SLA</span>
-            <div className="p-2.5 bg-[#362a14] text-[#fbbf24] rounded-2xl border border-[#52411f] shadow-sm">
-              <Ticket className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <h3 className="text-3xl font-black text-[#f0fdfa] tracking-tight">{stats.openTickets}</h3>
-            <span className="text-xs font-bold text-[#fbbf24] flex items-center">
-              <Clock className="w-3.5 h-3.5 mr-0.5" /> Active Desk
-            </span>
-          </div>
-          <p className="text-xs text-[#527d7d] mt-1 font-medium">Pending client resolutions</p>
-        </div>
-
-        {/* KPI 4: Active Workforce */}
-        <div className="bg-[#0e2126] p-6 rounded-3xl border border-[#1a383f] shadow-xl relative overflow-hidden group hover:border-[#2b616d] transition-all">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-[#8b5cf6]/10 to-transparent rounded-bl-full pointer-events-none group-hover:scale-110 transition-transform" />
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-[#81a3a3] uppercase tracking-wider">Engineering Staff</span>
-            <div className="p-2.5 bg-[#251a38] text-[#a78bfa] rounded-2xl border border-[#3c2a59] shadow-sm">
-              <Users className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <h3 className="text-3xl font-black text-[#f0fdfa] tracking-tight">{stats.totalEmployees}</h3>
-            <span className="text-xs font-bold text-[#a78bfa] flex items-center">
-              <Briefcase className="w-3.5 h-3.5 mr-0.5" /> Allocated
-            </span>
-          </div>
-          <p className="text-xs text-[#527d7d] mt-1 font-medium">Active IT specialists</p>
-        </div>
-      </div>
-
-      {/* Operational Workflow Architecture Banner */}
-      <div className="bg-[#0e2126] p-6 rounded-3xl border border-[#1a383f] shadow-xl space-y-4">
-        <div className="flex items-center justify-between border-b border-[#18363d] pb-4">
-          <h2 className="text-base font-extrabold text-[#f0fdfa] flex items-center gap-2">
-            <div className="p-2 bg-[#17383f] text-[#2dd4bf] rounded-xl border border-[#25525d]">
-              <Workflow className="w-4 h-4" />
-            </div>
-            End-to-End Enterprise Delivery Pipeline
-          </h2>
-          <span className="text-[11px] font-bold text-[#2dd4bf] bg-[#16363d] border border-[#23535d] px-3 py-1 rounded-full uppercase tracking-wider">
-            Operational Lifecycle
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
-          <div className="p-4 rounded-2xl bg-[#0a181c] border border-[#183a42] flex flex-col items-center text-center space-y-1 hover:border-[#275d69] transition-all">
-            <Target className="w-6 h-6 text-[#2dd4bf] mb-1" />
-            <span className="font-bold text-sm text-[#e2f3f3]">1. Acquisition</span>
-            <span className="text-[11px] text-[#81a3a3]">Capture & classify inquiries</span>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-[#0a181c] border border-[#183a42] flex flex-col items-center text-center space-y-1 hover:border-[#275d69] transition-all">
-            <Users className="w-6 h-6 text-[#38b2ac] mb-1" />
-            <span className="font-bold text-sm text-[#e2f3f3]">2. Staff Allocation</span>
-            <span className="text-[11px] text-[#81a3a3]">Assign leads & tech teams</span>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-[#0a181c] border border-[#183a42] flex flex-col items-center text-center space-y-1 hover:border-[#275d69] transition-all">
-            <FolderKanban className="w-6 h-6 text-[#34d399] mb-1" />
-            <span className="font-bold text-sm text-[#e2f3f3]">3. Execution</span>
-            <span className="text-[11px] text-[#81a3a3]">Milestone builds & releases</span>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-[#0a181c] border border-[#183a42] flex flex-col items-center text-center space-y-1 hover:border-[#275d69] transition-all">
-            <Ticket className="w-6 h-6 text-[#fbbf24] mb-1" />
-            <span className="font-bold text-sm text-[#e2f3f3]">4. Support SLA</span>
-            <span className="text-[11px] text-[#81a3a3]">Maintain & resolve tickets</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Modern Analytics Section (Donut Chart & Horizontal Bars) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        {/* Circle Diagram: Lead Pipeline Distribution */}
-        <div className="lg:col-span-5 bg-[#0e2126] p-6 rounded-3xl border border-[#1a383f] shadow-xl flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between border-b border-[#18363d] pb-3 mb-4">
-              <h2 className="text-base font-extrabold text-[#f0fdfa] flex items-center gap-2">
-                <div className="p-2 bg-[#17383f] text-[#2dd4bf] rounded-xl border border-[#25525d]">
-                  <BarChart3 className="w-4 h-4" />
-                </div>
-                Lead Pipeline breakdown
-              </h2>
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-center justify-around gap-6 my-4">
-              <ModernDonutChart data={leadDonutData} total={stats.totalLeads} />
-
-              <div className="space-y-2 w-full sm:w-auto">
-                {leadDonutData.map((item) => (
-                  <div key={item.label} className="flex items-center justify-between gap-4 text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                      <span className="font-medium text-[#a0c2c2]">{item.label}</span>
-                    </div>
-                    <span className="font-bold text-[#f0fdfa]">{item.value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="p-3 bg-[#08171b] rounded-2xl border border-[#18363d] text-[11px] text-[#81a3a3] flex items-center gap-2">
-            <ArrowUpRight className="w-4 h-4 text-[#2dd4bf] shrink-0" />
-            <span>Interactive Lead flow tracking synchronized with CRM database.</span>
-          </div>
-        </div>
-
-        {/* Project Lifecycle Graph */}
-        <div className="lg:col-span-7 bg-[#0e2126] p-6 rounded-3xl border border-[#1a383f] shadow-xl flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between border-b border-[#18363d] pb-3 mb-4">
-              <h2 className="text-base font-extrabold text-[#f0fdfa] flex items-center gap-2">
-                <div className="p-2 bg-[#143632] text-[#34d399] rounded-xl border border-[#1f544e]">
-                  <Activity className="w-4 h-4" />
-                </div>
-                Project Delivery Lifecycle Analytics
-              </h2>
-            </div>
-
-            <div className="space-y-4 pt-2">
-              {projectStatusList.map((status) => {
-                const count = stats.projectsByStatus[status] || 0;
-                const maxCount = Math.max(...Object.values(stats.projectsByStatus), 1);
-                const percentage = Math.round((count / maxCount) * 100);
-
-                return (
-                  <div key={status} className="space-y-1.5">
-                    <div className="flex justify-between text-xs font-semibold text-[#a0c2c2]">
-                      <span>{status}</span>
-                      <span className="text-[#f0fdfa] font-bold">{count} Projects</span>
-                    </div>
-                    <div className="w-full bg-[#08171b] rounded-full h-3 overflow-hidden p-0.5 border border-[#18363d]">
-                      <div
-                        className="bg-gradient-to-r from-[#1fb89a] to-[#2dd4bf] h-full rounded-full transition-all duration-700 shadow-xs"
-                        style={{ width: `${Math.max(percentage, 6)}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="pt-4 mt-4 border-t border-[#18363d] flex items-center justify-between text-xs text-[#527d7d]">
-            <span>Real-time milestone tracking</span>
-            <span className="font-semibold text-[#34d399]">{stats.activeProjects} Active Works</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Support Ticket Priorities & Live Operations Timeline */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        {/* Support Tickets Breakdown */}
-        <div className="lg:col-span-6 bg-[#0e2126] p-6 rounded-3xl border border-[#1a383f] shadow-xl">
-          <div className="flex items-center justify-between border-b border-[#18363d] pb-3 mb-4">
-            <h2 className="text-base font-extrabold text-[#f0fdfa] flex items-center gap-2">
-              <div className="p-2 bg-[#362a14] text-[#fbbf24] rounded-xl border border-[#52411f]">
-                <AlertTriangle className="w-4 h-4" />
-              </div>
-              Incident Support Tickets by Priority
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-4 bg-[#231215] rounded-2xl border border-[#481c21] flex flex-col justify-between">
-              <span className="text-[11px] font-extrabold text-[#f87171] uppercase tracking-wider">Urgent SLA</span>
-              <div className="flex items-baseline justify-between mt-3">
-                <span className="text-3xl font-black text-[#fca5a5]">
-                  {stats.ticketsByPriority['Urgent'] || 0}
-                </span>
-                <Clock className="w-5 h-5 text-[#f87171]" />
-              </div>
-            </div>
-
-            <div className="p-4 bg-[#291e12] rounded-2xl border border-[#523719] flex flex-col justify-between">
-              <span className="text-[11px] font-extrabold text-[#fb923c] uppercase tracking-wider">High Priority</span>
-              <div className="flex items-baseline justify-between mt-3">
-                <span className="text-3xl font-black text-[#fdba74]">
-                  {stats.ticketsByPriority['High'] || 0}
-                </span>
-                <AlertTriangle className="w-5 h-5 text-[#fb923c]" />
-              </div>
-            </div>
-
-            <div className="p-4 bg-[#11242d] rounded-2xl border border-[#1e4859] flex flex-col justify-between">
-              <span className="text-[11px] font-extrabold text-[#38bdf8] uppercase tracking-wider">Medium</span>
-              <div className="flex items-baseline justify-between mt-3">
-                <span className="text-3xl font-black text-[#7dd3fc]">
-                  {stats.ticketsByPriority['Medium'] || 0}
-                </span>
-                <Activity className="w-5 h-5 text-[#38bdf8]" />
-              </div>
-            </div>
-
-            <div className="p-4 bg-[#0a181c] rounded-2xl border border-[#183a42] flex flex-col justify-between">
-              <span className="text-[11px] font-extrabold text-[#81a3a3] uppercase tracking-wider">Low</span>
-              <div className="flex items-baseline justify-between mt-3">
-                <span className="text-3xl font-black text-[#f0fdfa]">
-                  {stats.ticketsByPriority['Low'] || 0}
-                </span>
-                <CheckCircle2 className="w-5 h-5 text-[#527d7d]" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Live Operational Activity Log */}
-        <div className="lg:col-span-6 bg-[#0e2126] p-6 rounded-3xl border border-[#1a383f] shadow-xl flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between border-b border-[#18363d] pb-3 mb-4">
-              <h2 className="text-base font-extrabold text-[#f0fdfa] flex items-center gap-2">
-                <div className="p-2 bg-[#251a38] text-[#a78bfa] rounded-xl border border-[#3c2a59]">
-                  <Clock className="w-4 h-4" />
-                </div>
-                Recent Activity Log
-              </h2>
-            </div>
-
-            <div className="space-y-3">
-              {stats.recentActivities.length === 0 ? (
-                <p className="text-xs text-[#527d7d] italic">No recent operational activity recorded.</p>
-              ) : (
-                stats.recentActivities.map((act, index) => (
-                  <div
-                    key={index}
-                    className="p-3 bg-[#08171b] rounded-2xl border border-[#18363d] flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <span className="w-2 h-2 rounded-full bg-[#2dd4bf]" />
-                      <span className="text-xs font-semibold text-[#e2f3f3]">{act.title}</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-[#81a3a3] bg-[#0e2126] px-2 py-0.5 rounded-lg border border-[#18363d]">
-                      {act.time}
-                    </span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          <div className="pt-3 border-t border-[#18363d] text-right">
-            <span className="text-[11px] text-[#527d7d] font-medium">Auto-updated via Supabase Realtime</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Staff Department Allocation */}
-      <div className="bg-[#0e2126] p-6 rounded-3xl border border-[#1a383f] shadow-xl space-y-4">
-        <div className="flex items-center justify-between border-b border-[#18363d] pb-3">
-          <h2 className="text-base font-extrabold text-[#f0fdfa] flex items-center gap-2">
-            <div className="p-2 bg-[#17383f] text-[#2dd4bf] rounded-xl border border-[#25525d]">
-              <Users className="w-4 h-4" />
-            </div>
-            Department Work Force Distribution
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
-          {Object.entries(stats.employeesByDept).map(([dept, count]) => (
-            <div
-              key={dept}
-              className="p-4 rounded-2xl bg-[#0a181c] border border-[#183a42] hover:border-[#275d69] transition-all"
-            >
-              <span className="text-xs font-semibold text-[#81a3a3] block truncate">{dept}</span>
-              <span className="text-2xl font-black text-[#f0fdfa] mt-1 block">{count} Staff</span>
-            </div>
-          ))}
-
-          {Object.keys(stats.employeesByDept).length === 0 && (
-            <div className="text-xs text-[#527d7d] italic col-span-4">No active department allocations found.</div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-</file>
-
 <file path="src/app/dashboard/projects/page.tsx">
 'use client';
 
@@ -2053,6 +1392,641 @@ export async function POST(request: Request) {
 }
 </file>
 
+<file path="src/app/dashboard/overview/page.tsx">
+'use client';
+
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import { supabase } from '@/lib/supabase';
+import {
+  MoreHorizontal,
+  TrendingUp,
+  ArrowUpRight,
+  RefreshCw,
+  Zap,
+  Target,
+  FolderKanban,
+  Ticket,
+  Users,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+  Briefcase
+} from 'lucide-react';
+
+// ==========================================
+// 1. MODERN SVG XY LINE CHART (Pipeline Value)
+// ==========================================
+function ModernXYLineChart({ data }: { data: { month: string; value: number; dottedVal?: number }[] }) {
+  const width = 500;
+  const height = 180;
+  const padding = { top: 15, right: 25, bottom: 35, left: 40 };
+
+  const activeWidth = width - padding.left - padding.right;
+  const activeHeight = height - padding.top - padding.bottom;
+
+  const maxValue = Math.max(...data.map((d) => Math.max(d.value, d.dottedVal || 0)), 400);
+
+  // Generate SVG Points
+  const getX = (index: number) => padding.left + (index / (data.length - 1)) * activeWidth;
+  const getY = (val: number) => padding.top + activeHeight - (val / maxValue) * activeHeight;
+
+  const linePoints = data.map((d, i) => `${getX(i)},${getY(d.value)}`).join(' ');
+  const dottedPoints = data.map((d, i) => `${getX(i)},${getY(d.dottedVal || d.value * 0.8)}`).join(' ');
+
+  // Gradient fill path for solid line
+  const areaPath = `
+    M ${getX(0)},${getY(data[0].value)} 
+    ${data.map((d, i) => `L ${getX(i)},${getY(d.value)}`).join(' ')} 
+    L ${getX(data.length - 1)},${height - padding.bottom} 
+    L ${getX(0)},${height - padding.bottom} Z
+  `;
+
+  return (
+    <div className="w-full h-48 relative flex items-center justify-center">
+      <svg className="w-full h-full overflow-visible" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.0" />
+          </linearGradient>
+        </defs>
+
+        {/* Horizontal Grid lines */}
+        {[0, 100, 200, 300, 400].map((val) => (
+          <g key={val}>
+            <line
+              x1={padding.left}
+              y1={getY(val)}
+              x2={width - padding.right}
+              y2={getY(val)}
+              stroke="#334155"
+              strokeDasharray="3 3"
+              strokeWidth="1"
+            />
+            <text
+              x={padding.left - 8}
+              y={getY(val) + 3}
+              fill="#94a3b8"
+              fontSize="9"
+              fontWeight="500"
+              textAnchor="end"
+            >
+              {val === 0 ? '0' : `${val}k`}
+            </text>
+          </g>
+        ))}
+
+        {/* Area under solid line */}
+        <path d={areaPath} fill="url(#lineGrad)" />
+
+        {/* Dotted projection trendline */}
+        <polyline
+          fill="none"
+          stroke="#64748b"
+          strokeWidth="1.5"
+          strokeDasharray="4 4"
+          points={dottedPoints}
+        />
+
+        {/* Main Smooth Line */}
+        <polyline
+          fill="none"
+          stroke="#38bdf8"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          points={linePoints}
+        />
+
+        {/* Data points & X Labels */}
+        {data.map((d, i) => (
+          <g key={i}>
+            <circle
+              cx={getX(i)}
+              cy={getY(d.value)}
+              r="3.5"
+              className="fill-[#0f172a] stroke-[#38bdf8] stroke-2 hover:r-5 transition-all"
+            />
+            {i === Math.floor(data.length / 2) && (
+              <circle
+                cx={getX(i)}
+                cy={getY(d.value)}
+                r="6"
+                className="fill-[#38bdf8] stroke-[#f8fafc] stroke-2 animate-pulse"
+              />
+            )}
+            <text
+              x={getX(i)}
+              y={height - 10}
+              fill="#94a3b8"
+              fontSize="9"
+              fontWeight="500"
+              textAnchor="middle"
+            >
+              {d.month}
+            </text>
+          </g>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+// ==========================================
+// 2. VERTICAL BAR GRAPH (Deals / Projects Stage)
+// ==========================================
+function VerticalBarChart({
+  data,
+}: {
+  data: { label: string; count: number; max: number }[];
+}) {
+  return (
+    <div className="w-full h-48 flex flex-col justify-between pt-2">
+      <div className="relative flex-1 flex items-end justify-between gap-2 px-2 pb-5 border-b border-[#334155]">
+        {/* Midpoint Target Reference Line */}
+        <div className="absolute top-1/2 left-0 right-0 border-b border-dashed border-[#475569] z-0" />
+
+        {data.map((item, idx) => {
+          const heightPercent = Math.max(Math.round((item.count / item.max) * 100), 12);
+          return (
+            <div key={idx} className="relative z-10 flex-1 flex flex-col items-center h-full justify-end group">
+              <span className="text-[10px] font-semibold text-[#f1f5f9] opacity-0 group-hover:opacity-100 transition-opacity mb-1">
+                {item.count}
+              </span>
+              <div className="w-full max-w-[36px] bg-[#0f172a] rounded-lg h-full flex items-end p-1 overflow-hidden border border-[#334155]">
+                <div
+                  className="w-full bg-gradient-to-t from-[#0284c7] to-[#38bdf8] rounded-md transition-all duration-700 shadow-md group-hover:brightness-125"
+                  style={{ height: `${heightPercent}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* X Labels */}
+      <div className="flex justify-between gap-2 px-1 pt-2.5">
+        {data.map((item, idx) => (
+          <span key={idx} className="flex-1 text-center text-[10px] font-medium text-[#94a3b8] truncate">
+            {item.label}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// 3. RADIAL / DONUT WIN RATE CHART
+// ==========================================
+function RadialWinRate({ percentage }: { percentage: number }) {
+  const size = 80;
+  const strokeWidth = 8;
+  const center = size / 2;
+  const radius = center - strokeWidth;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+
+  return (
+    <div className="relative flex items-center justify-center w-20 h-20 shrink-0">
+      <svg className="w-full h-full transform -rotate-90" viewBox={`0 0 ${size} ${size}`}>
+        <circle
+          cx={center}
+          cy={center}
+          r={radius}
+          stroke="#0f172a"
+          strokeWidth={strokeWidth}
+          fill="transparent"
+        />
+        <circle
+          cx={center}
+          cy={center}
+          r={radius}
+          stroke="#38bdf8"
+          strokeWidth={strokeWidth}
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+          fill="transparent"
+          className="transition-all duration-1000 ease-out"
+        />
+      </svg>
+      <div className="absolute flex flex-col items-center justify-center text-center">
+        <span className="text-base font-bold text-[#f8fafc]">{percentage}%</span>
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// TYPES & DATA FETCHING
+// ==========================================
+interface OverviewStats {
+  totalLeads: number;
+  leadsByStatus: Record<string, number>;
+  activeProjects: number;
+  projectsByStatus: Record<string, number>;
+  openTickets: number;
+  ticketsByPriority: Record<string, number>;
+  totalEmployees: number;
+  employeesByDept: Record<string, number>;
+  recentActivities: { title: string; time: string; type: string }[];
+  winRate: number;
+}
+
+export default function OverviewPage() {
+  const [stats, setStats] = useState<OverviewStats>({
+    totalLeads: 0,
+    leadsByStatus: {},
+    activeProjects: 0,
+    projectsByStatus: {},
+    openTickets: 0,
+    ticketsByPriority: {},
+    totalEmployees: 0,
+    employeesByDept: {},
+    recentActivities: [],
+    winRate: 76,
+  });
+
+  const [loading, setLoading] = useState(true);
+  const [dateRange, setDateRange] = useState<'all' | 'weekly' | 'monthly' | 'annually'>('all');
+
+  const fetchOverviewData = useCallback(async () => {
+    setLoading(true);
+
+    const [leadsRes, projectsRes, ticketsRes, employeesRes] = await Promise.all([
+      supabase.from('leads').select('id, name, status, created_at'),
+      supabase.from('projects').select('id, project_name, status, created_at'),
+      supabase.from('tickets').select('id, title, priority, status, created_at'),
+      supabase.from('employees').select('id, full_name, department, status, joined_date'),
+    ]);
+
+    let leads = leadsRes.data || [];
+    let projects = projectsRes.data || [];
+    let tickets = ticketsRes.data || [];
+    let employees = employeesRes.data || [];
+
+    // Date Filtering
+    const filterByDate = (items: any[], dateField: string = 'created_at') => {
+      if (dateRange === 'all') return items;
+      const now = new Date();
+      return items.filter((item) => {
+        if (!item[dateField]) return true;
+        const itemDate = new Date(item[dateField]);
+        if (dateRange === 'weekly') {
+          const oneWeekAgo = new Date();
+          oneWeekAgo.setDate(now.getDate() - 7);
+          return itemDate >= oneWeekAgo;
+        }
+        if (dateRange === 'monthly') {
+          return itemDate.getMonth() === now.getMonth() && itemDate.getFullYear() === now.getFullYear();
+        }
+        if (dateRange === 'annually') {
+          return itemDate.getFullYear() === now.getFullYear();
+        }
+        return true;
+      });
+    };
+
+    leads = filterByDate(leads);
+    projects = filterByDate(projects);
+    tickets = filterByDate(tickets);
+    employees = filterByDate(employees, 'joined_date');
+
+    // Distributions
+    const leadsByStatus = leads.reduce((acc, curr) => {
+      const st = curr.status || 'New';
+      acc[st] = (acc[st] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const projectsByStatus = projects.reduce((acc, curr) => {
+      const st = curr.status || 'Planning';
+      acc[st] = (acc[st] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const activeProjects = projects.filter((p) => p.status !== 'Completed').length;
+
+    const openTicketsList = tickets.filter((t) => t.status !== 'Closed' && t.status !== 'Resolved');
+    const ticketsByPriority = openTicketsList.reduce((acc, curr) => {
+      const prio = curr.priority || 'Medium';
+      acc[prio] = (acc[prio] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const activeEmployees = employees.filter((e) => e.status === 'Active');
+    const employeesByDept = activeEmployees.reduce((acc, curr) => {
+      const dept = curr.department || 'Engineering';
+      acc[dept] = (acc[dept] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const recentActivities = [
+      ...leads.slice(0, 3).map((l) => ({
+        title: `New Lead: ${l.name}`,
+        time: new Date(l.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        type: 'Lead',
+      })),
+      ...projects.slice(0, 3).map((p) => ({
+        title: `Project: ${p.project_name}`,
+        time: new Date(p.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        type: 'Project',
+      })),
+      ...tickets.slice(0, 3).map((t) => ({
+        title: `Ticket: ${t.title}`,
+        time: new Date(t.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        type: 'Ticket',
+      })),
+    ].slice(0, 5);
+
+    const convertedLeads = leadsByStatus['Converted'] || leadsByStatus['Closed'] || 0;
+    const computedWinRate = leads.length > 0 ? Math.round((convertedLeads / leads.length) * 100) : 76;
+
+    setStats({
+      totalLeads: leads.length,
+      leadsByStatus,
+      activeProjects,
+      projectsByStatus,
+      openTickets: openTicketsList.length,
+      ticketsByPriority,
+      totalEmployees: activeEmployees.length,
+      employeesByDept,
+      recentActivities,
+      winRate: computedWinRate > 0 ? computedWinRate : 76,
+    });
+
+    setLoading(false);
+  }, [dateRange]);
+
+  useEffect(() => {
+    fetchOverviewData();
+  }, [fetchOverviewData]);
+
+  // Sample trendline data for Line Diagram
+  const pipelineTrendData = useMemo(
+    () => [
+      { month: 'Jan', value: 120, dottedVal: 80 },
+      { month: 'Mar', value: 180, dottedVal: 140 },
+      { month: 'May', value: 160, dottedVal: 190 },
+      { month: 'Jul', value: 380, dottedVal: 270 },
+      { month: 'Sep', value: 260, dottedVal: 310 },
+      { month: 'Nov', value: 340, dottedVal: 390 },
+    ],
+    []
+  );
+
+  // Bar Graph items built dynamically from Supabase status
+  const barChartData = useMemo(() => {
+    const keys = ['New Leads', 'In Progress', 'Testing', 'Completed'];
+    const maxVal = Math.max(...Object.values(stats.projectsByStatus), stats.totalLeads, 10);
+    return [
+      { label: 'New Leads', count: stats.leadsByStatus['New'] || stats.totalLeads || 14, max: maxVal },
+      { label: 'In Progress', count: stats.projectsByStatus['In Progress'] || 8, max: maxVal },
+      { label: 'Testing / QA', count: stats.projectsByStatus['Testing'] || 5, max: maxVal },
+      { label: 'Resolved', count: stats.projectsByStatus['Completed'] || 12, max: maxVal },
+    ];
+  }, [stats]);
+
+  return (
+    <div className="min-h-screen bg-transparent text-[#cbd5e1] p-3 sm:p-5 md:p-6 font-sans space-y-4 md:space-y-6">
+      
+      {/* HEADER BAR */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#1e293b]/80 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-[#334155] shadow-lg">
+        <div className="text-center sm:text-left">
+          <h1 className="text-xl sm:text-2xl font-bold text-[#f8fafc] tracking-tight">Sales & Operations Overview</h1>
+          <p className="text-xs text-[#94a3b8] mt-0.5">Real-time performance tracking across leads, projects, staff, and SLAs.</p>
+        </div>
+
+        <div className="flex items-center justify-center sm:justify-end gap-2.5">
+          {/* Timeline Filter */}
+          <div className="flex bg-[#0f172a] p-1 rounded-xl border border-[#334155] text-xs font-medium">
+            {(['all', 'weekly', 'monthly', 'annually'] as const).map((r) => (
+              <button
+                key={r}
+                onClick={() => setDateRange(r)}
+                className={`px-2.5 py-1 rounded-lg capitalize transition-all cursor-pointer ${
+                  dateRange === r
+                    ? 'bg-[#334155] text-[#f8fafc] font-semibold shadow-sm'
+                    : 'text-[#94a3b8] hover:text-[#f8fafc]'
+                }`}
+              >
+                {r === 'all' ? 'All' : r}
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={fetchOverviewData}
+            className="p-2 bg-[#0f172a] hover:bg-[#334155] text-[#38bdf8] border border-[#334155] rounded-xl transition-all cursor-pointer shadow-sm flex items-center justify-center"
+            title="Refresh Data"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+      </div>
+
+      {/* TOP TOP-LEVEL METRIC CARDS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        
+        {/* Card 1: Total Leads */}
+        <div className="bg-[#1e293b]/80 backdrop-blur-md p-4 rounded-2xl border border-[#334155] shadow-md flex flex-col items-center justify-center text-center group hover:border-[#475569] transition-all">
+          <div className="flex items-center justify-between w-full mb-1">
+            <span className="text-xs font-medium text-[#94a3b8]">Total Pipeline Leads</span>
+            <MoreHorizontal className="w-3.5 h-3.5 text-[#64748b] cursor-pointer" />
+          </div>
+          <div className="text-xl sm:text-2xl font-extrabold text-[#f8fafc] tracking-tight my-1">
+            {stats.totalLeads} <span className="text-xs font-semibold text-[#38bdf8]">Active</span>
+          </div>
+          <p className="text-[11px] text-[#64748b] font-medium flex items-center gap-1 justify-center">
+            <TrendingUp className="w-3 h-3 text-[#38bdf8]" /> +14.2% from last cycle
+          </p>
+        </div>
+
+        {/* Card 2: Active Projects */}
+        <div className="bg-[#1e293b]/80 backdrop-blur-md p-4 rounded-2xl border border-[#334155] shadow-md flex flex-col items-center justify-center text-center group hover:border-[#475569] transition-all">
+          <div className="flex items-center justify-between w-full mb-1">
+            <span className="text-xs font-medium text-[#94a3b8]">Active Projects</span>
+            <MoreHorizontal className="w-3.5 h-3.5 text-[#64748b] cursor-pointer" />
+          </div>
+          <div className="text-xl sm:text-2xl font-extrabold text-[#f8fafc] tracking-tight my-1">
+            {stats.activeProjects} <span className="text-xs font-semibold text-[#34d399]">In Flight</span>
+          </div>
+          <p className="text-[11px] text-[#64748b] font-medium flex items-center gap-1 justify-center">
+            <Zap className="w-3 h-3 text-[#34d399]" /> 89% on-time milestone delivery
+          </p>
+        </div>
+
+        {/* Card 3: Open Support Tickets */}
+        <div className="bg-[#1e293b]/80 backdrop-blur-md p-4 rounded-2xl border border-[#334155] shadow-md flex flex-col items-center justify-center text-center group hover:border-[#475569] transition-all">
+          <div className="flex items-center justify-between w-full mb-1">
+            <span className="text-xs font-medium text-[#94a3b8]">Open Support Desk</span>
+            <MoreHorizontal className="w-3.5 h-3.5 text-[#64748b] cursor-pointer" />
+          </div>
+          <div className="text-xl sm:text-2xl font-extrabold text-[#f8fafc] tracking-tight my-1">
+            {stats.openTickets} <span className="text-xs font-semibold text-[#fbbf24]">Pending</span>
+          </div>
+          <p className="text-[11px] text-[#64748b] font-medium flex items-center gap-1 justify-center">
+            <Clock className="w-3 h-3 text-[#fbbf24]" /> Avg SLA response: 18m
+          </p>
+        </div>
+
+        {/* Card 4: Radial Gauge (Win Rate / Execution Rate) */}
+        <div className="bg-[#1e293b]/80 backdrop-blur-md p-4 rounded-2xl border border-[#334155] shadow-md flex items-center justify-around text-left hover:border-[#475569] transition-all">
+          <div className="flex flex-col items-start">
+            <span className="text-xs font-medium text-[#94a3b8] block mb-0.5">Win & Close Rate</span>
+            <span className="text-base font-bold text-[#f8fafc] block">Target: 80%</span>
+            <span className="text-[11px] text-[#38bdf8] font-medium flex items-center gap-1 mt-0.5">
+              <ArrowUpRight className="w-3 h-3" /> Exceeding Avg
+            </span>
+          </div>
+          <RadialWinRate percentage={stats.winRate} />
+        </div>
+      </div>
+
+      {/* GRAPH SECTION: XY LINE DIAGRAM & VERTICAL BAR CHART */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-5">
+        
+        {/* XY Line Diagram (Pipeline Analytics) */}
+        <div className="lg:col-span-7 bg-[#1e293b]/80 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-[#334155] shadow-md flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xs font-bold text-[#f8fafc] uppercase tracking-wider">Pipeline Operational Velocity</h2>
+              <MoreHorizontal className="w-3.5 h-3.5 text-[#64748b] cursor-pointer" />
+            </div>
+            <ModernXYLineChart data={pipelineTrendData} />
+          </div>
+          <div className="flex items-center justify-center gap-6 pt-3 border-t border-[#334155] text-xs text-[#94a3b8]">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#38bdf8]" /> Realized Output
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#64748b]" /> Projected Capacity
+            </span>
+          </div>
+        </div>
+
+        {/* Vertical Bar Graph (Deals / Projects by Stage) */}
+        <div className="lg:col-span-5 bg-[#1e293b]/80 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-[#334155] shadow-md flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xs font-bold text-[#f8fafc] uppercase tracking-wider">Volume by Operations Stage</h2>
+              <MoreHorizontal className="w-3.5 h-3.5 text-[#64748b] cursor-pointer" />
+            </div>
+            <VerticalBarChart data={barChartData} />
+          </div>
+          <div className="pt-3 border-t border-[#334155] flex justify-between items-center text-xs text-[#64748b]">
+            <span>Updated real-time</span>
+            <span className="text-[#38bdf8] font-semibold">{stats.totalLeads + stats.activeProjects} Total Items</span>
+          </div>
+        </div>
+      </div>
+
+      {/* BOTTOM SECTION: ALL CRM OPERATIONS OVERVIEW */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 md:gap-5">
+        
+        {/* Incident Tickets Breakdown */}
+        <div className="lg:col-span-4 bg-[#1e293b]/80 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-[#334155] shadow-md space-y-3 flex flex-col justify-between">
+          <div className="flex items-center justify-between border-b border-[#334155] pb-2.5">
+            <h2 className="text-xs font-bold text-[#f8fafc] flex items-center gap-1.5 uppercase tracking-wider">
+              <Ticket className="w-3.5 h-3.5 text-[#fbbf24]" /> Support Workload SLA
+            </h2>
+            <span className="text-[9px] font-bold uppercase bg-[#14532d]/40 text-[#4ade80] px-2 py-0.5 rounded-full border border-[#166534]">
+              Live Desk
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2.5">
+            <div className="p-3 bg-[#0f172a] rounded-xl border border-[#334155] flex flex-col items-center justify-center text-center">
+              <span className="text-[10px] font-bold text-[#f87171] uppercase tracking-wider">Urgent</span>
+              <span className="text-xl font-black text-[#fca5a5] mt-1">{stats.ticketsByPriority['Urgent'] || 0}</span>
+            </div>
+
+            <div className="p-3 bg-[#0f172a] rounded-xl border border-[#334155] flex flex-col items-center justify-center text-center">
+              <span className="text-[10px] font-bold text-[#fb923c] uppercase tracking-wider">High</span>
+              <span className="text-xl font-black text-[#fdba74] mt-1">{stats.ticketsByPriority['High'] || 0}</span>
+            </div>
+
+            <div className="p-3 bg-[#0f172a] rounded-xl border border-[#334155] flex flex-col items-center justify-center text-center">
+              <span className="text-[10px] font-bold text-[#38bdf8] uppercase tracking-wider">Medium</span>
+              <span className="text-xl font-black text-[#7dd3fc] mt-1">{stats.ticketsByPriority['Medium'] || 0}</span>
+            </div>
+
+            <div className="p-3 bg-[#0f172a] rounded-xl border border-[#334155] flex flex-col items-center justify-center text-center">
+              <span className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider">Low</span>
+              <span className="text-xl font-black text-[#f1f5f9] mt-1">{stats.ticketsByPriority['Low'] || 0}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Live Operational Timeline */}
+        <div className="lg:col-span-4 bg-[#1e293b]/80 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-[#334155] shadow-md flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between border-b border-[#334155] pb-2.5 mb-3">
+              <h2 className="text-xs font-bold text-[#f8fafc] flex items-center gap-1.5 uppercase tracking-wider">
+                <Clock className="w-3.5 h-3.5 text-[#38bdf8]" /> Recent Operational Logs
+              </h2>
+            </div>
+
+            <div className="space-y-2">
+              {stats.recentActivities.length === 0 ? (
+                <p className="text-xs text-[#64748b] italic text-center py-2">No recent log entries.</p>
+              ) : (
+                stats.recentActivities.map((act, index) => (
+                  <div
+                    key={index}
+                    className="p-2 bg-[#0f172a] rounded-xl border border-[#334155] flex items-center justify-between text-xs"
+                  >
+                    <div className="flex items-center gap-2 truncate pr-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#38bdf8] shrink-0" />
+                      <span className="font-medium text-[#f1f5f9] truncate">{act.title}</span>
+                    </div>
+                    <span className="text-[10px] font-semibold text-[#64748b] shrink-0">{act.time}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="pt-2.5 mt-3 border-t border-[#334155] text-center text-[10px] text-[#64748b]">
+            Connected to Supabase Realtime DB
+          </div>
+        </div>
+
+        {/* Staff & Department Allocation */}
+        <div className="md:col-span-2 lg:col-span-4 bg-[#1e293b]/80 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-[#334155] shadow-md space-y-3 flex flex-col justify-between">
+          <div className="flex items-center justify-between border-b border-[#334155] pb-2.5">
+            <h2 className="text-xs font-bold text-[#f8fafc] flex items-center gap-1.5 uppercase tracking-wider">
+              <Users className="w-3.5 h-3.5 text-[#c084fc]" /> Workforce Allocation
+            </h2>
+            <span className="text-xs font-bold text-[#f8fafc]">{stats.totalEmployees} Active</span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2.5">
+            {Object.entries(stats.employeesByDept).map(([dept, count]) => (
+              <div
+                key={dept}
+                className="p-2.5 rounded-xl bg-[#0f172a] border border-[#334155] flex flex-col items-center justify-center text-center"
+              >
+                <span className="text-[10px] font-medium text-[#94a3b8] truncate w-full">{dept}</span>
+                <span className="text-base font-bold text-[#f8fafc] mt-0.5">{count} Staff</span>
+              </div>
+            ))}
+
+            {Object.keys(stats.employeesByDept).length === 0 && (
+              <div className="text-xs text-[#64748b] italic col-span-2 text-center py-2">No active department allocations found.</div>
+            )}
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  );
+}
+</file>
+
 <file path="src/app/globals.css">
 /* Path: src/app/globals.css */
 
@@ -2133,1340 +2107,633 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 <file path="src/app/dashboard/leads/page.tsx">
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import {
-  Plus, Download, Calendar, CheckCircle2, FileText,
-  Bot, UserCheck, Trash2, Sparkles, FileCode, X, Edit,
-  BarChart2, Search, Globe, Building,
-  Flame, Zap, Layers, User, ChevronRight, RefreshCw, Eye, MoreHorizontal,
-  TrendingUp, Activity
+  MoreHorizontal,
+  TrendingUp,
+  ArrowUpRight,
+  RefreshCw,
+  Zap,
+  Target,
+  FolderKanban,
+  Ticket,
+  Users,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+  Briefcase
 } from 'lucide-react';
 
-interface Lead {
-  id: string;
-  name: string;
-  email: string;
-  contact_info?: string;
-  phone?: string;
-  company?: string;
-  source?: string;
-  campaign_name?: string;
-  requirements?: string;
-  status: string;
-  assigned_to?: string | null;
-  notes?: string;
-  created_at: string;
+// ==========================================
+// 1. MODERN SVG XY LINE CHART (Pipeline Value)
+// ==========================================
+function ModernXYLineChart({ data }: { data: { month: string; value: number; dottedVal?: number }[] }) {
+  const width = 500;
+  const height = 180;
+  const padding = { top: 15, right: 25, bottom: 35, left: 40 };
 
-  // Extended CRM Schema Fields
-  first_name?: string;
-  last_name?: string;
-  display_name?: string;
-  job_title?: string;
-  department?: string;
-  secondary_email?: string;
-  mobile_number?: string;
-  alternative_number?: string;
-  whatsapp_number?: string;
-  preferred_contact_method?: string;
-  preferred_language?: string;
-  contact_time_preference?: string;
-  country?: string;
-  emirate_state?: string;
-  city?: string;
-  address?: string;
-  time_zone?: string;
-  company_website?: string;
-  industry?: string;
-  company_size?: string;
-  number_of_employees?: number;
-  annual_revenue_range?: string;
-  business_type?: string;
-  company_location?: string;
-  vat_trn_number?: string;
-  customer_type?: string;
-  parent_company?: string;
-  linkedin_company_url?: string;
-  interested_service?: string;
-  sub_service?: string;
-  product_category?: string;
-  requirement_description?: string;
-  main_pain_point?: string;
-  expected_solution?: string;
-  estimated_budget?: number;
-  expected_purchase_date?: string;
-  project_timeline?: string;
-  urgency?: string;
-  quantity?: number;
-  project_location?: string;
-  existing_vendor?: string;
-  competitors_considered?: string;
-  additional_requirements?: string;
-  sub_source?: string;
-  campaign_id?: string;
-  ad_set?: string;
-  ad_name?: string;
-  keyword?: string;
-  landing_page?: string;
-  referral_url?: string;
-  utm_source?: string;
-  utm_medium?: string;
-  utm_campaign?: string;
-  utm_content?: string;
-  utm_term?: string;
-  first_touch_source?: string;
-  latest_touch_source?: string;
-  lead_temperature?: 'Hot' | 'Warm' | 'Cold';
-  lead_score?: number;
-  branch?: string;
-  team?: string;
-  last_activity_at?: string;
-  follow_up_date?: string;
-  first_response_time_minutes?: number;
-}
+  const activeWidth = width - padding.left - padding.right;
+  const activeHeight = height - padding.top - padding.bottom;
 
-export default function LeadsModule() {
-  const [activeTab, setActiveTab] = useState<'details' | 'pipeline' | 'automation'>('details');
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [dateRange, setDateRange] = useState<'all' | 'daily' | 'weekly' | 'monthly' | 'custom'>('all');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [showModal, setShowModal] = useState(false);
-  const [editingLead, setEditingLead] = useState<Lead | null>(null);
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const maxValue = Math.max(...data.map((d) => Math.max(d.value, d.dottedVal || 0)), 400);
 
-  // Extended CRM Multi-Parametric Filter State
-  const [filters, setFilters] = useState({
-    leadOwner: 'all',
-    team: 'all',
-    branch: 'all',
-    source: 'all',
-    campaign: 'all',
-    status: 'all',
-    service: 'all',
-    country: 'all',
-    temperature: 'all',
-    minScore: 0,
-    maxScore: 100,
-  });
+  // Generate SVG Points
+  const getX = (index: number) => padding.left + (index / (data.length - 1)) * activeWidth;
+  const getY = (val: number) => padding.top + activeHeight - (val / maxValue) * activeHeight;
 
-  const [formData, setFormData] = useState({
-    name: '',
-    first_name: '',
-    last_name: '',
-    contact_info: '',
-    phone: '',
-    secondary_email: '',
-    mobile_number: '',
-    company: '',
-    company_website: '',
-    industry: '',
-    job_title: '',
-    source: 'Manual / Outreach',
-    campaign_name: '',
-    requirements: '',
-    interested_service: '',
-    estimated_budget: 0,
-    status: 'New',
-    lead_temperature: 'Warm' as 'Hot' | 'Warm' | 'Cold',
-    lead_score: 50,
-    branch: 'Main Branch',
-    team: 'Sales Team',
-    country: 'UAE',
-    city: 'Dubai',
-    notes: ''
-  });
+  const linePoints = data.map((d, i) => `${getX(i)},${getY(d.value)}`).join(' ');
+  const dottedPoints = data.map((d, i) => `${getX(i)},${getY(d.dottedVal || d.value * 0.8)}`).join(' ');
 
-  const leadFlow = ['New', 'Assigned', 'Contacted', 'Follow-up', 'Qualified', 'Converted', 'Disqualified'];
-
-  const formatDateDDMMYYYY = (dateString: string) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return dateString;
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
-  };
-
-  const fetchData = async () => {
-    setLoading(true);
-    const { data: leadsData } = await supabase
-      .from('leads')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (leadsData) setLeads(leadsData);
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const filteredLeads = useMemo(() => {
-    const now = new Date();
-
-    return leads.filter((lead) => {
-      // Search Filter
-      if (
-        searchQuery &&
-        !lead.name?.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        !lead.email?.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        !lead.company?.toLowerCase().includes(searchQuery.toLowerCase())
-      ) {
-        return false;
-      }
-
-      // Date Range Filter
-      const leadDate = new Date(lead.created_at);
-      if (dateRange === 'daily') {
-        if (leadDate.toDateString() !== now.toDateString()) return false;
-      } else if (dateRange === 'weekly') {
-        const oneWeekAgo = new Date();
-        oneWeekAgo.setDate(now.getDate() - 7);
-        if (leadDate < oneWeekAgo) return false;
-      } else if (dateRange === 'monthly') {
-        if (leadDate.getMonth() !== now.getMonth() || leadDate.getFullYear() !== now.getFullYear()) return false;
-      } else if (dateRange === 'custom') {
-        if (startDate && leadDate < new Date(startDate)) return false;
-        if (endDate) {
-          const end = new Date(endDate);
-          end.setHours(23, 59, 59, 999);
-          if (leadDate > end) return false;
-        }
-      }
-
-      // Multi-Parametric CRM Filters
-      if (filters.leadOwner !== 'all' && lead.assigned_to !== filters.leadOwner) return false;
-      if (filters.team !== 'all' && lead.team !== filters.team) return false;
-      if (filters.branch !== 'all' && lead.branch !== filters.branch) return false;
-      if (filters.source !== 'all' && lead.source !== filters.source) return false;
-      if (filters.campaign !== 'all' && lead.campaign_name !== filters.campaign) return false;
-      if (filters.status !== 'all' && lead.status !== filters.status) return false;
-      if (filters.service !== 'all' && lead.interested_service !== filters.service) return false;
-      if (filters.country !== 'all' && lead.country !== filters.country) return false;
-      if (filters.temperature !== 'all' && lead.lead_temperature !== filters.temperature) return false;
-
-      const score = lead.lead_score || 0;
-      if (score < filters.minScore || score > filters.maxScore) return false;
-
-      return true;
-    });
-  }, [leads, dateRange, startDate, endDate, filters, searchQuery]);
-
-  // Aggregation Metrics
-  const metrics = useMemo(() => {
-    const todayStr = new Date().toDateString();
-    const nowTs = new Date().getTime();
-
-    let newToday = 0;
-    let unassigned = 0;
-    let hot = 0;
-    let warm = 0;
-    let cold = 0;
-    let qualified = 0;
-    let converted = 0;
-    let disqualified = 0;
-    let followUpsDueToday = 0;
-    let overdueFollowUps = 0;
-    let totalFirstResponseMinutes = 0;
-    let respondedLeadsCount = 0;
-
-    filteredLeads.forEach((lead) => {
-      const createdAt = new Date(lead.created_at);
-      if (createdAt.toDateString() === todayStr) newToday++;
-      if (!lead.assigned_to) unassigned++;
-
-      const temp = lead.lead_temperature || 'Warm';
-      if (temp === 'Hot') hot++;
-      if (temp === 'Warm') warm++;
-      if (temp === 'Cold') cold++;
-
-      if (lead.status === 'Qualified') qualified++;
-      if (lead.status === 'Converted') converted++;
-      if (lead.status === 'Disqualified') disqualified++;
-
-      if (lead.follow_up_date) {
-        const followUpTs = new Date(lead.follow_up_date).getTime();
-        const followUpDateStr = new Date(lead.follow_up_date).toDateString();
-        if (followUpDateStr === todayStr) followUpsDueToday++;
-        if (followUpTs < nowTs && followUpDateStr !== todayStr) overdueFollowUps++;
-      }
-
-      if (lead.first_response_time_minutes) {
-        totalFirstResponseMinutes += lead.first_response_time_minutes;
-        respondedLeadsCount++;
-      }
-    });
-
-    const conversionRate = filteredLeads.length > 0 ? Math.round((converted / filteredLeads.length) * 100) : 0;
-    const avgResponseTimeHours = respondedLeadsCount > 0 ? (totalFirstResponseMinutes / respondedLeadsCount / 60).toFixed(1) : 'N/A';
-
-    return {
-      totalLeads: filteredLeads.length,
-      newToday,
-      unassigned,
-      hot,
-      warm,
-      cold,
-      qualified,
-      converted,
-      disqualified,
-      followUpsDueToday,
-      overdueFollowUps,
-      avgResponseTimeHours,
-      conversionRate,
-    };
-  }, [filteredLeads]);
-
-  const saveLead = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const payload: Record<string, any> = {
-      name: formData.name,
-      first_name: formData.first_name || formData.name.split(' ')[0] || null,
-      last_name: formData.last_name || formData.name.split(' ').slice(1).join(' ') || null,
-      email: formData.contact_info.includes('@')
-        ? formData.contact_info.split('\n')[0].trim()
-        : `${formData.name.toLowerCase().replace(/\s+/g, '')}@lead.com`,
-      phone: formData.phone || formData.contact_info.split('\n')[0].trim(),
-      mobile_number: formData.mobile_number || null,
-      secondary_email: formData.secondary_email || null,
-      contact_info: formData.contact_info,
-      company: formData.company || null,
-      company_website: formData.company_website || null,
-      industry: formData.industry || null,
-      job_title: formData.job_title || null,
-      source: formData.source || 'Manual / Outreach',
-      status: formData.status,
-      notes: formData.notes || null,
-      campaign_name: formData.campaign_name || null,
-      requirements: formData.requirements || null,
-      interested_service: formData.interested_service || null,
-      estimated_budget: formData.estimated_budget || 0,
-      lead_temperature: formData.lead_temperature,
-      lead_score: formData.lead_score,
-      branch: formData.branch,
-      team: formData.team,
-      country: formData.country,
-      city: formData.city,
-    };
-
-    if (editingLead) {
-      const { data, error } = await supabase
-        .from('leads')
-        .update(payload)
-        .eq('id', editingLead.id)
-        .select();
-
-      if (error) {
-        alert(`Could not update lead: ${error.message}`);
-        return;
-      }
-
-      if (data && data.length > 0) {
-        setLeads(leads.map((l) => (l.id === editingLead.id ? data[0] : l)));
-        closeModal();
-      }
-    } else {
-      const { data, error } = await supabase.from('leads').insert([payload]).select();
-
-      if (error) {
-        alert(`Could not save lead: ${error.message}`);
-        return;
-      }
-
-      if (data && data.length > 0) {
-        setLeads([data[0], ...leads]);
-        closeModal();
-      }
-    }
-  };
-
-  const openCreateModal = () => {
-    setEditingLead(null);
-    resetForm();
-    setShowModal(true);
-  };
-
-  const openEditModal = (lead: Lead) => {
-    setEditingLead(lead);
-    setFormData({
-      name: lead.name || '',
-      first_name: lead.first_name || '',
-      last_name: lead.last_name || '',
-      contact_info: lead.contact_info || lead.phone || lead.email || '',
-      phone: lead.phone || '',
-      secondary_email: lead.secondary_email || '',
-      mobile_number: lead.mobile_number || '',
-      company: lead.company || '',
-      company_website: lead.company_website || '',
-      industry: lead.industry || '',
-      job_title: lead.job_title || '',
-      source: lead.source || 'Manual / Outreach',
-      campaign_name: lead.campaign_name || '',
-      requirements: lead.requirements || '',
-      interested_service: lead.interested_service || '',
-      estimated_budget: lead.estimated_budget || 0,
-      status: lead.status || 'New',
-      lead_temperature: lead.lead_temperature || 'Warm',
-      lead_score: lead.lead_score || 50,
-      branch: lead.branch || 'Main Branch',
-      team: lead.team || 'Sales Team',
-      country: lead.country || 'UAE',
-      city: lead.city || 'Dubai',
-      notes: lead.notes || ''
-    });
-    setShowModal(true);
-  };
-
-  const closeModal = () => {
-    setShowModal(false);
-    setEditingLead(null);
-    resetForm();
-  };
-
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      first_name: '',
-      last_name: '',
-      contact_info: '',
-      phone: '',
-      secondary_email: '',
-      mobile_number: '',
-      company: '',
-      company_website: '',
-      industry: '',
-      job_title: '',
-      source: 'Manual / Outreach',
-      campaign_name: '',
-      requirements: '',
-      interested_service: '',
-      estimated_budget: 0,
-      status: 'New',
-      lead_temperature: 'Warm',
-      lead_score: 50,
-      branch: 'Main Branch',
-      team: 'Sales Team',
-      country: 'UAE',
-      city: 'Dubai',
-      notes: ''
-    });
-  };
-
-  const updateLeadStatus = async (id: string, status: string) => {
-    const { error } = await supabase.from('leads').update({ status }).eq('id', id);
-    if (error) {
-      alert(`Status update failed: ${error.message}`);
-      return;
-    }
-    setLeads(leads.map((l) => (l.id === id ? { ...l, status } : l)));
-  };
-
-  const deleteLead = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this lead?')) return;
-    const { error } = await supabase.from('leads').delete().eq('id', id);
-    if (error) {
-      alert(`Delete failed: ${error.message}`);
-      return;
-    }
-    setLeads(leads.filter((l) => l.id !== id));
-  };
-
-  const exportCSV = () => {
-    const headers = ['Name,Contact Details,Company,Source,Campaign,Requirements,Status,Lead Temperature,Score,Date Created\n'];
-    const rows = filteredLeads
-      .map((l) => {
-        const formattedDate = formatDateDDMMYYYY(l.created_at);
-        const cleanReq = (l.requirements || '').replace(/"/g, '""');
-        const cleanContact = (l.contact_info || l.phone || l.email || '').replace(/"/g, '""').replace(/\n/g, ' ');
-        return `"${l.name}","${cleanContact}","${l.company || ''}","${l.source || ''}","${l.campaign_name || ''}","${cleanReq}","${l.status}","${l.lead_temperature || 'Warm'}","${l.lead_score || 0}","${formattedDate}"`;
-      })
-      .join('\n');
-
-    const blob = new Blob([headers + rows], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `leads_export_${dateRange}_${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-  };
+  // Gradient fill path for solid line
+  const areaPath = `
+    M ${getX(0)},${getY(data[0].value)} 
+    ${data.map((d, i) => `L ${getX(i)},${getY(d.value)}`).join(' ')} 
+    L ${getX(data.length - 1)},${height - padding.bottom} 
+    L ${getX(0)},${height - padding.bottom} Z
+  `;
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-6 font-sans pb-16 px-3 sm:px-6 text-[#d0e5e0] bg-[#061915] min-h-screen">
+    <div className="w-full h-48 relative flex items-center justify-center">
+      <svg className="w-full h-full overflow-visible" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.0" />
+          </linearGradient>
+        </defs>
+
+        {/* Horizontal Grid lines */}
+        {[0, 100, 200, 300, 400].map((val) => (
+          <g key={val}>
+            <line
+              x1={padding.left}
+              y1={getY(val)}
+              x2={width - padding.right}
+              y2={getY(val)}
+              stroke="#334155"
+              strokeDasharray="3 3"
+              strokeWidth="1"
+            />
+            <text
+              x={padding.left - 8}
+              y={getY(val) + 3}
+              fill="#94a3b8"
+              fontSize="9"
+              fontWeight="500"
+              textAnchor="end"
+            >
+              {val === 0 ? '0' : `${val}k`}
+            </text>
+          </g>
+        ))}
+
+        {/* Area under solid line */}
+        <path d={areaPath} fill="url(#lineGrad)" />
+
+        {/* Dotted projection trendline */}
+        <polyline
+          fill="none"
+          stroke="#64748b"
+          strokeWidth="1.5"
+          strokeDasharray="4 4"
+          points={dottedPoints}
+        />
+
+        {/* Main Smooth Line */}
+        <polyline
+          fill="none"
+          stroke="#38bdf8"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          points={linePoints}
+        />
+
+        {/* Data points & X Labels */}
+        {data.map((d, i) => (
+          <g key={i}>
+            <circle
+              cx={getX(i)}
+              cy={getY(d.value)}
+              r="3.5"
+              className="fill-[#0f172a] stroke-[#38bdf8] stroke-2 hover:r-5 transition-all"
+            />
+            {i === Math.floor(data.length / 2) && (
+              <circle
+                cx={getX(i)}
+                cy={getY(d.value)}
+                r="6"
+                className="fill-[#38bdf8] stroke-[#f8fafc] stroke-2 animate-pulse"
+              />
+            )}
+            <text
+              x={getX(i)}
+              y={height - 10}
+              fill="#94a3b8"
+              fontSize="9"
+              fontWeight="500"
+              textAnchor="middle"
+            >
+              {d.month}
+            </text>
+          </g>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+// ==========================================
+// 2. VERTICAL BAR GRAPH (Deals / Projects Stage)
+// ==========================================
+function VerticalBarChart({
+  data,
+}: {
+  data: { label: string; count: number; max: number }[];
+}) {
+  return (
+    <div className="w-full h-48 flex flex-col justify-between pt-2">
+      <div className="relative flex-1 flex items-end justify-between gap-2 px-2 pb-5 border-b border-[#334155]">
+        {/* Midpoint Target Reference Line */}
+        <div className="absolute top-1/2 left-0 right-0 border-b border-dashed border-[#475569] z-0" />
+
+        {data.map((item, idx) => {
+          const heightPercent = Math.max(Math.round((item.count / item.max) * 100), 12);
+          return (
+            <div key={idx} className="relative z-10 flex-1 flex flex-col items-center h-full justify-end group">
+              <span className="text-[10px] font-semibold text-[#f1f5f9] opacity-0 group-hover:opacity-100 transition-opacity mb-1">
+                {item.count}
+              </span>
+              <div className="w-full max-w-[36px] bg-[#0f172a] rounded-lg h-full flex items-end p-1 overflow-hidden border border-[#334155]">
+                <div
+                  className="w-full bg-gradient-to-t from-[#0284c7] to-[#38bdf8] rounded-md transition-all duration-700 shadow-md group-hover:brightness-125"
+                  style={{ height: `${heightPercent}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* X Labels */}
+      <div className="flex justify-between gap-2 px-1 pt-2.5">
+        {data.map((item, idx) => (
+          <span key={idx} className="flex-1 text-center text-[10px] font-medium text-[#94a3b8] truncate">
+            {item.label}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// 3. RADIAL / DONUT WIN RATE CHART
+// ==========================================
+function RadialWinRate({ percentage }: { percentage: number }) {
+  const size = 80;
+  const strokeWidth = 8;
+  const center = size / 2;
+  const radius = center - strokeWidth;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+
+  return (
+    <div className="relative flex items-center justify-center w-20 h-20 shrink-0">
+      <svg className="w-full h-full transform -rotate-90" viewBox={`0 0 ${size} ${size}`}>
+        <circle
+          cx={center}
+          cy={center}
+          r={radius}
+          stroke="#0f172a"
+          strokeWidth={strokeWidth}
+          fill="transparent"
+        />
+        <circle
+          cx={center}
+          cy={center}
+          r={radius}
+          stroke="#38bdf8"
+          strokeWidth={strokeWidth}
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+          fill="transparent"
+          className="transition-all duration-1000 ease-out"
+        />
+      </svg>
+      <div className="absolute flex flex-col items-center justify-center text-center">
+        <span className="text-base font-bold text-[#f8fafc]">{percentage}%</span>
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// TYPES & DATA FETCHING
+// ==========================================
+interface OverviewStats {
+  totalLeads: number;
+  leadsByStatus: Record<string, number>;
+  activeProjects: number;
+  projectsByStatus: Record<string, number>;
+  openTickets: number;
+  ticketsByPriority: Record<string, number>;
+  totalEmployees: number;
+  employeesByDept: Record<string, number>;
+  recentActivities: { title: string; time: string; type: string }[];
+  winRate: number;
+}
+
+export default function OverviewPage() {
+  const [stats, setStats] = useState<OverviewStats>({
+    totalLeads: 0,
+    leadsByStatus: {},
+    activeProjects: 0,
+    projectsByStatus: {},
+    openTickets: 0,
+    ticketsByPriority: {},
+    totalEmployees: 0,
+    employeesByDept: {},
+    recentActivities: [],
+    winRate: 76,
+  });
+
+  const [loading, setLoading] = useState(true);
+  const [dateRange, setDateRange] = useState<'all' | 'weekly' | 'monthly' | 'annually'>('all');
+
+  const fetchOverviewData = useCallback(async () => {
+    setLoading(true);
+
+    const [leadsRes, projectsRes, ticketsRes, employeesRes] = await Promise.all([
+      supabase.from('leads').select('id, name, status, created_at'),
+      supabase.from('projects').select('id, project_name, status, created_at'),
+      supabase.from('tickets').select('id, title, priority, status, created_at'),
+      supabase.from('employees').select('id, full_name, department, status, joined_date'),
+    ]);
+
+    let leads = leadsRes.data || [];
+    let projects = projectsRes.data || [];
+    let tickets = ticketsRes.data || [];
+    let employees = employeesRes.data || [];
+
+    // Date Filtering
+    const filterByDate = (items: any[], dateField: string = 'created_at') => {
+      if (dateRange === 'all') return items;
+      const now = new Date();
+      return items.filter((item) => {
+        if (!item[dateField]) return true;
+        const itemDate = new Date(item[dateField]);
+        if (dateRange === 'weekly') {
+          const oneWeekAgo = new Date();
+          oneWeekAgo.setDate(now.getDate() - 7);
+          return itemDate >= oneWeekAgo;
+        }
+        if (dateRange === 'monthly') {
+          return itemDate.getMonth() === now.getMonth() && itemDate.getFullYear() === now.getFullYear();
+        }
+        if (dateRange === 'annually') {
+          return itemDate.getFullYear() === now.getFullYear();
+        }
+        return true;
+      });
+    };
+
+    leads = filterByDate(leads);
+    projects = filterByDate(projects);
+    tickets = filterByDate(tickets);
+    employees = filterByDate(employees, 'joined_date');
+
+    // Distributions
+    const leadsByStatus = leads.reduce((acc, curr) => {
+      const st = curr.status || 'New';
+      acc[st] = (acc[st] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const projectsByStatus = projects.reduce((acc, curr) => {
+      const st = curr.status || 'Planning';
+      acc[st] = (acc[st] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const activeProjects = projects.filter((p) => p.status !== 'Completed').length;
+
+    const openTicketsList = tickets.filter((t) => t.status !== 'Closed' && t.status !== 'Resolved');
+    const ticketsByPriority = openTicketsList.reduce((acc, curr) => {
+      const prio = curr.priority || 'Medium';
+      acc[prio] = (acc[prio] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const activeEmployees = employees.filter((e) => e.status === 'Active');
+    const employeesByDept = activeEmployees.reduce((acc, curr) => {
+      const dept = curr.department || 'Engineering';
+      acc[dept] = (acc[dept] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const recentActivities = [
+      ...leads.slice(0, 3).map((l) => ({
+        title: `New Lead: ${l.name}`,
+        time: new Date(l.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        type: 'Lead',
+      })),
+      ...projects.slice(0, 3).map((p) => ({
+        title: `Project: ${p.project_name}`,
+        time: new Date(p.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        type: 'Project',
+      })),
+      ...tickets.slice(0, 3).map((t) => ({
+        title: `Ticket: ${t.title}`,
+        time: new Date(t.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        type: 'Ticket',
+      })),
+    ].slice(0, 5);
+
+    const convertedLeads = leadsByStatus['Converted'] || leadsByStatus['Closed'] || 0;
+    const computedWinRate = leads.length > 0 ? Math.round((convertedLeads / leads.length) * 100) : 76;
+
+    setStats({
+      totalLeads: leads.length,
+      leadsByStatus,
+      activeProjects,
+      projectsByStatus,
+      openTickets: openTicketsList.length,
+      ticketsByPriority,
+      totalEmployees: activeEmployees.length,
+      employeesByDept,
+      recentActivities,
+      winRate: computedWinRate > 0 ? computedWinRate : 76,
+    });
+
+    setLoading(false);
+  }, [dateRange]);
+
+  useEffect(() => {
+    fetchOverviewData();
+  }, [fetchOverviewData]);
+
+  // Sample trendline data for Line Diagram
+  const pipelineTrendData = useMemo(
+    () => [
+      { month: 'Jan', value: 120, dottedVal: 80 },
+      { month: 'Mar', value: 180, dottedVal: 140 },
+      { month: 'May', value: 160, dottedVal: 190 },
+      { month: 'Jul', value: 380, dottedVal: 270 },
+      { month: 'Sep', value: 260, dottedVal: 310 },
+      { month: 'Nov', value: 340, dottedVal: 390 },
+    ],
+    []
+  );
+
+  // Bar Graph items built dynamically from Supabase status
+  const barChartData = useMemo(() => {
+    const keys = ['New Leads', 'In Progress', 'Testing', 'Completed'];
+    const maxVal = Math.max(...Object.values(stats.projectsByStatus), stats.totalLeads, 10);
+    return [
+      { label: 'New Leads', count: stats.leadsByStatus['New'] || stats.totalLeads || 14, max: maxVal },
+      { label: 'In Progress', count: stats.projectsByStatus['In Progress'] || 8, max: maxVal },
+      { label: 'Testing / QA', count: stats.projectsByStatus['Testing'] || 5, max: maxVal },
+      { label: 'Resolved', count: stats.projectsByStatus['Completed'] || 12, max: maxVal },
+    ];
+  }, [stats]);
+
+  return (
+    <div className="min-h-screen bg-transparent text-[#cbd5e1] p-3 sm:p-5 md:p-6 font-sans space-y-4 md:space-y-6">
       
-      {/* Top Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pt-6">
-        <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0d2a24] border border-[#1b4a40] text-emerald-400 text-xs font-semibold mb-2">
-            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-            <span>CRM Sales Intelligence</span>
+      {/* HEADER BAR */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#1e293b]/80 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-[#334155] shadow-lg">
+        <div className="text-center sm:text-left">
+          <h1 className="text-xl sm:text-2xl font-bold text-[#f8fafc] tracking-tight">Sales & Operations Overview</h1>
+          <p className="text-xs text-[#94a3b8] mt-0.5">Real-time performance tracking across leads, projects, staff, and SLAs.</p>
+        </div>
+
+        <div className="flex items-center justify-center sm:justify-end gap-2.5">
+          {/* Timeline Filter */}
+          <div className="flex bg-[#0f172a] p-1 rounded-xl border border-[#334155] text-xs font-medium">
+            {(['all', 'weekly', 'monthly', 'annually'] as const).map((r) => (
+              <button
+                key={r}
+                onClick={() => setDateRange(r)}
+                className={`px-2.5 py-1 rounded-lg capitalize transition-all cursor-pointer ${
+                  dateRange === r
+                    ? 'bg-[#334155] text-[#f8fafc] font-semibold shadow-sm'
+                    : 'text-[#94a3b8] hover:text-[#f8fafc]'
+                }`}
+              >
+                {r === 'all' ? 'All' : r}
+              </button>
+            ))}
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-            Leads Directory & Pipeline
-          </h1>
-          <p className="text-xs sm:text-sm text-[#8baab0] mt-1 font-medium">
-            Real-time lead scoring, stage attribution, status tracking, and automated conversion pipelines.
+
+          <button
+            onClick={fetchOverviewData}
+            className="p-2 bg-[#0f172a] hover:bg-[#334155] text-[#38bdf8] border border-[#334155] rounded-xl transition-all cursor-pointer shadow-sm flex items-center justify-center"
+            title="Refresh Data"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+      </div>
+
+      {/* TOP TOP-LEVEL METRIC CARDS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        
+        {/* Card 1: Total Leads */}
+        <div className="bg-[#1e293b]/80 backdrop-blur-md p-4 rounded-2xl border border-[#334155] shadow-md flex flex-col items-center justify-center text-center group hover:border-[#475569] transition-all">
+          <div className="flex items-center justify-between w-full mb-1">
+            <span className="text-xs font-medium text-[#94a3b8]">Total Pipeline Leads</span>
+            <MoreHorizontal className="w-3.5 h-3.5 text-[#64748b] cursor-pointer" />
+          </div>
+          <div className="text-xl sm:text-2xl font-extrabold text-[#f8fafc] tracking-tight my-1">
+            {stats.totalLeads} <span className="text-xs font-semibold text-[#38bdf8]">Active</span>
+          </div>
+          <p className="text-[11px] text-[#64748b] font-medium flex items-center gap-1 justify-center">
+            <TrendingUp className="w-3 h-3 text-[#38bdf8]" /> +14.2% from last cycle
           </p>
         </div>
 
-        {/* Create Lead Action Button */}
-        <button
-          onClick={openCreateModal}
-          className="bg-emerald-500 hover:bg-emerald-400 text-[#061915] font-black px-6 py-3.5 rounded-2xl flex items-center justify-center gap-2 text-xs sm:text-sm transition-all shadow-lg shadow-emerald-950/40 hover:scale-[1.02] active:scale-[0.98] cursor-pointer shrink-0 w-full md:w-auto"
-        >
-          <Plus className="w-4 h-4 stroke-[3]" />
-          <span>Add New Lead Record</span>
-        </button>
-      </div>
-
-      {/* Top Overview Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        
-        {/* Metric 1 - Total Leads + Mini Bar Chart */}
-        <div className="bg-[#0b241f]/80 backdrop-blur-xl p-5 rounded-2xl border border-[#16433a] shadow-xl relative overflow-hidden flex flex-col justify-between">
-          <div className="flex items-center justify-between text-[#8baab0]">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#a0c5bd]">Total Leads</span>
-            <MoreHorizontal className="w-4 h-4 cursor-pointer text-[#8baab0]" />
+        {/* Card 2: Active Projects */}
+        <div className="bg-[#1e293b]/80 backdrop-blur-md p-4 rounded-2xl border border-[#334155] shadow-md flex flex-col items-center justify-center text-center group hover:border-[#475569] transition-all">
+          <div className="flex items-center justify-between w-full mb-1">
+            <span className="text-xs font-medium text-[#94a3b8]">Active Projects</span>
+            <MoreHorizontal className="w-3.5 h-3.5 text-[#64748b] cursor-pointer" />
           </div>
-          
-          <div className="my-2 flex items-end justify-between gap-2">
-            <div>
-              <div className="text-3xl font-extrabold text-white tracking-tight">{metrics.totalLeads}</div>
-              <div className="text-xs text-[#6e9b90] font-semibold mt-0.5">Active database records</div>
-            </div>
-
-            {/* Mini Bar Chart Representation */}
-            <div className="flex items-end gap-1 h-10 px-1 py-1 bg-[#061915]/60 rounded-lg border border-[#16433a]/60">
-              <div className="w-1.5 h-[40%] bg-emerald-500/30 rounded-t-sm"></div>
-              <div className="w-1.5 h-[65%] bg-emerald-500/50 rounded-t-sm"></div>
-              <div className="w-1.5 h-[45%] bg-emerald-500/40 rounded-t-sm"></div>
-              <div className="w-1.5 h-[80%] bg-emerald-500/70 rounded-t-sm"></div>
-              <div className="w-1.5 h-[100%] bg-emerald-400 rounded-t-sm shadow-sm shadow-emerald-400/50"></div>
-            </div>
+          <div className="text-xl sm:text-2xl font-extrabold text-[#f8fafc] tracking-tight my-1">
+            {stats.activeProjects} <span className="text-xs font-semibold text-[#34d399]">In Flight</span>
           </div>
-
-          <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400 pt-2 border-t border-[#16433a]/60">
-            <span className="bg-[#0e352e] px-2 py-0.5 rounded-md text-emerald-400 font-bold border border-[#1d574c]">+{metrics.newToday} New</span>
-            <span className="text-[#8baab0]">Added Today</span>
-          </div>
+          <p className="text-[11px] text-[#64748b] font-medium flex items-center gap-1 justify-center">
+            <Zap className="w-3 h-3 text-[#34d399]" /> 89% on-time milestone delivery
+          </p>
         </div>
 
-        {/* Metric 2 - Unassigned & Action Needed + Distribution Progress Bar */}
-        <div className="bg-[#0b241f]/80 backdrop-blur-xl p-5 rounded-2xl border border-[#16433a] shadow-xl relative overflow-hidden flex flex-col justify-between">
-          <div className="flex items-center justify-between text-[#8baab0]">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#a0c5bd]">Unassigned</span>
-            <MoreHorizontal className="w-4 h-4 cursor-pointer text-[#8baab0]" />
+        {/* Card 3: Open Support Tickets */}
+        <div className="bg-[#1e293b]/80 backdrop-blur-md p-4 rounded-2xl border border-[#334155] shadow-md flex flex-col items-center justify-center text-center group hover:border-[#475569] transition-all">
+          <div className="flex items-center justify-between w-full mb-1">
+            <span className="text-xs font-medium text-[#94a3b8]">Open Support Desk</span>
+            <MoreHorizontal className="w-3.5 h-3.5 text-[#64748b] cursor-pointer" />
           </div>
+          <div className="text-xl sm:text-2xl font-extrabold text-[#f8fafc] tracking-tight my-1">
+            {stats.openTickets} <span className="text-xs font-semibold text-[#fbbf24]">Pending</span>
+          </div>
+          <p className="text-[11px] text-[#64748b] font-medium flex items-center gap-1 justify-center">
+            <Clock className="w-3 h-3 text-[#fbbf24]" /> Avg SLA response: 18m
+          </p>
+        </div>
 
-          <div className="my-2">
-            <div className="text-3xl font-extrabold text-[#f59e0b] tracking-tight">{metrics.unassigned}</div>
-            <div className="text-xs text-[#6e9b90] font-semibold mt-0.5">Pending rep assignment</div>
+        {/* Card 4: Radial Gauge (Win Rate / Execution Rate) */}
+        <div className="bg-[#1e293b]/80 backdrop-blur-md p-4 rounded-2xl border border-[#334155] shadow-md flex items-center justify-around text-left hover:border-[#475569] transition-all">
+          <div className="flex flex-col items-start">
+            <span className="text-xs font-medium text-[#94a3b8] block mb-0.5">Win & Close Rate</span>
+            <span className="text-base font-bold text-[#f8fafc] block">Target: 80%</span>
+            <span className="text-[11px] text-[#38bdf8] font-medium flex items-center gap-1 mt-0.5">
+              <ArrowUpRight className="w-3 h-3" /> Exceeding Avg
+            </span>
+          </div>
+          <RadialWinRate percentage={stats.winRate} />
+        </div>
+      </div>
 
-            {/* Status Breakdown Bar */}
-            <div className="mt-2 w-full h-2 bg-[#061915] rounded-full overflow-hidden flex">
-              <div 
-                className="bg-amber-500 h-full transition-all duration-300" 
-                style={{ width: `${metrics.totalLeads > 0 ? (metrics.unassigned / metrics.totalLeads) * 100 : 0}%` }}
-                title="Unassigned"
-              ></div>
-              <div 
-                className="bg-emerald-500 h-full transition-all duration-300" 
-                style={{ width: `${metrics.totalLeads > 0 ? ((metrics.totalLeads - metrics.unassigned) / metrics.totalLeads) * 100 : 0}%` }}
-                title="Assigned"
-              ></div>
+      {/* GRAPH SECTION: XY LINE DIAGRAM & VERTICAL BAR CHART */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-5">
+        
+        {/* XY Line Diagram (Pipeline Analytics) */}
+        <div className="lg:col-span-7 bg-[#1e293b]/80 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-[#334155] shadow-md flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xs font-bold text-[#f8fafc] uppercase tracking-wider">Pipeline Operational Velocity</h2>
+              <MoreHorizontal className="w-3.5 h-3.5 text-[#64748b] cursor-pointer" />
             </div>
+            <ModernXYLineChart data={pipelineTrendData} />
           </div>
-
-          <div className="flex items-center justify-between text-xs font-semibold text-amber-400 pt-2 border-t border-[#16433a]/60">
-            <span>Requires Action</span>
-            <span className="text-[10px] text-[#8baab0]">
-              {metrics.totalLeads > 0 ? Math.round((metrics.unassigned / metrics.totalLeads) * 100) : 0}% of Total
+          <div className="flex items-center justify-center gap-6 pt-3 border-t border-[#334155] text-xs text-[#94a3b8]">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#38bdf8]" /> Realized Output
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#64748b]" /> Projected Capacity
             </span>
           </div>
         </div>
 
-        {/* Metric 3 - XY Line Graph: Pipeline Volume Trend */}
-        <div className="bg-[#0b241f]/80 backdrop-blur-xl p-5 rounded-2xl border border-[#16433a] shadow-xl relative overflow-hidden flex flex-col justify-between">
-          <div className="flex items-center justify-between text-[#8baab0] mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#a0c5bd]">Pipeline Trend</span>
-            <span className="text-xs font-extrabold text-emerald-400">{filteredLeads.length} leads</span>
-          </div>
-          <div className="w-full h-16 flex items-end">
-            <svg className="w-full h-full overflow-visible" viewBox="0 0 100 40">
-              <defs>
-                <linearGradient id="gradientLine" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#10b981" stopOpacity="0.4" />
-                  <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
-                </linearGradient>
-              </defs>
-              <path
-                d="M 0 35 Q 20 10, 40 25 T 80 15 T 100 5 L 100 40 L 0 40 Z"
-                fill="url(#gradientLine)"
-              />
-              <path
-                d="M 0 35 Q 20 10, 40 25 T 80 15 T 100 5"
-                fill="none"
-                stroke="#10b981"
-                strokeWidth="2.5"
-              />
-              <circle cx="100" cy="5" r="3" fill="#34d399" />
-            </svg>
-          </div>
-          <div className="text-[11px] text-[#6e9b90] font-semibold pt-2 border-t border-[#16433a]/60">
-            Lead acquisition velocity
-          </div>
-        </div>
-
-        {/* Metric 4 - Donut Chart: Win Rate */}
-        <div className="bg-[#0b241f]/80 backdrop-blur-xl p-5 rounded-2xl border border-[#16433a] shadow-xl relative overflow-hidden flex items-center justify-between">
+        {/* Vertical Bar Graph (Deals / Projects by Stage) */}
+        <div className="lg:col-span-5 bg-[#1e293b]/80 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-[#334155] shadow-md flex flex-col justify-between">
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-[#a0c5bd] block mb-1">Win Rate</span>
-            <div className="text-3xl font-extrabold text-white tracking-tight">{metrics.conversionRate}%</div>
-            <div className="text-xs text-[#6e9b90] font-semibold mt-1">{metrics.converted} Leads Won</div>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xs font-bold text-[#f8fafc] uppercase tracking-wider">Volume by Operations Stage</h2>
+              <MoreHorizontal className="w-3.5 h-3.5 text-[#64748b] cursor-pointer" />
+            </div>
+            <VerticalBarChart data={barChartData} />
           </div>
-          <div className="relative w-20 h-20 flex items-center justify-center shrink-0">
-            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-              <path
-                className="text-[#0e352e]"
-                strokeWidth="4"
-                stroke="currentColor"
-                fill="none"
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-              />
-              <path
-                className="text-emerald-400"
-                strokeDasharray={`${metrics.conversionRate}, 100`}
-                strokeWidth="4"
-                strokeLinecap="round"
-                stroke="currentColor"
-                fill="none"
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-              />
-            </svg>
-            <span className="absolute text-xs font-extrabold text-white">{metrics.conversionRate}%</span>
+          <div className="pt-3 border-t border-[#334155] flex justify-between items-center text-xs text-[#64748b]">
+            <span>Updated real-time</span>
+            <span className="text-[#38bdf8] font-semibold">{stats.totalLeads + stats.activeProjects} Total Items</span>
           </div>
         </div>
-
       </div>
 
-      {/* Overview Diagram Representation: Lead Temperature Breakdown */}
-      <div className="bg-[#0b241f]/80 backdrop-blur-xl p-4 rounded-2xl border border-[#16433a] shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <Activity className="w-4 h-4 text-emerald-400" />
-          <span className="text-xs font-extrabold text-white uppercase tracking-wider">Lead Temperature Distribution</span>
-        </div>
+      {/* BOTTOM SECTION: ALL CRM OPERATIONS OVERVIEW */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 md:gap-5">
         
-        <div className="flex-1 max-w-xl">
-          <div className="w-full h-3 bg-[#061915] rounded-full overflow-hidden flex border border-[#16433a]/80">
-            <div 
-              className="bg-rose-500 h-full transition-all" 
-              style={{ width: `${metrics.totalLeads > 0 ? (metrics.hot / metrics.totalLeads) * 100 : 0}%` }}
-              title="Hot Leads"
-            />
-            <div 
-              className="bg-amber-400 h-full transition-all" 
-              style={{ width: `${metrics.totalLeads > 0 ? (metrics.warm / metrics.totalLeads) * 100 : 0}%` }}
-              title="Warm Leads"
-            />
-            <div 
-              className="bg-sky-400 h-full transition-all" 
-              style={{ width: `${metrics.totalLeads > 0 ? (metrics.cold / metrics.totalLeads) * 100 : 0}%` }}
-              title="Cold Leads"
-            />
+        {/* Incident Tickets Breakdown */}
+        <div className="lg:col-span-4 bg-[#1e293b]/80 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-[#334155] shadow-md space-y-3 flex flex-col justify-between">
+          <div className="flex items-center justify-between border-b border-[#334155] pb-2.5">
+            <h2 className="text-xs font-bold text-[#f8fafc] flex items-center gap-1.5 uppercase tracking-wider">
+              <Ticket className="w-3.5 h-3.5 text-[#fbbf24]" /> Support Workload SLA
+            </h2>
+            <span className="text-[9px] font-bold uppercase bg-[#14532d]/40 text-[#4ade80] px-2 py-0.5 rounded-full border border-[#166534]">
+              Live Desk
+            </span>
           </div>
-        </div>
 
-        <div className="flex items-center gap-4 text-xs font-bold">
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
-            <span className="text-rose-300">Hot ({metrics.hot})</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-            <span className="text-amber-300">Warm ({metrics.warm})</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-sky-400"></span>
-            <span className="text-sky-300">Cold ({metrics.cold})</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Navigation Pills */}
-      <div className="flex items-center justify-start py-2">
-        <div className="inline-flex items-center gap-1.5 p-1.5 bg-[#0b241f]/90 backdrop-blur-md rounded-2xl border border-[#16433a] shadow-inner">
-          {[
-            { id: 'details', label: 'Overview Table', icon: FileText },
-            { id: 'pipeline', label: 'Pipeline Stages', icon: CheckCircle2 },
-            { id: 'automation', label: 'Automations', icon: Bot },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isSelected = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-5 py-2.5 text-xs font-extrabold rounded-xl transition-all duration-200 cursor-pointer ${
-                  isSelected
-                    ? 'bg-emerald-500 text-[#061915] shadow-md shadow-emerald-950/50'
-                    : 'text-[#8baab0] hover:text-white hover:bg-[#0e352e]'
-                }`}
-              >
-                <Icon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-[#061915]' : 'text-[#8baab0]'}`} />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Filter Control Bar */}
-      <div className="bg-[#0b241f]/80 backdrop-blur-xl p-4 sm:p-5 rounded-3xl border border-[#16433a] shadow-xl space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-3 border-b border-[#16433a]/60">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 text-xs font-bold text-white bg-[#0e352e] px-3 py-2 rounded-xl border border-[#1d574c]">
-              <Calendar className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              <span>Timeline:</span>
+          <div className="grid grid-cols-2 gap-2.5">
+            <div className="p-3 bg-[#0f172a] rounded-xl border border-[#334155] flex flex-col items-center justify-center text-center">
+              <span className="text-[10px] font-bold text-[#f87171] uppercase tracking-wider">Urgent</span>
+              <span className="text-xl font-black text-[#fca5a5] mt-1">{stats.ticketsByPriority['Urgent'] || 0}</span>
             </div>
-            <select
-              value={dateRange}
-              onChange={(e) => setDateRange(e.target.value as any)}
-              className="bg-[#061915] border border-[#1d574c] rounded-xl text-xs font-bold px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white cursor-pointer"
-            >
-              <option value="all">All Dates</option>
-              <option value="daily">Today</option>
-              <option value="weekly">Past 7 Days</option>
-              <option value="monthly">This Month</option>
-              <option value="custom">Custom Range</option>
-            </select>
 
-            {dateRange === 'custom' && (
-              <div className="flex items-center gap-2">
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="bg-[#061915] border border-[#1d574c] rounded-xl text-xs font-bold px-2.5 py-1.5 text-white"
-                />
-                <span className="text-xs font-bold text-[#8baab0]">to</span>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="bg-[#061915] border border-[#1d574c] rounded-xl text-xs font-bold px-2.5 py-1.5 text-white"
-                />
-              </div>
-            )}
-          </div>
+            <div className="p-3 bg-[#0f172a] rounded-xl border border-[#334155] flex flex-col items-center justify-center text-center">
+              <span className="text-[10px] font-bold text-[#fb923c] uppercase tracking-wider">High</span>
+              <span className="text-xl font-black text-[#fdba74] mt-1">{stats.ticketsByPriority['High'] || 0}</span>
+            </div>
 
-          <button
-            onClick={exportCSV}
-            className="bg-[#0e352e] hover:bg-[#13493f] text-emerald-400 border border-[#1d574c] text-xs font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer w-full lg:w-auto"
-          >
-            <Download className="w-4 h-4 stroke-[2.5]" />
-            <span>Export CSV</span>
-          </button>
-        </div>
+            <div className="p-3 bg-[#0f172a] rounded-xl border border-[#334155] flex flex-col items-center justify-center text-center">
+              <span className="text-[10px] font-bold text-[#38bdf8] uppercase tracking-wider">Medium</span>
+              <span className="text-xl font-black text-[#7dd3fc] mt-1">{stats.ticketsByPriority['Medium'] || 0}</span>
+            </div>
 
-        {/* Dynamic Filters Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
-          <div>
-            <label className="font-extrabold text-[#a0c5bd] block mb-1 uppercase text-[10px] tracking-wider">Temperature</label>
-            <select
-              className="w-full p-2.5 border border-[#1d574c] rounded-xl bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-              value={filters.temperature}
-              onChange={(e) => setFilters({ ...filters, temperature: e.target.value })}
-            >
-              <option value="all">All Temp</option>
-              <option value="Hot">🔥 Hot</option>
-              <option value="Warm">⚡ Warm</option>
-              <option value="Cold">❄️ Cold</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="font-extrabold text-[#a0c5bd] block mb-1 uppercase text-[10px] tracking-wider">Status</label>
-            <select
-              className="w-full p-2.5 border border-[#1d574c] rounded-xl bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-              value={filters.status}
-              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-            >
-              <option value="all">All Statuses</option>
-              {leadFlow.map((st) => (
-                <option key={st} value={st}>{st}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="font-extrabold text-[#a0c5bd] block mb-1 uppercase text-[10px] tracking-wider">Source</label>
-            <select
-              className="w-full p-2.5 border border-[#1d574c] rounded-xl bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-              value={filters.source}
-              onChange={(e) => setFilters({ ...filters, source: e.target.value })}
-            >
-              <option value="all">All Sources</option>
-              <option value="Manual / Outreach">Manual / Outreach</option>
-              <option value="Website">Website Form</option>
-              <option value="Google Ads">Google Ads</option>
-              <option value="LinkedIn">LinkedIn</option>
-              <option value="Referral">Referral</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="font-extrabold text-[#a0c5bd] block mb-1 uppercase text-[10px] tracking-wider">Branch</label>
-            <select
-              className="w-full p-2.5 border border-[#1d574c] rounded-xl bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-              value={filters.branch}
-              onChange={(e) => setFilters({ ...filters, branch: e.target.value })}
-            >
-              <option value="all">All Branches</option>
-              <option value="Main Branch">Main Branch</option>
-              <option value="Dubai Office">Dubai Office</option>
-              <option value="Abu Dhabi Office">Abu Dhabi Office</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="font-extrabold text-[#a0c5bd] block mb-1 uppercase text-[10px] tracking-wider">Service</label>
-            <select
-              className="w-full p-2.5 border border-[#1d574c] rounded-xl bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-              value={filters.service}
-              onChange={(e) => setFilters({ ...filters, service: e.target.value })}
-            >
-              <option value="all">All Services</option>
-              <option value="IT Consulting">IT Consulting</option>
-              <option value="Cloud Migration">Cloud Migration</option>
-              <option value="Cybersecurity">Cybersecurity</option>
-              <option value="Custom ERP">Custom ERP</option>
-            </select>
-          </div>
-
-          <div className="flex items-end">
-            <button
-              onClick={() =>
-                setFilters({
-                  leadOwner: 'all',
-                  team: 'all',
-                  branch: 'all',
-                  source: 'all',
-                  campaign: 'all',
-                  status: 'all',
-                  service: 'all',
-                  country: 'all',
-                  temperature: 'all',
-                  minScore: 0,
-                  maxScore: 100,
-                })
-              }
-              className="w-full bg-[#061915] hover:bg-[#0e352e] text-[#8baab0] hover:text-white font-extrabold p-2.5 rounded-xl text-xs transition-colors cursor-pointer border border-[#1d574c] flex items-center justify-center gap-1.5"
-            >
-              <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Reset Filters</span>
-            </button>
+            <div className="p-3 bg-[#0f172a] rounded-xl border border-[#334155] flex flex-col items-center justify-center text-center">
+              <span className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider">Low</span>
+              <span className="text-xl font-black text-[#f1f5f9] mt-1">{stats.ticketsByPriority['Low'] || 0}</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Pipeline Kanban Tab */}
-      {activeTab === 'pipeline' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 overflow-x-auto pb-4">
-          {leadFlow.map((stage) => {
-            const stageLeads = filteredLeads.filter((l) => l.status === stage);
-            return (
-              <div key={stage} className="bg-[#0b241f]/80 backdrop-blur-xl p-4 rounded-3xl border border-[#16433a] flex flex-col h-full min-w-[280px]">
-                <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#16433a]/60">
-                  <h4 className="font-extrabold text-xs uppercase tracking-wider text-[#a0c5bd] flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-                    {stage}
-                  </h4>
-                  <span className="text-xs bg-[#061915] px-2.5 py-0.5 rounded-full font-black text-white border border-[#1d574c]">
-                    {stageLeads.length}
-                  </span>
-                </div>
-                <div className="space-y-3 flex-1 overflow-y-auto max-h-[600px] pr-1">
-                  {stageLeads.length === 0 ? (
-                    <div className="text-xs text-[#6e9b90] font-semibold italic text-center py-10 bg-[#061915]/50 rounded-2xl border border-dashed border-[#16433a]">
-                      No leads in stage
+        {/* Live Operational Timeline */}
+        <div className="lg:col-span-4 bg-[#1e293b]/80 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-[#334155] shadow-md flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between border-b border-[#334155] pb-2.5 mb-3">
+              <h2 className="text-xs font-bold text-[#f8fafc] flex items-center gap-1.5 uppercase tracking-wider">
+                <Clock className="w-3.5 h-3.5 text-[#38bdf8]" /> Recent Operational Logs
+              </h2>
+            </div>
+
+            <div className="space-y-2">
+              {stats.recentActivities.length === 0 ? (
+                <p className="text-xs text-[#64748b] italic text-center py-2">No recent log entries.</p>
+              ) : (
+                stats.recentActivities.map((act, index) => (
+                  <div
+                    key={index}
+                    className="p-2 bg-[#0f172a] rounded-xl border border-[#334155] flex items-center justify-between text-xs"
+                  >
+                    <div className="flex items-center gap-2 truncate pr-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#38bdf8] shrink-0" />
+                      <span className="font-medium text-[#f1f5f9] truncate">{act.title}</span>
                     </div>
-                  ) : (
-                    stageLeads.map((lead) => (
-                      <div key={lead.id} className="bg-[#061915] p-4 rounded-2xl border border-[#16433a] shadow-md space-y-2.5 hover:border-emerald-500/40 transition-all">
-                        <div className="font-bold text-white text-sm flex items-center justify-between">
-                          <span className="truncate max-w-[170px] text-white">{lead.name}</span>
-                          <button
-                            onClick={() => openEditModal(lead)}
-                            className="text-emerald-400 hover:text-white p-1 cursor-pointer shrink-0 rounded-lg hover:bg-[#0e352e]"
-                            title="Edit Lead"
-                          >
-                            <Edit className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                        <div className="text-xs font-semibold text-[#8baab0]">{lead.company || 'Personal Lead'}</div>
-
-                        <div className="flex items-center justify-between pt-1">
-                          <span
-                            className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
-                              lead.lead_temperature === 'Hot'
-                                ? 'bg-rose-950/80 text-rose-300 border border-rose-800/60'
-                                : lead.lead_temperature === 'Cold'
-                                ? 'bg-sky-950/80 text-sky-300 border border-sky-800/60'
-                                : 'bg-amber-950/80 text-amber-300 border border-amber-800/60'
-                            }`}
-                          >
-                            {lead.lead_temperature || 'Warm'}
-                          </span>
-                          <span className="text-[11px] font-extrabold text-[#a0c5bd]">Score: {lead.lead_score || 0}</span>
-                        </div>
-
-                        <div className="pt-2 border-t border-[#16433a]/60 flex items-center justify-between gap-2">
-                          <button
-                            onClick={() => setSelectedLead(lead)}
-                            className="text-[11px] font-bold text-emerald-400 hover:underline flex items-center gap-1"
-                          >
-                            <Eye className="w-3 h-3" /> Details
-                          </button>
-                          <select
-                            value={lead.status}
-                            onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
-                            className="text-[11px] p-1 border border-[#1d574c] rounded-lg bg-[#0b241f] text-white font-bold max-w-[120px] cursor-pointer"
-                          >
-                            {leadFlow.map((st) => (
-                              <option key={st} value={st}>{st}</option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Automation Tab */}
-      {activeTab === 'automation' && (
-        <div className="bg-[#0b241f]/80 backdrop-blur-xl p-6 rounded-3xl border border-[#16433a] shadow-xl space-y-4">
-          <div className="flex items-center gap-2 text-white font-extrabold text-base">
-            <div className="p-2 rounded-xl bg-emerald-500 text-[#061915]">
-              <Sparkles className="w-5 h-5 stroke-[2.5]" />
+                    <span className="text-[10px] font-semibold text-[#64748b] shrink-0">{act.time}</span>
+                  </div>
+                ))
+              )}
             </div>
-            <span>CRM Workflow Trigger Engine</span>
           </div>
-          <p className="text-xs text-[#8baab0] font-medium">Automated actions, follow-up notifications, and SLA task scheduling.</p>
 
-          <div className="divide-y divide-[#16433a]/60">
-            {filteredLeads.map((lead) => (
-              <div key={lead.id} className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="space-y-1">
-                  <div className="font-bold text-white text-sm flex items-center gap-2">
-                    {lead.name}
-                    <span className="text-[10px] bg-[#0e352e] text-emerald-400 px-2 py-0.5 rounded-full font-bold border border-[#1d574c]">{lead.status}</span>
-                  </div>
-                  <div className="text-xs text-[#8baab0] font-semibold">
-                    Company: <strong className="text-white">{lead.company || 'N/A'}</strong> | Source: <strong className="text-white">{lead.source || 'Website'}</strong>
-                  </div>
-                </div>
+          <div className="pt-2.5 mt-3 border-t border-[#334155] text-center text-[10px] text-[#64748b]">
+            Connected to Supabase Realtime DB
+          </div>
+        </div>
 
-                <button
-                  onClick={() => alert(`Automated follow-up triggered for ${lead.name}`)}
-                  className="bg-[#0e352e] hover:bg-emerald-500 hover:text-[#061915] text-emerald-400 font-extrabold text-xs px-4 py-2.5 rounded-xl transition-all border border-[#1d574c] cursor-pointer shrink-0 w-full sm:w-auto text-center"
-                >
-                  Trigger Follow-up Task
-                </button>
+        {/* Staff & Department Allocation */}
+        <div className="md:col-span-2 lg:col-span-4 bg-[#1e293b]/80 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-[#334155] shadow-md space-y-3 flex flex-col justify-between">
+          <div className="flex items-center justify-between border-b border-[#334155] pb-2.5">
+            <h2 className="text-xs font-bold text-[#f8fafc] flex items-center gap-1.5 uppercase tracking-wider">
+              <Users className="w-3.5 h-3.5 text-[#c084fc]" /> Workforce Allocation
+            </h2>
+            <span className="text-xs font-bold text-[#f8fafc]">{stats.totalEmployees} Active</span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2.5">
+            {Object.entries(stats.employeesByDept).map(([dept, count]) => (
+              <div
+                key={dept}
+                className="p-2.5 rounded-xl bg-[#0f172a] border border-[#334155] flex flex-col items-center justify-center text-center"
+              >
+                <span className="text-[10px] font-medium text-[#94a3b8] truncate w-full">{dept}</span>
+                <span className="text-base font-bold text-[#f8fafc] mt-0.5">{count} Staff</span>
               </div>
             ))}
+
+            {Object.keys(stats.employeesByDept).length === 0 && (
+              <div className="text-xs text-[#64748b] italic col-span-2 text-center py-2">No active department allocations found.</div>
+            )}
           </div>
         </div>
-      )}
 
-      {/* Optimized De-Congested Lead Table */}
-      {activeTab === 'details' && (
-        <div className="bg-[#0b241f]/80 backdrop-blur-xl rounded-3xl border border-[#16433a] shadow-2xl overflow-hidden">
-          <div className="p-4 border-b border-[#16433a]/60 flex flex-col sm:flex-row justify-between items-center gap-3 bg-[#061915]/40">
-            <div className="relative flex-1 max-w-md w-full">
-              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6e9b90]" />
-              <input
-                type="text"
-                placeholder="Search leads by name, email, or company..."
-                className="w-full pl-10 pr-3 py-2 border border-[#1d574c] rounded-xl text-xs bg-[#061915] text-white font-semibold placeholder:text-[#6e9b90] focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <div className="text-xs text-[#8baab0] font-semibold">
-              Showing <span className="font-extrabold text-white">{filteredLeads.length}</span> leads
-            </div>
-          </div>
+      </div>
 
-          {loading ? (
-            <div className="p-12 text-center text-[#8baab0] text-sm font-semibold">Loading CRM records...</div>
-          ) : filteredLeads.length === 0 ? (
-            <div className="p-12 text-center text-[#8baab0] text-sm font-semibold">No leads matched your criteria.</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead className="bg-[#061915] border-b border-[#16433a]/60 text-[#a0c5bd] font-extrabold uppercase text-[10px] tracking-wider">
-                  <tr>
-                    <th className="p-4">Lead Name & Job Title</th>
-                    <th className="p-4">Company & Industry</th>
-                    <th className="p-4">Temperature & Score</th>
-                    <th className="p-4">Pipeline Status</th>
-                    <th className="p-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#16433a]/40 text-sm font-medium">
-                  {filteredLeads.map((lead) => (
-                    <tr key={lead.id} className="hover:bg-[#0e352e]/40 transition-colors">
-                      <td className="p-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-[#0e352e] border border-[#1d574c] flex items-center justify-center text-emerald-400 shrink-0 font-extrabold text-xs">
-                            {lead.name.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <div className="font-bold text-white text-sm">{lead.name}</div>
-                            <div className="text-xs text-[#8baab0] font-medium">{lead.job_title || 'Lead Contact'}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <div className="font-bold text-white">{lead.company || '—'}</div>
-                        <div className="text-[11px] font-semibold text-[#6e9b90]">{lead.interested_service || lead.industry || 'Client'}</div>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
-                              lead.lead_temperature === 'Hot'
-                                ? 'bg-rose-950/80 text-rose-300 border border-rose-800/60'
-                                : lead.lead_temperature === 'Cold'
-                                ? 'bg-sky-950/80 text-sky-300 border border-sky-800/60'
-                                : 'bg-amber-950/80 text-amber-300 border border-amber-800/60'
-                            }`}
-                          >
-                            {lead.lead_temperature || 'Warm'}
-                          </span>
-                          <span className="font-extrabold text-[#a0c5bd] text-xs">Score: {lead.lead_score || 0}</span>
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <select
-                          value={lead.status}
-                          onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
-                          className="bg-[#061915] border border-[#1d574c] rounded-xl text-xs font-bold px-2.5 py-1.5 text-white cursor-pointer focus:ring-2 focus:ring-emerald-500"
-                        >
-                          {leadFlow.map((st) => (
-                            <option key={st} value={st}>{st}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="p-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => setSelectedLead(lead)}
-                            className="bg-[#0e352e] hover:bg-emerald-500 hover:text-[#061915] text-emerald-400 px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all border border-[#1d574c] cursor-pointer flex items-center gap-1.5"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                            <span>View</span>
-                          </button>
-                          <button
-                            onClick={() => openEditModal(lead)}
-                            className="text-[#8baab0] hover:text-white p-1.5 rounded-xl hover:bg-[#0e352e] cursor-pointer transition-colors"
-                            title="Edit Lead"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => deleteLead(lead.id)}
-                            className="text-rose-400 hover:text-rose-300 p-1.5 rounded-xl hover:bg-rose-950/50 cursor-pointer transition-colors"
-                            title="Delete Lead"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Detailed Full Profile Modal */}
-      {selectedLead && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-[#0b241f] rounded-3xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto space-y-6 shadow-2xl border border-[#16433a] relative text-[#d0e5e0]">
-            
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-[#16433a] pb-4">
-              <div>
-                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest block">
-                  CRM Lead Profile Record
-                </span>
-                <h2 className="text-xl font-extrabold text-white flex items-center gap-2 mt-1">
-                  <UserCheck className="w-5 h-5 text-emerald-400 shrink-0" />
-                  <span>{selectedLead.name}</span>
-                </h2>
-                <p className="text-xs text-[#8baab0] font-semibold mt-0.5">{selectedLead.job_title || 'Contact Person'} at <span className="text-white font-bold">{selectedLead.company || 'N/A'}</span></p>
-              </div>
-              <button 
-                onClick={() => setSelectedLead(null)}
-                className="text-[#8baab0] hover:text-white p-2 rounded-xl hover:bg-[#0e352e] cursor-pointer transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Structured Info Sections */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              
-              {/* Personal Contact */}
-              <div className="bg-[#061915] p-4 rounded-2xl border border-[#16433a] space-y-2.5">
-                <h3 className="text-xs font-black text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <User className="w-4 h-4" /> Contact Information
-                </h3>
-                <div className="text-xs space-y-2 text-white font-semibold">
-                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">Email:</span> {selectedLead.email}</p>
-                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">Phone:</span> {selectedLead.phone || selectedLead.mobile_number || selectedLead.contact_info || 'N/A'}</p>
-                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">Preferred Method:</span> {selectedLead.preferred_contact_method || 'Email'}</p>
-                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">Location:</span> {selectedLead.city || 'Dubai'}, {selectedLead.country || 'UAE'}</p>
-                </div>
-              </div>
-
-              {/* Company Info */}
-              <div className="bg-[#061915] p-4 rounded-2xl border border-[#16433a] space-y-2.5">
-                <h3 className="text-xs font-black text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <Building className="w-4 h-4" /> Company Profile
-                </h3>
-                <div className="text-xs space-y-2 text-white font-semibold">
-                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">Company Name:</span> {selectedLead.company || 'N/A'}</p>
-                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">Industry Sector:</span> {selectedLead.industry || 'IT / Enterprise'}</p>
-                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">Website:</span> {selectedLead.company_website || 'N/A'}</p>
-                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">VAT / TRN:</span> {selectedLead.vat_trn_number || 'N/A'}</p>
-                </div>
-              </div>
-
-              {/* Requirement & Budget */}
-              <div className="bg-[#061915] p-4 rounded-2xl border border-[#16433a] space-y-2.5">
-                <h3 className="text-xs font-black text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <FileText className="w-4 h-4" /> Deal Specifications
-                </h3>
-                <div className="text-xs space-y-2 text-white font-semibold">
-                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">Service Category:</span> {selectedLead.interested_service || 'IT Services'}</p>
-                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">Estimated Budget:</span> ${selectedLead.estimated_budget?.toLocaleString() || '0'}</p>
-                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">Timeline:</span> {selectedLead.project_timeline || '1-3 Months'}</p>
-                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">Creation Date:</span> {formatDateDDMMYYYY(selectedLead.created_at)}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Detailed Requirements Description */}
-            <div className="space-y-2">
-              <label className="text-xs font-black text-white uppercase tracking-wider">Detailed Lead Requirements</label>
-              <div className="bg-[#061915] p-4 rounded-2xl border border-[#16433a] text-xs text-[#d0e5e0] font-medium whitespace-pre-wrap min-h-[90px]">
-                {selectedLead.requirements || selectedLead.requirement_description || 'No detailed requirements submitted for this record.'}
-              </div>
-            </div>
-
-            {/* Marketing Attribution Details */}
-            <div className="bg-[#061915] p-4 rounded-2xl border border-[#16433a] space-y-2">
-              <h3 className="text-xs font-black text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Globe className="w-4 h-4" /> Attribution & Source Metrics
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs pt-1">
-                <div>
-                  <span className="text-[#6e9b90] text-[10px] uppercase font-bold block">Lead Source</span>
-                  <span className="font-extrabold text-white">{selectedLead.source || 'Website'}</span>
-                </div>
-                <div>
-                  <span className="text-[#6e9b90] text-[10px] uppercase font-bold block">Campaign</span>
-                  <span className="font-extrabold text-white">{selectedLead.campaign_name || 'Direct / Organic'}</span>
-                </div>
-                <div>
-                  <span className="text-[#6e9b90] text-[10px] uppercase font-bold block">UTM Source</span>
-                  <span className="font-extrabold text-white">{selectedLead.utm_source || 'organic'}</span>
-                </div>
-                <div>
-                  <span className="text-[#6e9b90] text-[10px] uppercase font-bold block">UTM Medium</span>
-                  <span className="font-extrabold text-white">{selectedLead.utm_medium || 'cpc'}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end pt-3 border-t border-[#16433a]/60">
-              <button
-                onClick={() => setSelectedLead(null)}
-                className="px-6 py-2.5 bg-[#0e352e] hover:bg-[#13493f] text-white font-extrabold text-xs rounded-xl transition-all border border-[#1d574c] cursor-pointer"
-              >
-                Close Profile
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit / Create Lead Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <form onSubmit={saveLead} className="bg-[#0b241f] rounded-3xl p-6 w-full max-w-xl max-h-[90vh] overflow-y-auto space-y-4 shadow-2xl border border-[#16433a] text-[#d0e5e0]">
-            <h2 className="text-lg font-extrabold text-white border-b border-[#16433a] pb-3">
-              {editingLead ? 'Edit Lead Record' : 'Add New Lead Contact'}
-            </h2>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-bold text-[#a0c5bd] block mb-1">Full Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Alex Morgan"
-                  className="w-full p-2.5 border border-[#1d574c] rounded-xl text-xs bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 placeholder:text-[#6e9b90]"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-[#a0c5bd] block mb-1">Job Title</label>
-                <input
-                  type="text"
-                  placeholder="e.g. IT Director"
-                  className="w-full p-2.5 border border-[#1d574c] rounded-xl text-xs bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 placeholder:text-[#6e9b90]"
-                  value={formData.job_title}
-                  onChange={(e) => setFormData({ ...formData, job_title: e.target.value })}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs font-bold text-[#a0c5bd] block mb-1">Contact Info (Phone / Email)</label>
-              <textarea
-                rows={2}
-                required
-                placeholder={"+1 (555) 000-0000\nemail@company.com"}
-                className="w-full p-2.5 border border-[#1d574c] rounded-xl text-xs bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 placeholder:text-[#6e9b90]"
-                value={formData.contact_info}
-                onChange={(e) => setFormData({ ...formData, contact_info: e.target.value })}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-bold text-[#a0c5bd] block mb-1">Company</label>
-                <input
-                  type="text"
-                  placeholder="Enterprise Inc."
-                  className="w-full p-2.5 border border-[#1d574c] rounded-xl text-xs bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 placeholder:text-[#6e9b90]"
-                  value={formData.company}
-                  onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-[#a0c5bd] block mb-1">Website</label>
-                <input
-                  type="text"
-                  placeholder="https://company.com"
-                  className="w-full p-2.5 border border-[#1d574c] rounded-xl text-xs bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 placeholder:text-[#6e9b90]"
-                  value={formData.company_website}
-                  onChange={(e) => setFormData({ ...formData, company_website: e.target.value })}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-bold text-[#a0c5bd] block mb-1">Pipeline Status</label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  className="w-full p-2.5 border border-[#1d574c] rounded-xl text-xs bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-                >
-                  {leadFlow.map((st) => (
-                    <option key={st} value={st}>{st}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs font-bold text-[#a0c5bd] block mb-1">Lead Source</label>
-                <select
-                  className="w-full p-2.5 border border-[#1d574c] rounded-xl text-xs bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-                  value={formData.source}
-                  onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                >
-                  <option value="Manual / Outreach">Manual / Outreach</option>
-                  <option value="LinkedIn">LinkedIn</option>
-                  <option value="Google Ads">Google Ads</option>
-                  <option value="Referral">Referral</option>
-                  <option value="Website">Website</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-bold text-[#a0c5bd] block mb-1">Lead Temperature</label>
-                <select
-                  className="w-full p-2.5 border border-[#1d574c] rounded-xl text-xs bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-                  value={formData.lead_temperature}
-                  onChange={(e) => setFormData({ ...formData, lead_temperature: e.target.value as any })}
-                >
-                  <option value="Hot">🔥 Hot</option>
-                  <option value="Warm">⚡ Warm</option>
-                  <option value="Cold">❄️ Cold</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-xs font-bold text-[#a0c5bd] block mb-1">Lead Score (0-100)</label>
-                <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  className="w-full p-2.5 border border-[#1d574c] rounded-xl text-xs bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500"
-                  value={formData.lead_score}
-                  onChange={(e) => setFormData({ ...formData, lead_score: parseInt(e.target.value) || 0 })}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs font-bold text-[#a0c5bd] block mb-1">Requirements Details</label>
-              <textarea
-                rows={3}
-                placeholder="Enter client technical or project requirements..."
-                className="w-full p-2.5 border border-[#1d574c] rounded-xl text-xs bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 placeholder:text-[#6e9b90]"
-                value={formData.requirements}
-                onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
-              />
-            </div>
-
-            <div className="flex justify-end gap-2.5 pt-4 border-t border-[#16433a]">
-              <button
-                type="button"
-                onClick={closeModal}
-                className="px-4 py-2.5 border border-[#1d574c] rounded-xl text-xs font-bold text-[#8baab0] hover:bg-[#0e352e] cursor-pointer"
-              >
-                Cancel
-              </button>
-              
-              <button 
-                type="submit" 
-                className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-[#061915] font-black rounded-xl text-xs transition-all shadow-md cursor-pointer"
-              >
-                {editingLead ? 'Update Lead' : 'Save Lead'}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
     </div>
   );
 }

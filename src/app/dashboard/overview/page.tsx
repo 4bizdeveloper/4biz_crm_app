@@ -24,8 +24,8 @@ import {
 // ==========================================
 function ModernXYLineChart({ data }: { data: { month: string; value: number; dottedVal?: number }[] }) {
   const width = 500;
-  const height = 200;
-  const padding = { top: 20, right: 30, bottom: 40, left: 45 };
+  const height = 180;
+  const padding = { top: 15, right: 25, bottom: 35, left: 40 };
 
   const activeWidth = width - padding.left - padding.right;
   const activeHeight = height - padding.top - padding.bottom;
@@ -48,12 +48,12 @@ function ModernXYLineChart({ data }: { data: { month: string; value: number; dot
   `;
 
   return (
-    <div className="w-full h-56 relative">
+    <div className="w-full h-48 relative flex items-center justify-center">
       <svg className="w-full h-full overflow-visible" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
         <defs>
           <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#2dd4bf" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#2dd4bf" stopOpacity="0.0" />
+            <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.0" />
           </linearGradient>
         </defs>
 
@@ -65,16 +65,16 @@ function ModernXYLineChart({ data }: { data: { month: string; value: number; dot
               y1={getY(val)}
               x2={width - padding.right}
               y2={getY(val)}
-              stroke="#132e35"
+              stroke="#334155"
               strokeDasharray="3 3"
               strokeWidth="1"
             />
             <text
-              x={padding.left - 10}
-              y={getY(val) + 4}
-              fill="#527d7d"
-              fontSize="10"
-              fontWeight="600"
+              x={padding.left - 8}
+              y={getY(val) + 3}
+              fill="#94a3b8"
+              fontSize="9"
+              fontWeight="500"
               textAnchor="end"
             >
               {val === 0 ? '0' : `${val}k`}
@@ -88,8 +88,8 @@ function ModernXYLineChart({ data }: { data: { month: string; value: number; dot
         {/* Dotted projection trendline */}
         <polyline
           fill="none"
-          stroke="#427b82"
-          strokeWidth="2"
+          stroke="#64748b"
+          strokeWidth="1.5"
           strokeDasharray="4 4"
           points={dottedPoints}
         />
@@ -97,8 +97,8 @@ function ModernXYLineChart({ data }: { data: { month: string; value: number; dot
         {/* Main Smooth Line */}
         <polyline
           fill="none"
-          stroke="#2dd4bf"
-          strokeWidth="3"
+          stroke="#38bdf8"
+          strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"
           points={linePoints}
@@ -110,23 +110,23 @@ function ModernXYLineChart({ data }: { data: { month: string; value: number; dot
             <circle
               cx={getX(i)}
               cy={getY(d.value)}
-              r="4"
-              className="fill-[#08181c] stroke-[#2dd4bf] stroke-2 hover:r-6 transition-all"
+              r="3.5"
+              className="fill-[#0f172a] stroke-[#38bdf8] stroke-2 hover:r-5 transition-all"
             />
             {i === Math.floor(data.length / 2) && (
               <circle
                 cx={getX(i)}
                 cy={getY(d.value)}
-                r="7"
-                className="fill-[#2dd4bf] stroke-[#f0fdfa] stroke-2 animate-pulse"
+                r="6"
+                className="fill-[#38bdf8] stroke-[#f8fafc] stroke-2 animate-pulse"
               />
             )}
             <text
               x={getX(i)}
-              y={height - 12}
-              fill="#81a3a3"
-              fontSize="10"
-              fontWeight="600"
+              y={height - 10}
+              fill="#94a3b8"
+              fontSize="9"
+              fontWeight="500"
               textAnchor="middle"
             >
               {d.month}
@@ -147,21 +147,21 @@ function VerticalBarChart({
   data: { label: string; count: number; max: number }[];
 }) {
   return (
-    <div className="w-full h-56 flex flex-col justify-between pt-2">
-      <div className="relative flex-1 flex items-end justify-between gap-3 px-2 pb-6 border-b border-[#16363d]">
+    <div className="w-full h-48 flex flex-col justify-between pt-2">
+      <div className="relative flex-1 flex items-end justify-between gap-2 px-2 pb-5 border-b border-[#334155]">
         {/* Midpoint Target Reference Line */}
-        <div className="absolute top-1/2 left-0 right-0 border-b border-dashed border-[#23535d] z-0" />
+        <div className="absolute top-1/2 left-0 right-0 border-b border-dashed border-[#475569] z-0" />
 
         {data.map((item, idx) => {
           const heightPercent = Math.max(Math.round((item.count / item.max) * 100), 12);
           return (
             <div key={idx} className="relative z-10 flex-1 flex flex-col items-center h-full justify-end group">
-              <span className="text-[11px] font-bold text-[#e2f3f3] opacity-0 group-hover:opacity-100 transition-opacity mb-1">
+              <span className="text-[10px] font-semibold text-[#f1f5f9] opacity-0 group-hover:opacity-100 transition-opacity mb-1">
                 {item.count}
               </span>
-              <div className="w-full max-w-[48px] bg-[#0c2227] rounded-xl h-full flex items-end p-1 overflow-hidden border border-[#16383f]">
+              <div className="w-full max-w-[36px] bg-[#0f172a] rounded-lg h-full flex items-end p-1 overflow-hidden border border-[#334155]">
                 <div
-                  className="w-full bg-gradient-to-t from-[#155a60] to-[#2dd4bf] rounded-lg transition-all duration-700 shadow-lg group-hover:brightness-125"
+                  className="w-full bg-gradient-to-t from-[#0284c7] to-[#38bdf8] rounded-md transition-all duration-700 shadow-md group-hover:brightness-125"
                   style={{ height: `${heightPercent}%` }}
                 />
               </div>
@@ -171,9 +171,9 @@ function VerticalBarChart({
       </div>
 
       {/* X Labels */}
-      <div className="flex justify-between gap-3 px-2 pt-3">
+      <div className="flex justify-between gap-2 px-1 pt-2.5">
         {data.map((item, idx) => (
-          <span key={idx} className="flex-1 text-center text-[11px] font-semibold text-[#81a3a3] truncate">
+          <span key={idx} className="flex-1 text-center text-[10px] font-medium text-[#94a3b8] truncate">
             {item.label}
           </span>
         ))}
@@ -186,21 +186,21 @@ function VerticalBarChart({
 // 3. RADIAL / DONUT WIN RATE CHART
 // ==========================================
 function RadialWinRate({ percentage }: { percentage: number }) {
-  const size = 96;
-  const strokeWidth = 10;
+  const size = 80;
+  const strokeWidth = 8;
   const center = size / 2;
   const radius = center - strokeWidth;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
   return (
-    <div className="relative flex items-center justify-center w-24 h-24 shrink-0">
+    <div className="relative flex items-center justify-center w-20 h-20 shrink-0">
       <svg className="w-full h-full transform -rotate-90" viewBox={`0 0 ${size} ${size}`}>
         <circle
           cx={center}
           cy={center}
           r={radius}
-          stroke="#0d242a"
+          stroke="#0f172a"
           strokeWidth={strokeWidth}
           fill="transparent"
         />
@@ -208,7 +208,7 @@ function RadialWinRate({ percentage }: { percentage: number }) {
           cx={center}
           cy={center}
           r={radius}
-          stroke="#2dd4bf"
+          stroke="#38bdf8"
           strokeWidth={strokeWidth}
           strokeDasharray={circumference}
           strokeDashoffset={strokeDashoffset}
@@ -218,7 +218,7 @@ function RadialWinRate({ percentage }: { percentage: number }) {
         />
       </svg>
       <div className="absolute flex flex-col items-center justify-center text-center">
-        <span className="text-xl font-extrabold text-[#f0fdfa]">{percentage}%</span>
+        <span className="text-base font-bold text-[#f8fafc]">{percentage}%</span>
       </div>
     </div>
   );
@@ -395,26 +395,26 @@ export default function OverviewPage() {
   }, [stats]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#051114] via-[#08181c] to-[#040c0e] text-[#b0c4c4] p-4 sm:p-6 md:p-8 font-sans space-y-6">
+    <div className="min-h-screen bg-transparent text-[#cbd5e1] p-3 sm:p-5 md:p-6 font-sans space-y-4 md:space-y-6">
       
       {/* HEADER BAR */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#091e23]/70 backdrop-blur-md p-5 rounded-3xl border border-[#14353c] shadow-2xl">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#f0fdfa] tracking-tight">Sales & Operations Overview</h1>
-          <p className="text-xs sm:text-sm text-[#81a3a3] mt-1">Real-time performance tracking across leads, projects, staff, and SLAs.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#1e293b]/80 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-[#334155] shadow-lg">
+        <div className="text-center sm:text-left">
+          <h1 className="text-xl sm:text-2xl font-bold text-[#f8fafc] tracking-tight">Sales & Operations Overview</h1>
+          <p className="text-xs text-[#94a3b8] mt-0.5">Real-time performance tracking across leads, projects, staff, and SLAs.</p>
         </div>
 
-        <div className="flex items-center gap-3 self-start md:self-auto">
+        <div className="flex items-center justify-center sm:justify-end gap-2.5">
           {/* Timeline Filter */}
-          <div className="flex bg-[#051114] p-1 rounded-2xl border border-[#14353c] text-xs font-semibold">
+          <div className="flex bg-[#0f172a] p-1 rounded-xl border border-[#334155] text-xs font-medium">
             {(['all', 'weekly', 'monthly', 'annually'] as const).map((r) => (
               <button
                 key={r}
                 onClick={() => setDateRange(r)}
-                className={`px-3 py-1.5 rounded-xl capitalize transition-all cursor-pointer ${
+                className={`px-2.5 py-1 rounded-lg capitalize transition-all cursor-pointer ${
                   dateRange === r
-                    ? 'bg-[#143b43] text-[#f0fdfa] border border-[#235863] shadow-sm font-bold'
-                    : 'text-[#81a3a3] hover:text-[#f0fdfa]'
+                    ? 'bg-[#334155] text-[#f8fafc] font-semibold shadow-sm'
+                    : 'text-[#94a3b8] hover:text-[#f8fafc]'
                 }`}
               >
                 {r === 'all' ? 'All' : r}
@@ -424,65 +424,65 @@ export default function OverviewPage() {
 
           <button
             onClick={fetchOverviewData}
-            className="p-2.5 bg-[#0e2a30] hover:bg-[#143b43] text-[#2dd4bf] border border-[#1f4e58] rounded-2xl transition-all cursor-pointer shadow-sm"
+            className="p-2 bg-[#0f172a] hover:bg-[#334155] text-[#38bdf8] border border-[#334155] rounded-xl transition-all cursor-pointer shadow-sm flex items-center justify-center"
             title="Refresh Data"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
       </div>
 
-      {/* TOP TOP-LEVEL METRIC CARDS (Matches top row of attached image) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* TOP TOP-LEVEL METRIC CARDS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         
         {/* Card 1: Total Leads */}
-        <div className="bg-[#091e23]/80 backdrop-blur-md p-5 rounded-3xl border border-[#14353c] shadow-xl relative overflow-hidden group hover:border-[#204d57] transition-all">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-[#81a3a3]">Total Pipeline Leads</span>
-            <MoreHorizontal className="w-4 h-4 text-[#527d7d] cursor-pointer" />
+        <div className="bg-[#1e293b]/80 backdrop-blur-md p-4 rounded-2xl border border-[#334155] shadow-md flex flex-col items-center justify-center text-center group hover:border-[#475569] transition-all">
+          <div className="flex items-center justify-between w-full mb-1">
+            <span className="text-xs font-medium text-[#94a3b8]">Total Pipeline Leads</span>
+            <MoreHorizontal className="w-3.5 h-3.5 text-[#64748b] cursor-pointer" />
           </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-[#f0fdfa] tracking-tight mb-1">
-            {stats.totalLeads} <span className="text-sm font-bold text-[#2dd4bf]">Active</span>
+          <div className="text-xl sm:text-2xl font-extrabold text-[#f8fafc] tracking-tight my-1">
+            {stats.totalLeads} <span className="text-xs font-semibold text-[#38bdf8]">Active</span>
           </div>
-          <p className="text-[11px] text-[#527d7d] font-medium flex items-center gap-1">
-            <TrendingUp className="w-3 h-3 text-[#2dd4bf]" /> +14.2% from last cycle
+          <p className="text-[11px] text-[#64748b] font-medium flex items-center gap-1 justify-center">
+            <TrendingUp className="w-3 h-3 text-[#38bdf8]" /> +14.2% from last cycle
           </p>
         </div>
 
         {/* Card 2: Active Projects */}
-        <div className="bg-[#091e23]/80 backdrop-blur-md p-5 rounded-3xl border border-[#14353c] shadow-xl relative overflow-hidden group hover:border-[#204d57] transition-all">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-[#81a3a3]">Active Projects</span>
-            <MoreHorizontal className="w-4 h-4 text-[#527d7d] cursor-pointer" />
+        <div className="bg-[#1e293b]/80 backdrop-blur-md p-4 rounded-2xl border border-[#334155] shadow-md flex flex-col items-center justify-center text-center group hover:border-[#475569] transition-all">
+          <div className="flex items-center justify-between w-full mb-1">
+            <span className="text-xs font-medium text-[#94a3b8]">Active Projects</span>
+            <MoreHorizontal className="w-3.5 h-3.5 text-[#64748b] cursor-pointer" />
           </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-[#f0fdfa] tracking-tight mb-1">
-            {stats.activeProjects} <span className="text-sm font-bold text-[#34d399]">In Flight</span>
+          <div className="text-xl sm:text-2xl font-extrabold text-[#f8fafc] tracking-tight my-1">
+            {stats.activeProjects} <span className="text-xs font-semibold text-[#34d399]">In Flight</span>
           </div>
-          <p className="text-[11px] text-[#527d7d] font-medium flex items-center gap-1">
+          <p className="text-[11px] text-[#64748b] font-medium flex items-center gap-1 justify-center">
             <Zap className="w-3 h-3 text-[#34d399]" /> 89% on-time milestone delivery
           </p>
         </div>
 
         {/* Card 3: Open Support Tickets */}
-        <div className="bg-[#091e23]/80 backdrop-blur-md p-5 rounded-3xl border border-[#14353c] shadow-xl relative overflow-hidden group hover:border-[#204d57] transition-all">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-[#81a3a3]">Open Support Desk</span>
-            <MoreHorizontal className="w-4 h-4 text-[#527d7d] cursor-pointer" />
+        <div className="bg-[#1e293b]/80 backdrop-blur-md p-4 rounded-2xl border border-[#334155] shadow-md flex flex-col items-center justify-center text-center group hover:border-[#475569] transition-all">
+          <div className="flex items-center justify-between w-full mb-1">
+            <span className="text-xs font-medium text-[#94a3b8]">Open Support Desk</span>
+            <MoreHorizontal className="w-3.5 h-3.5 text-[#64748b] cursor-pointer" />
           </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-[#f0fdfa] tracking-tight mb-1">
-            {stats.openTickets} <span className="text-sm font-bold text-[#fbbf24]">Pending</span>
+          <div className="text-xl sm:text-2xl font-extrabold text-[#f8fafc] tracking-tight my-1">
+            {stats.openTickets} <span className="text-xs font-semibold text-[#fbbf24]">Pending</span>
           </div>
-          <p className="text-[11px] text-[#527d7d] font-medium flex items-center gap-1">
+          <p className="text-[11px] text-[#64748b] font-medium flex items-center gap-1 justify-center">
             <Clock className="w-3 h-3 text-[#fbbf24]" /> Avg SLA response: 18m
           </p>
         </div>
 
         {/* Card 4: Radial Gauge (Win Rate / Execution Rate) */}
-        <div className="bg-[#091e23]/80 backdrop-blur-md p-4 rounded-3xl border border-[#14353c] shadow-xl flex items-center justify-between hover:border-[#204d57] transition-all">
-          <div>
-            <span className="text-xs font-semibold text-[#81a3a3] block mb-1">Win & Close Rate</span>
-            <span className="text-lg font-bold text-[#f0fdfa] block">Target: 80%</span>
-            <span className="text-[11px] text-[#2dd4bf] font-medium flex items-center gap-1 mt-1">
+        <div className="bg-[#1e293b]/80 backdrop-blur-md p-4 rounded-2xl border border-[#334155] shadow-md flex items-center justify-around text-left hover:border-[#475569] transition-all">
+          <div className="flex flex-col items-start">
+            <span className="text-xs font-medium text-[#94a3b8] block mb-0.5">Win & Close Rate</span>
+            <span className="text-base font-bold text-[#f8fafc] block">Target: 80%</span>
+            <span className="text-[11px] text-[#38bdf8] font-medium flex items-center gap-1 mt-0.5">
               <ArrowUpRight className="w-3 h-3" /> Exceeding Avg
             </span>
           </div>
@@ -490,137 +490,137 @@ export default function OverviewPage() {
         </div>
       </div>
 
-      {/* GRAPH SECTION: XY LINE DIAGRAM & VERTICAL BAR CHART (Middle row matching design) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      {/* GRAPH SECTION: XY LINE DIAGRAM & VERTICAL BAR CHART */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-5">
         
         {/* XY Line Diagram (Pipeline Analytics) */}
-        <div className="lg:col-span-7 bg-[#091e23]/80 backdrop-blur-md p-6 rounded-3xl border border-[#14353c] shadow-2xl flex flex-col justify-between">
+        <div className="lg:col-span-7 bg-[#1e293b]/80 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-[#334155] shadow-md flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-bold text-[#f0fdfa] tracking-wide">Pipeline Operational Velocity</h2>
-              <MoreHorizontal className="w-4 h-4 text-[#527d7d] cursor-pointer" />
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xs font-bold text-[#f8fafc] uppercase tracking-wider">Pipeline Operational Velocity</h2>
+              <MoreHorizontal className="w-3.5 h-3.5 text-[#64748b] cursor-pointer" />
             </div>
             <ModernXYLineChart data={pipelineTrendData} />
           </div>
-          <div className="flex items-center justify-between pt-4 border-t border-[#14353c] text-xs text-[#81a3a3]">
-            <span className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#2dd4bf]" /> Realized Output
+          <div className="flex items-center justify-center gap-6 pt-3 border-t border-[#334155] text-xs text-[#94a3b8]">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#38bdf8]" /> Realized Output
             </span>
-            <span className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#427b82]" /> Projected Capacity
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#64748b]" /> Projected Capacity
             </span>
           </div>
         </div>
 
         {/* Vertical Bar Graph (Deals / Projects by Stage) */}
-        <div className="lg:col-span-5 bg-[#091e23]/80 backdrop-blur-md p-6 rounded-3xl border border-[#14353c] shadow-2xl flex flex-col justify-between">
+        <div className="lg:col-span-5 bg-[#1e293b]/80 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-[#334155] shadow-md flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-bold text-[#f0fdfa] tracking-wide">Volume by Operations Stage</h2>
-              <MoreHorizontal className="w-4 h-4 text-[#527d7d] cursor-pointer" />
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xs font-bold text-[#f8fafc] uppercase tracking-wider">Volume by Operations Stage</h2>
+              <MoreHorizontal className="w-3.5 h-3.5 text-[#64748b] cursor-pointer" />
             </div>
             <VerticalBarChart data={barChartData} />
           </div>
-          <div className="pt-4 border-t border-[#14353c] flex justify-between items-center text-xs text-[#527d7d]">
-            <span>Updated real-time from Supabase</span>
-            <span className="text-[#2dd4bf] font-semibold">{stats.totalLeads + stats.activeProjects} Total Items</span>
+          <div className="pt-3 border-t border-[#334155] flex justify-between items-center text-xs text-[#64748b]">
+            <span>Updated real-time</span>
+            <span className="text-[#38bdf8] font-semibold">{stats.totalLeads + stats.activeProjects} Total Items</span>
           </div>
         </div>
       </div>
 
-      {/* BOTTOM SECTION: ALL CRM OPERATIONS OVERVIEW (Tickets, Recent Activity & Workforce) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      {/* BOTTOM SECTION: ALL CRM OPERATIONS OVERVIEW */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 md:gap-5">
         
         {/* Incident Tickets Breakdown */}
-        <div className="lg:col-span-4 bg-[#091e23]/80 backdrop-blur-md p-6 rounded-3xl border border-[#14353c] shadow-xl space-y-4">
-          <div className="flex items-center justify-between border-b border-[#14353c] pb-3">
-            <h2 className="text-sm font-bold text-[#f0fdfa] flex items-center gap-2">
-              <Ticket className="w-4 h-4 text-[#fbbf24]" /> Support Workload SLA
+        <div className="lg:col-span-4 bg-[#1e293b]/80 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-[#334155] shadow-md space-y-3 flex flex-col justify-between">
+          <div className="flex items-center justify-between border-b border-[#334155] pb-2.5">
+            <h2 className="text-xs font-bold text-[#f8fafc] flex items-center gap-1.5 uppercase tracking-wider">
+              <Ticket className="w-3.5 h-3.5 text-[#fbbf24]" /> Support Workload SLA
             </h2>
-            <span className="text-[10px] font-extrabold uppercase bg-[#1e2a1a] text-[#a3e635] px-2 py-0.5 rounded-full border border-[#324a29]">
+            <span className="text-[9px] font-bold uppercase bg-[#14532d]/40 text-[#4ade80] px-2 py-0.5 rounded-full border border-[#166534]">
               Live Desk
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-3.5 bg-[#1a0e10] rounded-2xl border border-[#3b191d] flex flex-col justify-between">
+          <div className="grid grid-cols-2 gap-2.5">
+            <div className="p-3 bg-[#0f172a] rounded-xl border border-[#334155] flex flex-col items-center justify-center text-center">
               <span className="text-[10px] font-bold text-[#f87171] uppercase tracking-wider">Urgent</span>
-              <span className="text-2xl font-black text-[#fca5a5] mt-2">{stats.ticketsByPriority['Urgent'] || 0}</span>
+              <span className="text-xl font-black text-[#fca5a5] mt-1">{stats.ticketsByPriority['Urgent'] || 0}</span>
             </div>
 
-            <div className="p-3.5 bg-[#1c150c] rounded-2xl border border-[#422c15] flex flex-col justify-between">
+            <div className="p-3 bg-[#0f172a] rounded-xl border border-[#334155] flex flex-col items-center justify-center text-center">
               <span className="text-[10px] font-bold text-[#fb923c] uppercase tracking-wider">High</span>
-              <span className="text-2xl font-black text-[#fdba74] mt-2">{stats.ticketsByPriority['High'] || 0}</span>
+              <span className="text-xl font-black text-[#fdba74] mt-1">{stats.ticketsByPriority['High'] || 0}</span>
             </div>
 
-            <div className="p-3.5 bg-[#0b1b22] rounded-2xl border border-[#173a4a] flex flex-col justify-between">
+            <div className="p-3 bg-[#0f172a] rounded-xl border border-[#334155] flex flex-col items-center justify-center text-center">
               <span className="text-[10px] font-bold text-[#38bdf8] uppercase tracking-wider">Medium</span>
-              <span className="text-2xl font-black text-[#7dd3fc] mt-2">{stats.ticketsByPriority['Medium'] || 0}</span>
+              <span className="text-xl font-black text-[#7dd3fc] mt-1">{stats.ticketsByPriority['Medium'] || 0}</span>
             </div>
 
-            <div className="p-3.5 bg-[#061316] rounded-2xl border border-[#123038] flex flex-col justify-between">
-              <span className="text-[10px] font-bold text-[#81a3a3] uppercase tracking-wider">Low</span>
-              <span className="text-2xl font-black text-[#e2f3f3] mt-2">{stats.ticketsByPriority['Low'] || 0}</span>
+            <div className="p-3 bg-[#0f172a] rounded-xl border border-[#334155] flex flex-col items-center justify-center text-center">
+              <span className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider">Low</span>
+              <span className="text-xl font-black text-[#f1f5f9] mt-1">{stats.ticketsByPriority['Low'] || 0}</span>
             </div>
           </div>
         </div>
 
         {/* Live Operational Timeline */}
-        <div className="lg:col-span-4 bg-[#091e23]/80 backdrop-blur-md p-6 rounded-3xl border border-[#14353c] shadow-xl flex flex-col justify-between">
+        <div className="lg:col-span-4 bg-[#1e293b]/80 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-[#334155] shadow-md flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between border-b border-[#14353c] pb-3 mb-4">
-              <h2 className="text-sm font-bold text-[#f0fdfa] flex items-center gap-2">
-                <Clock className="w-4 h-4 text-[#2dd4bf]" /> Recent Operational Logs
+            <div className="flex items-center justify-between border-b border-[#334155] pb-2.5 mb-3">
+              <h2 className="text-xs font-bold text-[#f8fafc] flex items-center gap-1.5 uppercase tracking-wider">
+                <Clock className="w-3.5 h-3.5 text-[#38bdf8]" /> Recent Operational Logs
               </h2>
             </div>
 
-            <div className="space-y-2.5">
+            <div className="space-y-2">
               {stats.recentActivities.length === 0 ? (
-                <p className="text-xs text-[#527d7d] italic">No recent log entries.</p>
+                <p className="text-xs text-[#64748b] italic text-center py-2">No recent log entries.</p>
               ) : (
                 stats.recentActivities.map((act, index) => (
                   <div
                     key={index}
-                    className="p-2.5 bg-[#051316] rounded-2xl border border-[#123038] flex items-center justify-between text-xs"
+                    className="p-2 bg-[#0f172a] rounded-xl border border-[#334155] flex items-center justify-between text-xs"
                   >
                     <div className="flex items-center gap-2 truncate pr-2">
-                      <span className="w-2 h-2 rounded-full bg-[#2dd4bf] shrink-0" />
-                      <span className="font-medium text-[#e2f3f3] truncate">{act.title}</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#38bdf8] shrink-0" />
+                      <span className="font-medium text-[#f1f5f9] truncate">{act.title}</span>
                     </div>
-                    <span className="text-[10px] font-semibold text-[#81a3a3] shrink-0">{act.time}</span>
+                    <span className="text-[10px] font-semibold text-[#64748b] shrink-0">{act.time}</span>
                   </div>
                 ))
               )}
             </div>
           </div>
 
-          <div className="pt-3 mt-4 border-t border-[#14353c] text-right text-[10px] text-[#527d7d]">
+          <div className="pt-2.5 mt-3 border-t border-[#334155] text-center text-[10px] text-[#64748b]">
             Connected to Supabase Realtime DB
           </div>
         </div>
 
         {/* Staff & Department Allocation */}
-        <div className="lg:col-span-4 bg-[#091e23]/80 backdrop-blur-md p-6 rounded-3xl border border-[#14353c] shadow-xl space-y-4">
-          <div className="flex items-center justify-between border-b border-[#14353c] pb-3">
-            <h2 className="text-sm font-bold text-[#f0fdfa] flex items-center gap-2">
-              <Users className="w-4 h-4 text-[#a78bfa]" /> Workforce Allocation
+        <div className="md:col-span-2 lg:col-span-4 bg-[#1e293b]/80 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-[#334155] shadow-md space-y-3 flex flex-col justify-between">
+          <div className="flex items-center justify-between border-b border-[#334155] pb-2.5">
+            <h2 className="text-xs font-bold text-[#f8fafc] flex items-center gap-1.5 uppercase tracking-wider">
+              <Users className="w-3.5 h-3.5 text-[#c084fc]" /> Workforce Allocation
             </h2>
-            <span className="text-xs font-extrabold text-[#f0fdfa]">{stats.totalEmployees} Active</span>
+            <span className="text-xs font-bold text-[#f8fafc]">{stats.totalEmployees} Active</span>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2.5">
             {Object.entries(stats.employeesByDept).map(([dept, count]) => (
               <div
                 key={dept}
-                className="p-3 rounded-2xl bg-[#051316] border border-[#123038] flex flex-col justify-between"
+                className="p-2.5 rounded-xl bg-[#0f172a] border border-[#334155] flex flex-col items-center justify-center text-center"
               >
-                <span className="text-[11px] font-semibold text-[#81a3a3] truncate">{dept}</span>
-                <span className="text-lg font-black text-[#f0fdfa] mt-1">{count} Staff</span>
+                <span className="text-[10px] font-medium text-[#94a3b8] truncate w-full">{dept}</span>
+                <span className="text-base font-bold text-[#f8fafc] mt-0.5">{count} Staff</span>
               </div>
             ))}
 
             {Object.keys(stats.employeesByDept).length === 0 && (
-              <div className="text-xs text-[#527d7d] italic col-span-2">No active department allocations found.</div>
+              <div className="text-xs text-[#64748b] italic col-span-2 text-center py-2">No active department allocations found.</div>
             )}
           </div>
         </div>
