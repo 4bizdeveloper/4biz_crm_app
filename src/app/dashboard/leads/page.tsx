@@ -6,7 +6,8 @@ import {
   Plus, Download, Calendar, CheckCircle2, FileText,
   Bot, UserCheck, Trash2, Sparkles, FileCode, X, Edit,
   BarChart2, Search, Globe, Building,
-  Flame, Zap, Layers, User, ChevronRight, RefreshCw, Eye, MoreHorizontal
+  Flame, Zap, Layers, User, ChevronRight, RefreshCw, Eye, MoreHorizontal,
+  TrendingUp, Activity
 } from 'lucide-react';
 
 interface Lead {
@@ -493,34 +494,66 @@ export default function LeadsModule() {
       {/* Top Overview Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
-        {/* Metric 1 - Total Balance/Leads */}
+        {/* Metric 1 - Total Leads + Mini Bar Chart */}
         <div className="bg-[#0b241f]/80 backdrop-blur-xl p-5 rounded-2xl border border-[#16433a] shadow-xl relative overflow-hidden flex flex-col justify-between">
           <div className="flex items-center justify-between text-[#8baab0]">
             <span className="text-xs font-bold uppercase tracking-wider text-[#a0c5bd]">Total Leads</span>
             <MoreHorizontal className="w-4 h-4 cursor-pointer text-[#8baab0]" />
           </div>
-          <div className="my-3">
-            <div className="text-3xl font-extrabold text-white tracking-tight">{metrics.totalLeads}</div>
-            <div className="text-xs text-[#6e9b90] font-semibold mt-1">Active database records</div>
+          
+          <div className="my-2 flex items-end justify-between gap-2">
+            <div>
+              <div className="text-3xl font-extrabold text-white tracking-tight">{metrics.totalLeads}</div>
+              <div className="text-xs text-[#6e9b90] font-semibold mt-0.5">Active database records</div>
+            </div>
+
+            {/* Mini Bar Chart Representation */}
+            <div className="flex items-end gap-1 h-10 px-1 py-1 bg-[#061915]/60 rounded-lg border border-[#16433a]/60">
+              <div className="w-1.5 h-[40%] bg-emerald-500/30 rounded-t-sm"></div>
+              <div className="w-1.5 h-[65%] bg-emerald-500/50 rounded-t-sm"></div>
+              <div className="w-1.5 h-[45%] bg-emerald-500/40 rounded-t-sm"></div>
+              <div className="w-1.5 h-[80%] bg-emerald-500/70 rounded-t-sm"></div>
+              <div className="w-1.5 h-[100%] bg-emerald-400 rounded-t-sm shadow-sm shadow-emerald-400/50"></div>
+            </div>
           </div>
+
           <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400 pt-2 border-t border-[#16433a]/60">
             <span className="bg-[#0e352e] px-2 py-0.5 rounded-md text-emerald-400 font-bold border border-[#1d574c]">+{metrics.newToday} New</span>
             <span className="text-[#8baab0]">Added Today</span>
           </div>
         </div>
 
-        {/* Metric 2 - Unassigned & Action Needed */}
+        {/* Metric 2 - Unassigned & Action Needed + Distribution Progress Bar */}
         <div className="bg-[#0b241f]/80 backdrop-blur-xl p-5 rounded-2xl border border-[#16433a] shadow-xl relative overflow-hidden flex flex-col justify-between">
           <div className="flex items-center justify-between text-[#8baab0]">
             <span className="text-xs font-bold uppercase tracking-wider text-[#a0c5bd]">Unassigned</span>
             <MoreHorizontal className="w-4 h-4 cursor-pointer text-[#8baab0]" />
           </div>
-          <div className="my-3">
+
+          <div className="my-2">
             <div className="text-3xl font-extrabold text-[#f59e0b] tracking-tight">{metrics.unassigned}</div>
-            <div className="text-xs text-[#6e9b90] font-semibold mt-1">Pending rep assignment</div>
+            <div className="text-xs text-[#6e9b90] font-semibold mt-0.5">Pending rep assignment</div>
+
+            {/* Status Breakdown Bar */}
+            <div className="mt-2 w-full h-2 bg-[#061915] rounded-full overflow-hidden flex">
+              <div 
+                className="bg-amber-500 h-full transition-all duration-300" 
+                style={{ width: `${metrics.totalLeads > 0 ? (metrics.unassigned / metrics.totalLeads) * 100 : 0}%` }}
+                title="Unassigned"
+              ></div>
+              <div 
+                className="bg-emerald-500 h-full transition-all duration-300" 
+                style={{ width: `${metrics.totalLeads > 0 ? ((metrics.totalLeads - metrics.unassigned) / metrics.totalLeads) * 100 : 0}%` }}
+                title="Assigned"
+              ></div>
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-amber-400 pt-2 border-t border-[#16433a]/60">
+
+          <div className="flex items-center justify-between text-xs font-semibold text-amber-400 pt-2 border-t border-[#16433a]/60">
             <span>Requires Action</span>
+            <span className="text-[10px] text-[#8baab0]">
+              {metrics.totalLeads > 0 ? Math.round((metrics.unassigned / metrics.totalLeads) * 100) : 0}% of Total
+            </span>
           </div>
         </div>
 
@@ -586,6 +619,49 @@ export default function LeadsModule() {
           </div>
         </div>
 
+      </div>
+
+      {/* Overview Diagram Representation: Lead Temperature Breakdown */}
+      <div className="bg-[#0b241f]/80 backdrop-blur-xl p-4 rounded-2xl border border-[#16433a] shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <Activity className="w-4 h-4 text-emerald-400" />
+          <span className="text-xs font-extrabold text-white uppercase tracking-wider">Lead Temperature Distribution</span>
+        </div>
+        
+        <div className="flex-1 max-w-xl">
+          <div className="w-full h-3 bg-[#061915] rounded-full overflow-hidden flex border border-[#16433a]/80">
+            <div 
+              className="bg-rose-500 h-full transition-all" 
+              style={{ width: `${metrics.totalLeads > 0 ? (metrics.hot / metrics.totalLeads) * 100 : 0}%` }}
+              title="Hot Leads"
+            />
+            <div 
+              className="bg-amber-400 h-full transition-all" 
+              style={{ width: `${metrics.totalLeads > 0 ? (metrics.warm / metrics.totalLeads) * 100 : 0}%` }}
+              title="Warm Leads"
+            />
+            <div 
+              className="bg-sky-400 h-full transition-all" 
+              style={{ width: `${metrics.totalLeads > 0 ? (metrics.cold / metrics.totalLeads) * 100 : 0}%` }}
+              title="Cold Leads"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4 text-xs font-bold">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+            <span className="text-rose-300">Hot ({metrics.hot})</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+            <span className="text-amber-300">Warm ({metrics.warm})</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-sky-400"></span>
+            <span className="text-sky-300">Cold ({metrics.cold})</span>
+          </div>
+        </div>
       </div>
 
       {/* Navigation Pills */}
