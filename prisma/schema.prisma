@@ -1,0 +1,178 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Lead {
+  id                          String          @id @default(uuid()) @db.Uuid
+  name                        String
+  email                       String
+  company                     String?
+  value                       Decimal         @default(0) @db.Decimal
+  created_at                  DateTime        @default(now()) @db.Timestamptz(6)
+  phone                       String?
+  source                      String          @default("Website")
+  notes                       String?
+  assigned_to                 String?
+  requirements                String?
+  campaign_name               String?
+  interactions                Json            @default("[]")
+  tasks                       Json            @default("[]")
+  documents                   Json            @default("[]")
+  quotation_details           Json            @default("{}")
+  discount_pct                Decimal         @default(0) @db.Decimal
+  handover_notes              String?
+  contact_info                String?
+  first_name                  String?
+  last_name                   String?
+  display_name                String?
+  job_title                   String?
+  department                  String?
+  secondary_email             String?
+  mobile_number               String?
+  alternative_number          String?
+  whatsapp_number             String?
+  preferred_contact_method    String          @default("Email")
+  preferred_language          String          @default("English")
+  contact_time_preference     String?
+  country                     String?
+  emirate_state               String?
+  city                        String?
+  address                     String?
+  time_zone                   String          @default("UTC")
+  company_website             String?
+  industry                    String?
+  company_size                String?
+  number_of_employees         Int             @default(0)
+  annual_revenue_range        String?
+  business_type               String?
+  company_location            String?
+  vat_trn_number              String?
+  customer_type               String          @default("New Prospect")
+  parent_company              String?
+  linkedin_company_url        String?
+  interested_service          String?
+  sub_service                 String?
+  product_category            String?
+  requirement_description     String?
+  main_pain_point             String?
+  expected_solution           String?
+  estimated_budget            Decimal         @default(0) @db.Decimal
+  expected_purchase_date      DateTime?       @db.Date
+  project_timeline            String?
+  urgency                     String          @default("Medium")
+  quantity                    Int             @default(1)
+  project_location            String?
+  existing_vendor             String?
+  competitors_considered      String?
+  additional_requirements     String?
+  sub_source                  String?
+  campaign_id                 String?
+  ad_set                      String?
+  ad_name                     String?
+  keyword                     String?
+  landing_page                String?
+  referral_url                String?
+  utm_source                  String?
+  utm_medium                  String?
+  utm_campaign                String?
+  utm_content                 String?
+  utm_term                    String?
+  first_touch_source          String?
+  latest_touch_source         String?
+  lead_score                  Int             @default(0)
+  branch                      String          @default("Main Branch")
+  team                        String          @default("Sales Team")
+  last_activity_at            DateTime        @default(now()) @db.Timestamptz(6)
+  follow_up_date              DateTime?       @db.Timestamptz(6)
+  first_response_time_minutes Int             @default(0)
+  status                      LeadStatus      @default(New)
+  approval_status             ApprovalStatus  @default(None)
+  payment_status              PaymentStatus   @default(Unpaid)
+  lead_temperature            LeadTemperature @default(Warm)
+
+  @@map("leads")
+}
+
+model Project {
+  id           String        @id @default(uuid()) @db.Uuid
+  client_name  String
+  project_name String
+  budget       Decimal       @default(0) @db.Decimal
+  assigned_to  String?
+  created_at   DateTime      @default(now()) @db.Timestamptz(6)
+  start_date   DateTime      @default(now()) @db.Date
+  due_date     DateTime?     @db.Date
+  description  String?
+  status       ProjectStatus @default(Planning)
+
+  @@map("projects")
+}
+
+model Ticket {
+  id          String         @id @default(uuid()) @db.Uuid
+  title       String
+  client_name String
+  assigned_to String?
+  created_at  DateTime       @default(now()) @db.Timestamptz(6)
+  priority    TicketPriority @default(Medium)
+  status      TicketStatus   @default(Open)
+
+  @@map("tickets")
+}
+
+enum LeadStatus {
+  New
+  Assigned
+  Contacted
+  Follow_up    @map("Follow-up")
+  Qualified
+  Converted
+  Disqualified
+}
+
+enum ApprovalStatus {
+  None
+  Pending
+  Approved
+  Rejected
+}
+
+enum PaymentStatus {
+  Unpaid
+  Partial
+  Paid
+}
+
+enum LeadTemperature {
+  Hot
+  Warm
+  Cold
+}
+
+enum ProjectStatus {
+  Planning
+  In_Progress @map("In Progress")
+  Testing
+  Completed
+  On_Hold     @map("On Hold")
+}
+
+enum TicketPriority {
+  Low
+  Medium
+  High
+  Urgent
+}
+
+enum TicketStatus {
+  Open
+  In_Progress @map("In Progress")
+  Resolved
+  Closed
+}
