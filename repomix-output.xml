@@ -61,8 +61,6 @@ src/
         page.tsx
       tickets/
         page.tsx
-      website-contact-form-enquiries/
-        page.tsx
       layout.tsx
     login/
       page.tsx
@@ -699,188 +697,6 @@ export default function TicketsPage() {
             </div>
           </>
         )}
-      </div>
-    </div>
-  );
-}
-</file>
-
-<file path="src/app/login/page.tsx">
-'use client';
-
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { ShieldCheck, Server, Ticket, ArrowRight, Lock, Mail, CheckCircle2 } from 'lucide-react';
-
-export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (res.ok) {
-        router.push('/dashboard/overview');
-      } else {
-        setError('Invalid admin credentials. Please try again.');
-      }
-    } catch (err) {
-      setError('An unexpected error occurred. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="min-h-screen w-full bg-slate-50 flex items-center justify-center p-4 md:p-8">
-      <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl border border-slate-200/80 overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[600px]">
-        
-        {/* Left Side: Clean Feature Cards (No Stats/Numbers) */}
-        <div className="lg:col-span-7 bg-gradient-to-br from-blue-50 via-indigo-50/50 to-slate-100 p-8 lg:p-12 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-200">
-          <div>
-            <div className="flex items-center gap-2.5 mb-8">
-              <div className="bg-blue-600 text-white p-2 rounded-xl shadow-md shadow-blue-500/20">
-                <ShieldCheck className="w-6 h-6" />
-              </div>
-              <span className="font-bold text-xl text-slate-900 tracking-tight">
-                4Biz <span className="text-blue-600">IT CRM</span>
-              </span>
-            </div>
-
-            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-tight mb-3">
-              Unified Platform for IT Service & Client Management
-            </h1>
-            <p className="text-slate-600 text-sm leading-relaxed mb-8 max-w-md">
-              Streamline sales pipelines, client project operations, technical infrastructure tickets, and staff management in one centralized hub.
-            </p>
-
-            {/* Static Clean Widgets */}
-            <div className="grid grid-cols-2 gap-4 max-w-md">
-              <div className="bg-white/80 backdrop-blur-sm p-4 rounded-xl border border-slate-200/80 shadow-xs">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 bg-emerald-100 text-emerald-700 rounded-lg">
-                    <Server className="w-4 h-4" />
-                  </div>
-                  <span className="text-xs font-semibold text-slate-700">System Status</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium pt-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>All Systems Operational</span>
-                </div>
-              </div>
-
-              <div className="bg-white/80 backdrop-blur-sm p-4 rounded-xl border border-slate-200/80 shadow-xs">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 bg-blue-100 text-blue-700 rounded-lg">
-                    <Ticket className="w-4 h-4" />
-                  </div>
-                  <span className="text-xs font-semibold text-slate-700">Service Desk</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-xs text-blue-600 font-medium pt-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Real-time Ticketing Active</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="pt-8 border-t border-slate-200/60 flex items-center gap-6 text-xs text-slate-500 font-medium">
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-blue-600" /> Enterprise Security
-            </span>
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-blue-600" /> Real-time Analytics
-            </span>
-          </div>
-        </div>
-
-        {/* Right Side: Login Form */}
-        <div className="lg:col-span-5 p-8 lg:p-12 flex flex-col justify-center bg-white">
-          <div className="max-w-sm mx-auto w-full space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-slate-900">Admin Sign In</h2>
-              <p className="text-xs text-slate-500 mt-1">
-                Enter your administrative credentials to access your workspace.
-              </p>
-            </div>
-
-            {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-xs font-medium text-center">
-                {error}
-              </div>
-            )}
-
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  Admin Email Address
-                </label>
-                <div className="relative">
-                  <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    placeholder="4bizdeveloper@gmail.com"
-                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    placeholder="••••••••"
-                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-sm rounded-lg shadow-sm shadow-blue-500/20 flex items-center justify-center gap-2 transition-all disabled:opacity-70"
-              >
-                {loading ? (
-                  <span>Signing in...</span>
-                ) : (
-                  <>
-                    <span>Sign In to Dashboard</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-            </form>
-
-            <div className="pt-4 text-center">
-              <p className="text-xs text-slate-400">
-                Encrypted with SSL 256-bit authentication
-              </p>
-            </div>
-          </div>
-        </div>
-
       </div>
     </div>
   );
@@ -1905,6 +1721,261 @@ export default function ProjectsPage() {
 }
 </file>
 
+<file path="src/app/login/page.tsx">
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { 
+  ShieldCheck, 
+  Server, 
+  Ticket, 
+  ArrowRight, 
+  Lock, 
+  Mail, 
+  CheckCircle2, 
+  TrendingUp, 
+  Users, 
+  Activity, 
+  BarChart3, 
+  Zap,
+  Globe
+} from 'lucide-react';
+
+export default function LoginPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (res.ok) {
+        router.push('/dashboard/overview');
+      } else {
+        setError('Invalid admin credentials. Please try again.');
+      }
+    } catch (err) {
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="relative min-h-screen w-full bg-[#020a0a] text-slate-100 flex flex-col justify-between overflow-hidden selection:bg-[#288277]/30 selection:text-[#52d6c1]">
+      
+      {/* Background Glows & Ambient Lighting */}
+      <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-[#1d5c58]/20 rounded-full blur-[140px] pointer-events-none -translate-y-1/2" />
+      <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-[#0c2f2e]/30 rounded-full blur-[160px] pointer-events-none translate-y-1/2" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#0d2d2c10_1px,transparent_1px),linear-gradient(to_bottom,#0d2d2c10_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
+
+      {/* Header / Navigation Bar */}
+      <header className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="bg-gradient-to-br from-[#1b4e4c] to-[#0c2827] text-[#52d6c1] p-2.5 rounded-xl border border-[#2a6d68]/40 shadow-lg shadow-[#123937]/50">
+            <ShieldCheck className="w-6 h-6" />
+          </div>
+          <span className="font-extrabold text-xl sm:text-2xl text-white tracking-tight">
+            4Biz <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#42b8a6] to-[#7ce3d2]">IT CRM</span>
+          </span>
+        </div>
+
+        <div className="hidden md:flex items-center gap-6 text-xs font-semibold text-slate-300">
+          <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#0c2323]/80 border border-[#1b4341]">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            System Status: 99.98%
+          </span>
+          <span className="flex items-center gap-1.5 text-slate-400">
+            <Globe className="w-4 h-4 text-[#42b8a6]" /> Global Cloud Network
+          </span>
+        </div>
+      </header>
+
+      {/* Main Container */}
+      <main className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 my-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+          
+          {/* Left Column: Landing Page Content & Visual CRM Showcase */}
+          <div className="lg:col-span-7 space-y-8 text-left">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#0f2d2c]/80 border border-[#1f5653] text-[#52d6c1] text-xs font-semibold mb-4 backdrop-blur-md">
+                <Zap className="w-3.5 h-3.5" /> Next-Gen Enterprise Solution
+              </div>
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-[1.15]">
+                Intelligent Control Center for <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#42b8a6] via-[#65dbca] to-[#99f3e4]">IT Operations</span> & Clients
+              </h1>
+              <p className="text-slate-300 text-sm sm:text-base leading-relaxed mt-4 max-w-xl">
+                Accelerate business pipelines, automate technical workflows, monitor real-time server infrastructure, and elevate client satisfaction with our unified CRM suite.
+              </p>
+            </div>
+
+            {/* Simulated Live Analytics Cards Showcase */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+              <div className="bg-gradient-to-b from-[#0e2726]/90 to-[#081818]/90 backdrop-blur-xl p-4 rounded-xl border border-[#1d4a47]/60 shadow-xl relative overflow-hidden group hover:border-[#2a6d68] transition-all">
+                <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                  <TrendingUp className="w-12 h-12 text-[#52d6c1]" />
+                </div>
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Revenue Pipeline</p>
+                <h3 className="text-lg sm:text-xl font-bold text-white mt-1">₹ 42.5 L</h3>
+                <span className="inline-flex items-center text-[10px] text-emerald-400 font-medium mt-1">
+                  +18.4% this month
+                </span>
+              </div>
+
+              <div className="bg-gradient-to-b from-[#0e2726]/90 to-[#081818]/90 backdrop-blur-xl p-4 rounded-xl border border-[#1d4a47]/60 shadow-xl relative overflow-hidden group hover:border-[#2a6d68] transition-all">
+                <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                  <Users className="w-12 h-12 text-[#52d6c1]" />
+                </div>
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Active Clients</p>
+                <h3 className="text-lg sm:text-xl font-bold text-white mt-1">1,280+</h3>
+                <span className="inline-flex items-center text-[10px] text-emerald-400 font-medium mt-1">
+                  Active SLA contracts
+                </span>
+              </div>
+
+              <div className="col-span-2 sm:col-span-1 bg-gradient-to-b from-[#0e2726]/90 to-[#081818]/90 backdrop-blur-xl p-4 rounded-xl border border-[#1d4a47]/60 shadow-xl relative overflow-hidden group hover:border-[#2a6d68] transition-all">
+                <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                  <Activity className="w-12 h-12 text-[#52d6c1]" />
+                </div>
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Service Desk</p>
+                <h3 className="text-lg sm:text-xl font-bold text-white mt-1">98.2%</h3>
+                <span className="inline-flex items-center text-[10px] text-[#52d6c1] font-medium mt-1">
+                  Resolution rate
+                </span>
+              </div>
+            </div>
+
+            {/* Feature Highlights Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex items-start gap-3 p-3.5 rounded-xl bg-[#0a1f1e]/60 border border-[#163e3b]/50">
+                <div className="p-2 rounded-lg bg-[#143d3a] text-[#52d6c1] shrink-0">
+                  <Server className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-slate-100">Infrastructure Tickets</h4>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Automated queue routing and live server monitoring.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3.5 rounded-xl bg-[#0a1f1e]/60 border border-[#163e3b]/50">
+                <div className="p-2 rounded-lg bg-[#143d3a] text-[#52d6c1] shrink-0">
+                  <BarChart3 className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-slate-100">Real-Time Analytics</h4>
+                  <p className="text-[11px] text-slate-400 mt-0.5">In-depth insights into team output and sales conversion.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: High-End Login Card */}
+          <div className="lg:col-span-5 w-full">
+            <div className="relative bg-gradient-to-b from-[#0d2625]/95 to-[#061414]/95 backdrop-blur-2xl p-6 sm:p-8 rounded-2xl border border-[#215450]/80 shadow-[0_20px_50px_rgba(0,0,0,0.6)] relative overflow-hidden">
+              
+              {/* Subtle Ambient Card Gradient */}
+              <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#22726a]/20 rounded-full blur-3xl pointer-events-none" />
+
+              <div className="mb-6">
+                <h2 className="text-2xl font-extrabold text-white tracking-tight">Admin Sign In</h2>
+                <p className="text-xs text-slate-400 mt-1.5">
+                  Enter your credentials to access the administrative workstation.
+                </p>
+              </div>
+
+              {error && (
+                <div className="mb-6 p-3 bg-red-950/60 border border-red-800/80 rounded-xl text-red-300 text-xs font-medium text-center backdrop-blur-md">
+                  {error}
+                </div>
+              )}
+
+              <form onSubmit={handleLogin} className="space-y-5">
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-2">
+                    Admin Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      placeholder="admin@4biz.com"
+                      className="w-full pl-10 pr-4 py-3 bg-[#071717]/90 border border-[#1f4e4b] rounded-xl text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#37a395] focus:border-transparent transition-all shadow-inner"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-xs font-bold text-slate-300">
+                      Password
+                    </label>
+                  </div>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      placeholder="••••••••"
+                      className="w-full pl-10 pr-4 py-3 bg-[#071717]/90 border border-[#1f4e4b] rounded-xl text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#37a395] focus:border-transparent transition-all shadow-inner"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3 px-4 bg-gradient-to-r from-[#184d4b] via-[#226863] to-[#2c837c] hover:from-[#1d5c5a] hover:to-[#359b92] active:scale-[0.99] text-white font-bold text-sm rounded-xl shadow-lg shadow-[#103836]/60 border border-[#3ba095]/40 flex items-center justify-center gap-2 transition-all disabled:opacity-70 cursor-pointer"
+                >
+                  {loading ? (
+                    <span>Authenticating...</span>
+                  ) : (
+                    <>
+                      <span>Sign In to Dashboard</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </form>
+
+              <div className="mt-6 pt-5 border-t border-[#173e3c]/80 flex items-center justify-between text-[11px] text-slate-400">
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#52d6c1]" /> SSL 256-bit Encrypted
+                </span>
+                <span className="text-slate-400">v4.8.2 Enterprise</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center text-xs text-slate-400">
+        <p>© {new Date().getFullYear()} 4Biz IT CRM System. All rights reserved.</p>
+      </footer>
+
+    </div>
+  );
+}
+</file>
+
 <file path="src/app/api/contact/route.ts">
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
@@ -2059,714 +2130,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 }
 </file>
 
-<file path="src/app/dashboard/website-contact-form-enquiries/page.tsx">
-'use client';
-
-import { useEffect, useState, useMemo } from 'react';
-import { supabase } from '@/lib/supabase';
-import {
-  Download, Calendar, CheckCircle2, FileText,
-  Bot, UserCheck, Trash2, Edit, Eye, X, Filter, Sparkles, ChevronRight, User
-} from 'lucide-react';
-
-interface Lead {
-  id: string;
-  name: string;
-  email: string;
-  contact_info?: string;
-  phone?: string;
-  company?: string;
-  source?: string;
-  campaign_name?: string;
-  requirements?: string;
-  status: string;
-  assigned_to?: string | null;
-  notes?: string;
-  created_at: string;
-}
-
-export default function WebsiteContactFormEnquiriesPage() {
-  const [activeTab, setActiveTab] = useState<'details' | 'pipeline' | 'automation'>('details');
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [dateRange, setDateRange] = useState<'all' | 'daily' | 'weekly' | 'monthly' | 'custom'>('all');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [showModal, setShowModal] = useState(false);
-  const [editingLead, setEditingLead] = useState<Lead | null>(null);
-
-  // Requirements Modal Zoom State
-  const [viewRequirements, setViewRequirements] = useState<string | null>(null);
-
-  const [formData, setFormData] = useState({
-    name: '',
-    contact_info: '',
-    company: '',
-    source: 'Website',
-    campaign_name: '',
-    requirements: '',
-    status: 'New',
-    assigned_to: 'not_assigned',
-    notes: ''
-  });
-
-  const leadFlow = ['New', 'Assigned', 'Contacted', 'Follow-up', 'Qualified', 'Converted', 'Disqualified'];
-
-  const formatDateDDMMYYYY = (dateString: string) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return dateString;
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
-  };
-
-  const fetchData = async () => {
-    setLoading(true);
-    // Fetch ONLY website contact form enquiries
-    const { data: leadsData } = await supabase
-      .from('leads')
-      .select('*')
-      .eq('source', 'Website')
-      .order('created_at', { ascending: false });
-
-    if (leadsData) setLeads(leadsData);
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const filteredLeads = useMemo(() => {
-    if (dateRange === 'all') return leads;
-
-    const now = new Date();
-    return leads.filter((lead) => {
-      const leadDate = new Date(lead.created_at);
-      if (dateRange === 'daily') {
-        return leadDate.toDateString() === now.toDateString();
-      }
-      if (dateRange === 'weekly') {
-        const oneWeekAgo = new Date();
-        oneWeekAgo.setDate(now.getDate() - 7);
-        return leadDate >= oneWeekAgo;
-      }
-      if (dateRange === 'monthly') {
-        return leadDate.getMonth() === now.getMonth() && leadDate.getFullYear() === now.getFullYear();
-      }
-      if (dateRange === 'custom') {
-        if (!startDate || !endDate) return true;
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999);
-        return leadDate >= start && leadDate <= end;
-      }
-      return true;
-    });
-  }, [leads, dateRange, startDate, endDate]);
-
-  const saveLead = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingLead) return;
-
-    const isAssigned = formData.assigned_to === 'assigned';
-
-    // Separate potential email and phone from the contact_info string lines
-    const lines = formData.contact_info.split('\n').map((line) => line.trim());
-    const extractedEmail =
-      lines.find((line) => line.includes('@')) ||
-      editingLead.email ||
-      `${formData.name.toLowerCase().replace(/\s+/g, '')}@lead.com`;
-    const extractedPhone =
-      lines.find((line) => !line.includes('@')) || formData.contact_info.trim();
-
-    const payload: Record<string, any> = {
-      name: formData.name,
-      email: extractedEmail,
-      phone: extractedPhone,
-      contact_info: formData.contact_info,
-      company: formData.company || null,
-      source: 'Website',
-      status: isAssigned && formData.status === 'New' ? 'Assigned' : formData.status,
-      assigned_to: isAssigned ? 'assigned' : null,
-      notes: formData.notes || null,
-      campaign_name: formData.campaign_name || null,
-      requirements: formData.requirements || null
-    };
-
-    const { data, error } = await supabase
-      .from('leads')
-      .update(payload)
-      .eq('id', editingLead.id)
-      .select();
-
-    if (error) {
-      alert(`Could not update enquiry: ${error.message}`);
-      return;
-    }
-
-    if (data && data.length > 0) {
-      setLeads(leads.map((l) => (l.id === editingLead.id ? data[0] : l)));
-      closeModal();
-    }
-  };
-
-  const openEditModal = (lead: Lead) => {
-    setEditingLead(lead);
-    const isAssigned = lead.assigned_to === 'assigned' || lead.assigned_to === 'Assigned';
-    setFormData({
-      name: lead.name || '',
-      contact_info: lead.contact_info || (lead.email && lead.phone ? `${lead.email}\n${lead.phone}` : lead.email || lead.phone || ''),
-      company: lead.company || '',
-      source: 'Website',
-      campaign_name: lead.campaign_name || '',
-      requirements: lead.requirements || '',
-      status: lead.status || 'New',
-      assigned_to: isAssigned ? 'assigned' : 'not_assigned',
-      notes: lead.notes || ''
-    });
-    setShowModal(true);
-  };
-
-  const closeModal = () => {
-    setShowModal(false);
-    setEditingLead(null);
-  };
-
-  const updateAssignment = async (id: string, assignmentStatus: string) => {
-    const isAssigned = assignmentStatus === 'assigned';
-    const assignedVal = isAssigned ? 'assigned' : null;
-
-    const { error } = await supabase
-      .from('leads')
-      .update({ 
-        assigned_to: assignedVal,
-        ...(isAssigned ? { status: 'Assigned' } : {})
-      })
-      .eq('id', id);
-
-    if (error) {
-      alert(`Assignment update failed: ${error.message}`);
-      return;
-    }
-
-    setLeads(leads.map((l) => (l.id === id ? { 
-      ...l, 
-      assigned_to: assignedVal,
-      ...(isAssigned ? { status: 'Assigned' } : {})
-    } : l)));
-  };
-
-  const deleteLead = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this enquiry?')) return;
-    const { error } = await supabase.from('leads').delete().eq('id', id);
-    if (error) {
-      alert(`Delete failed: ${error.message}`);
-      return;
-    }
-    setLeads(leads.filter((l) => l.id !== id));
-  };
-
-  const exportCSV = () => {
-    const headers = ['Name,Contact Details,Company,Source,Campaign,Requirements,Status,Assign Lead,Date Created\n'];
-    const rows = filteredLeads
-      .map((l) => {
-        const assignmentLabel = l.assigned_to ? 'assign to leads' : 'not assign to leads';
-        const formattedDate = formatDateDDMMYYYY(l.created_at);
-        const cleanReq = (l.requirements || '').replace(/"/g, '""');
-        const contactVal = l.contact_info || (l.email && l.phone ? `${l.email} ${l.phone}` : l.email || l.phone || '');
-        const cleanContact = contactVal.replace(/"/g, '""').replace(/\n/g, ' ');
-        return `"${l.name}","${cleanContact}","${l.company || ''}","${l.source || ''}","${l.campaign_name || ''}","${cleanReq}","${l.status}","${assignmentLabel}","${formattedDate}"`;
-      })
-      .join('\n');
-
-    const blob = new Blob([headers + rows], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `website_contact_enquiries_${dateRange}_${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-  };
-
-  return (
-    <div className="w-full max-w-7xl mx-auto space-y-6 font-sans pb-12 px-2 sm:px-4 md:px-6 bg-[#040D0C] text-[#E0E2EC] min-h-screen">
-      
-      {/* 1. Header Container */}
-      <div className="bg-[#0B1E1C]/90 p-5 sm:p-6 rounded-3xl border border-[#183B36] shadow-2xl relative overflow-hidden">
-        <div className="absolute -right-10 -top-10 w-40 h-40 bg-gradient-to-br from-[#1A5248]/30 via-[#277D6C]/10 to-transparent rounded-full blur-2xl pointer-events-none" />
-        
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 relative z-10">
-          <div className="space-y-1.5 max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#143B35] border border-[#277D6C]/50 text-[#6CE5D0] text-xs font-semibold">
-              <Sparkles className="w-3.5 h-3.5 text-[#6CE5D0]" />
-              <span>Inbound Web Leads Engine</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#F0F2F5] tracking-tight flex items-center gap-3">
-              <div className="p-2.5 rounded-2xl bg-gradient-to-tr from-[#164940] via-[#22685B] to-[#34A08B] text-[#E0E2EC] shadow-md shadow-[#000000]/40 shrink-0 border border-[#277D6C]/40">
-                <UserCheck className="w-6 h-6 text-[#72F5DE]" />
-              </div>
-              Website Contact Form Enquiries
-            </h1>
-            <p className="text-xs sm:text-sm text-[#8DA09D] leading-relaxed pt-1">
-              Displaying only website contact form enquiries. Select <span className="font-semibold text-[#6CE5D0] bg-[#12312C] px-2 py-0.5 rounded-md border border-[#1D4A42]">assign to leads</span> to route an enquiry into the main Sales Lead Pipeline.
-            </p>
-          </div>
-
-          <button
-            onClick={exportCSV}
-            className="group relative inline-flex items-center justify-center gap-2.5 px-5 py-3 rounded-2xl font-semibold text-xs sm:text-sm text-[#051815] shadow-lg shadow-[#000000]/50 bg-gradient-to-r from-[#5BE3CA] via-[#34A08B] to-[#257A6A] hover:from-[#72F5DE] hover:to-[#34A08B] active:scale-[0.98] transition-all duration-200 cursor-pointer shrink-0 border border-[#8BFFEC]/40 overflow-hidden font-bold"
-          >
-            <Download className="w-4 h-4 transition-transform group-hover:-translate-y-0.5 text-[#051815]" />
-            <span>Export Enquiries CSV</span>
-          </button>
-        </div>
-      </div>
-
-      {/* 2. Date Filter Bar Container */}
-      <div className="bg-[#0B1E1C]/90 p-4 sm:p-5 rounded-3xl border border-[#183B36] shadow-xl flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full md:w-auto">
-          <div className="flex items-center gap-2 text-[#8DA09D] font-bold text-xs uppercase tracking-wider shrink-0">
-            <Filter className="w-4 h-4 text-[#6CE5D0]" />
-            <span>Date Range:</span>
-          </div>
-          <div className="flex flex-wrap bg-[#061513] p-1.5 rounded-2xl border border-[#163833] text-xs font-semibold w-full sm:w-auto">
-            {(['all', 'daily', 'weekly', 'monthly', 'custom'] as const).map((r) => (
-              <button
-                key={r}
-                onClick={() => setDateRange(r)}
-                className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl capitalize transition-all duration-200 cursor-pointer text-center ${
-                  dateRange === r
-                    ? 'bg-[#18453E] text-[#72F5DE] shadow-sm font-bold border border-[#277D6C]/60'
-                    : 'text-[#8DA09D] hover:text-[#E0E2EC] hover:bg-[#0E2824]'
-                }`}
-              >
-                {r === 'all' ? 'All Enquiries' : r}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {dateRange === 'custom' && (
-          <div className="flex items-center gap-2 text-xs bg-[#061513] p-2 rounded-2xl border border-[#163833]">
-            <Calendar className="w-4 h-4 text-[#8DA09D] shrink-0" />
-            <input
-              type="date"
-              className="px-2.5 py-1.5 rounded-xl border border-[#1E4B43] bg-[#0E2824] text-[#E0E2EC] font-medium focus:outline-none focus:ring-2 focus:ring-[#277D6C]"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-            <span className="text-[#8DA09D] font-medium">to</span>
-            <input
-              type="date"
-              className="px-2.5 py-1.5 rounded-xl border border-[#1E4B43] bg-[#0E2824] text-[#E0E2EC] font-medium focus:outline-none focus:ring-2 focus:ring-[#277D6C]"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
-          </div>
-        )}
-      </div>
-
-      {/* 3. View Tabs Navigation */}
-      <div className="w-full overflow-x-auto no-scrollbar py-1">
-        <div className="inline-flex items-center gap-2 p-1.5 bg-[#0B1E1C]/90 rounded-2xl border border-[#183B36] shadow-xl max-w-full min-w-max">
-          <button
-            onClick={() => setActiveTab('details')}
-            className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 cursor-pointer flex items-center gap-2 ${
-              activeTab === 'details'
-                ? 'bg-[#18453E] text-[#72F5DE] shadow-md border border-[#277D6C]/60'
-                : 'text-[#8DA09D] hover:text-[#E0E2EC] hover:bg-[#0E2824]'
-            }`}
-          >
-            Detailed Enquiry Table
-          </button>
-          <button
-            onClick={() => setActiveTab('pipeline')}
-            className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 cursor-pointer flex items-center gap-2 ${
-              activeTab === 'pipeline'
-                ? 'bg-[#18453E] text-[#72F5DE] shadow-md border border-[#277D6C]/60'
-                : 'text-[#8DA09D] hover:text-[#E0E2EC] hover:bg-[#0E2824]'
-            }`}
-          >
-            Visual Enquiry Pipeline
-          </button>
-          <button
-            onClick={() => setActiveTab('automation')}
-            className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 cursor-pointer flex items-center gap-2 ${
-              activeTab === 'automation'
-                ? 'bg-[#18453E] text-[#72F5DE] shadow-md border border-[#277D6C]/60'
-                : 'text-[#8DA09D] hover:text-[#E0E2EC] hover:bg-[#0E2824]'
-            }`}
-          >
-            Form AI & Webhook Automation
-          </button>
-        </div>
-      </div>
-
-      {/* Requirements Full Text Zoom Modal */}
-      {viewRequirements && (
-        <div className="fixed inset-0 bg-[#020807]/80 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto animate-in fade-in duration-200">
-          <div className="bg-[#0B1E1C] rounded-3xl p-6 sm:p-7 w-full max-w-lg space-y-5 shadow-2xl my-auto relative border border-[#1E4B43] animate-in zoom-in-95 duration-200 text-[#E0E2EC]">
-            <div className="flex items-center justify-between border-b border-[#163833] pb-4">
-              <h3 className="text-base font-bold text-[#F0F2F5] flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-[#143B35] text-[#6CE5D0]">
-                  <FileText className="w-5 h-5" />
-                </div>
-                Enquiry Requirements & Details
-              </h3>
-              <button
-                onClick={() => setViewRequirements(null)}
-                className="p-1.5 rounded-xl text-[#8DA09D] hover:text-[#E0E2EC] hover:bg-[#143B35] transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="max-h-[60vh] overflow-y-auto p-4 sm:p-5 bg-[#061513] rounded-2xl border border-[#163833] text-sm text-[#D3E4E0] whitespace-pre-wrap leading-relaxed font-sans">
-              {viewRequirements}
-            </div>
-            <div className="flex justify-end pt-2">
-              <button
-                onClick={() => setViewRequirements(null)}
-                className="px-5 py-2.5 bg-[#18453E] hover:bg-[#225F56] text-[#72F5DE] border border-[#277D6C]/60 rounded-xl text-xs font-semibold transition-all duration-150 shadow-sm cursor-pointer"
-              >
-                Close View
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* TAB 1: Detailed Enquiry Table */}
-      {activeTab === 'details' && (
-        <div className="bg-[#0B1E1C]/90 rounded-3xl border border-[#183B36] shadow-xl overflow-hidden">
-          {loading ? (
-            <div className="p-12 text-center text-[#8DA09D] text-sm font-medium flex flex-col items-center justify-center gap-3">
-              <div className="w-8 h-8 border-3 border-[#6CE5D0] border-t-transparent rounded-full animate-spin" />
-              <span>Loading website contact form enquiries...</span>
-            </div>
-          ) : filteredLeads.length === 0 ? (
-            <div className="p-12 text-center text-[#8DA09D] text-sm font-medium">
-              No website contact enquiries found for this filter.
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[1100px]">
-                <thead className="bg-[#061513] border-b border-[#163833] text-[#8DA09D] font-bold uppercase text-[11px] tracking-wider">
-                  <tr>
-                    <th className="py-4 px-5">Name</th>
-                    <th className="py-4 px-5">Contact Details</th>
-                    <th className="py-4 px-5">Company</th>
-                    <th className="py-4 px-5">Source</th>
-                    <th className="py-4 px-5">Campaign Name</th>
-                    <th className="py-4 px-5">Requirements</th>
-                    <th className="py-4 px-5">Status</th>
-                    <th className="py-4 px-5">Assign Lead</th>
-                    <th className="py-4 px-5">Date Created</th>
-                    <th className="py-4 px-5 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#14312B] text-xs">
-                  {filteredLeads.map((lead) => {
-                    const isAssigned = lead.assigned_to === 'assigned' || lead.assigned_to === 'Assigned';
-                    const formattedDate = formatDateDDMMYYYY(lead.created_at);
-
-                    return (
-                      <tr key={lead.id} className="hover:bg-[#112E29]/60 transition-colors group">
-                        <td className="py-4 px-5 font-bold text-[#F0F2F5] whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <User className="w-4 h-4 text-[#6CE5D0] shrink-0" />
-                            <span>{lead.name}</span>
-                          </div>
-                        </td>
-                        <td className="py-4 px-5 font-medium text-[#C2D6D3] whitespace-pre-line leading-relaxed">
-                          {lead.contact_info || (
-                            <>
-                              {lead.email && <div className="text-[#E0E2EC]">{lead.email}</div>}
-                              {lead.phone && <div className="text-[#8DA09D] text-[11px]">{lead.phone}</div>}
-                            </>
-                          )}
-                        </td>
-                        <td className="py-4 px-5 text-[#A2B8B4] font-medium whitespace-nowrap">{lead.company || '-'}</td>
-                        <td className="py-4 px-5 whitespace-nowrap">
-                          <span className="inline-flex items-center bg-[#123630] text-[#6CE5D0] border border-[#23685C] px-2.5 py-1 rounded-lg text-[11px] font-bold">
-                            {lead.source || 'Website'}
-                          </span>
-                        </td>
-                        <td className="py-4 px-5 text-[#8DA09D] whitespace-nowrap">{lead.campaign_name || 'Website Contact Form'}</td>
-                        <td className="py-4 px-5 max-w-xs">
-                          {lead.requirements ? (
-                            <div className="flex items-center gap-2">
-                              <span className="truncate text-[#C2D6D3] block max-w-[180px]">
-                                {lead.requirements}
-                              </span>
-                              <button
-                                onClick={() => setViewRequirements(lead.requirements || '')}
-                                className="p-1 text-[#6CE5D0] hover:text-[#8BFFEC] hover:bg-[#18453E] rounded-lg transition-colors shrink-0 cursor-pointer"
-                                title="Zoom / View Full Requirements"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </button>
-                            </div>
-                          ) : (
-                            <span className="text-[#5B736F] italic">No notes</span>
-                          )}
-                        </td>
-                        <td className="py-4 px-5 whitespace-nowrap">
-                          <span className={`px-3 py-1 rounded-full text-[11px] font-bold inline-block border ${
-                            lead.status === 'Converted' ? 'bg-[#123A31] text-[#6CE5D0] border-[#257A6A]' :
-                            lead.status === 'Assigned' ? 'bg-[#2A2140] text-[#D0B3FF] border-[#533980]' :
-                            'bg-[#122A26] text-[#A2B8B4] border-[#1D4A42]'
-                          }`}>
-                            {lead.status}
-                          </span>
-                        </td>
-                        <td className="py-4 px-5 whitespace-nowrap">
-                          <select
-                            className={`px-3 py-1.5 rounded-xl border text-xs font-bold cursor-pointer transition-all duration-150 focus:outline-none ${
-                              isAssigned
-                                ? 'bg-[#2A2140] border-[#533980] text-[#D0B3FF] shadow-xs'
-                                : 'bg-[#0E2824] border-[#1E4B43] text-[#8DA09D] hover:bg-[#143B35]'
-                            }`}
-                            value={isAssigned ? 'assigned' : 'not_assigned'}
-                            onChange={(e) => updateAssignment(lead.id, e.target.value)}
-                          >
-                            <option value="not_assigned" className="bg-[#0B1E1C] text-[#E0E2EC]">not assign to leads</option>
-                            <option value="assigned" className="bg-[#0B1E1C] text-[#E0E2EC]">assign to leads</option>
-                          </select>
-                        </td>
-                        <td className="py-4 px-5 font-semibold text-[#8DA09D] whitespace-nowrap">{formattedDate}</td>
-                        <td className="py-4 px-5 text-right whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-1">
-                            <button
-                              onClick={() => openEditModal(lead)}
-                              className="p-1.5 text-[#8DA09D] hover:text-[#6CE5D0] hover:bg-[#143B35] rounded-lg transition-colors cursor-pointer"
-                              title="Edit Enquiry"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => deleteLead(lead.id)}
-                              className="p-1.5 text-[#8DA09D] hover:text-[#FF8B8B] hover:bg-[#3D1414] rounded-lg transition-colors cursor-pointer"
-                              title="Delete Enquiry"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* TAB 2: Visual Enquiry Pipeline */}
-      {activeTab === 'pipeline' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4 overflow-x-auto pb-4">
-          {leadFlow.map((stage) => {
-            const stageLeads = filteredLeads.filter((l) => l.status === stage);
-            return (
-              <div key={stage} className="bg-[#0B1E1C]/90 p-3.5 rounded-3xl border border-[#183B36] min-w-[220px] flex flex-col justify-between">
-                <div>
-                  <div className="flex justify-between items-center border-b border-[#163833] pb-3 mb-3">
-                    <span className="font-extrabold text-xs text-[#E0E2EC] tracking-tight">{stage}</span>
-                    <span className="bg-[#12312C] border border-[#23685C] text-[#6CE5D0] text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-2xs">
-                      {stageLeads.length}
-                    </span>
-                  </div>
-
-                  <div className="space-y-2.5">
-                    {stageLeads.map((l) => (
-                      <div key={l.id} className="bg-[#061513] p-3.5 rounded-2xl border border-[#183B36] shadow-2xs hover:border-[#277D6C]/60 transition-all duration-200 space-y-2">
-                        <div className="font-bold text-xs text-[#F0F2F5] truncate">{l.name}</div>
-                        <div className="text-[11px] text-[#8DA09D] truncate">{l.company || l.email}</div>
-                        <div className="text-[10px] text-[#5B736F] flex justify-between items-center pt-2 border-t border-[#122A26]">
-                          <span className="font-medium">{formatDateDDMMYYYY(l.created_at)}</span>
-                          {l.requirements && (
-                            <button
-                              onClick={() => setViewRequirements(l.requirements || '')}
-                              className="text-[#6CE5D0] hover:text-[#8BFFEC] font-bold cursor-pointer inline-flex items-center gap-0.5"
-                            >
-                              <span>View</span>
-                              <ChevronRight className="w-3 h-3" />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* TAB 3: Automation & Form Webhooks */}
-      {activeTab === 'automation' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-[#0B1E1C]/90 p-6 sm:p-7 rounded-3xl border border-[#183B36] shadow-xl space-y-4">
-            <h3 className="text-base font-bold text-[#F0F2F5] flex items-center gap-2.5 border-b border-[#163833] pb-4">
-              <div className="p-2 rounded-xl bg-[#143B35] text-[#6CE5D0]">
-                <Bot className="w-5 h-5" />
-              </div>
-              Website Contact Form Webhook Integration
-            </h3>
-            <p className="text-xs text-[#8DA09D] leading-relaxed">
-              Connect your external marketing site contact form directly to this CRM via API. Enquiries automatically post with source <span className="font-semibold text-[#6CE5D0] bg-[#12312C] px-2 py-0.5 rounded-md border border-[#1D4A42]">&quot;Website&quot;</span>.
-            </p>
-            <div className="bg-[#030B0A] text-[#D0E5E1] p-5 rounded-2xl text-xs font-mono overflow-x-auto space-y-2 border border-[#143B35] shadow-inner">
-              <div className="text-[#6CE5D0] font-semibold">// Endpoint URL</div>
-              <div className="text-[#8DA09D]">POST https://your-crm-domain.com/api/contact</div>
-              <div className="text-[#6CE5D0] font-semibold pt-2">// Request Payload JSON</div>
-              <div className="text-[#C2D6D3] leading-relaxed">
-                {`{
-  "name": "Jane Doe",
-  "email": "jane@company.com",
-  "phone": "+1 555-0192",
-  "company": "Enterprise Corp",
-  "requirements": "Interested in full IT infrastructure service package."
-}`}
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-[#0B1E1C]/90 p-6 sm:p-7 rounded-3xl border border-[#183B36] shadow-xl space-y-4">
-            <h3 className="text-base font-bold text-[#F0F2F5] flex items-center gap-2.5 border-b border-[#163833] pb-4">
-              <div className="p-2 rounded-xl bg-[#143B35] text-[#6CE5D0]">
-                <CheckCircle2 className="w-5 h-5" />
-              </div>
-              Automated Enquiry Routing Rules
-            </h3>
-            <div className="space-y-3 text-xs">
-              <div className="p-4 bg-[#061513] rounded-2xl border border-[#163833] space-y-1">
-                <span className="font-bold text-[#E0E2EC]">1. Instant Status Tagging</span>
-                <p className="text-[#8DA09D] leading-relaxed">Every submission from the website contact form is created with default status &quot;New&quot;.</p>
-              </div>
-              <div className="p-4 bg-[#061513] rounded-2xl border border-[#163833] space-y-1">
-                <span className="font-bold text-[#E0E2EC]">2. Single-Click Sales Pipeline Promotion</span>
-                <p className="text-[#8DA09D] leading-relaxed">Changing &quot;Assign Lead&quot; to &quot;assign to leads&quot; instantly changes status to &quot;Assigned&quot; and includes it in team lead assignments.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Modal */}
-      {showModal && editingLead && (
-        <div className="fixed inset-0 bg-[#020807]/80 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto animate-in fade-in duration-200">
-          <form
-            onSubmit={saveLead}
-            className="bg-[#0B1E1C] rounded-3xl p-6 sm:p-7 w-full max-w-lg space-y-4 shadow-2xl my-auto border border-[#1E4B43] animate-in zoom-in-95 duration-200 text-[#E0E2EC]"
-          >
-            <div className="flex items-center justify-between border-b border-[#163833] pb-3">
-              <h2 className="text-base font-bold text-[#F0F2F5]">Edit Contact Form Enquiry</h2>
-              <button
-                type="button"
-                onClick={closeModal}
-                className="p-1 rounded-xl text-[#8DA09D] hover:text-[#E0E2EC] hover:bg-[#143B35] transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-semibold text-[#8DA09D] block mb-1">Full Name *</label>
-                <input
-                  type="text"
-                  required
-                  className="w-full p-2.5 border border-[#1E4B43] rounded-xl text-xs bg-[#061513] text-[#E0E2EC] focus:bg-[#0E2824] focus:ring-2 focus:ring-[#277D6C] focus:border-[#277D6C] transition-all"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-[#8DA09D] block mb-1">Company</label>
-                <input
-                  type="text"
-                  className="w-full p-2.5 border border-[#1E4B43] rounded-xl text-xs bg-[#061513] text-[#E0E2EC] focus:bg-[#0E2824] focus:ring-2 focus:ring-[#277D6C] focus:border-[#277D6C] transition-all"
-                  value={formData.company}
-                  onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-[#8DA09D] block mb-1">Contact Details (Email & Phone)</label>
-              <textarea
-                rows={2}
-                className="w-full p-2.5 border border-[#1E4B43] rounded-xl text-xs bg-[#061513] text-[#E0E2EC] focus:bg-[#0E2824] focus:ring-2 focus:ring-[#277D6C] focus:border-[#277D6C] transition-all"
-                value={formData.contact_info}
-                onChange={(e) => setFormData({ ...formData, contact_info: e.target.value })}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-semibold text-[#8DA09D] block mb-1">Status</label>
-                <select
-                  className="w-full p-2.5 border border-[#1E4B43] rounded-xl text-xs bg-[#061513] text-[#E0E2EC] focus:bg-[#0E2824] focus:ring-2 focus:ring-[#277D6C] focus:border-[#277D6C] transition-all cursor-pointer"
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                >
-                  {leadFlow.map((s) => (
-                    <option key={s} value={s} className="bg-[#0B1E1C] text-[#E0E2EC]">{s}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-[#8DA09D] block mb-1">Assign Lead</label>
-                <select
-                  className="w-full p-2.5 border border-[#1E4B43] rounded-xl text-xs bg-[#061513] text-[#E0E2EC] focus:bg-[#0E2824] focus:ring-2 focus:ring-[#277D6C] focus:border-[#277D6C] transition-all cursor-pointer"
-                  value={formData.assigned_to}
-                  onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
-                >
-                  <option value="not_assigned" className="bg-[#0B1E1C] text-[#E0E2EC]">not assign to leads</option>
-                  <option value="assigned" className="bg-[#0B1E1C] text-[#E0E2EC]">assign to leads</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-[#8DA09D] block mb-1">Requirements</label>
-              <textarea
-                rows={3}
-                className="w-full p-2.5 border border-[#1E4B43] rounded-xl text-xs bg-[#061513] text-[#E0E2EC] focus:bg-[#0E2824] focus:ring-2 focus:ring-[#277D6C] focus:border-[#277D6C] transition-all"
-                value={formData.requirements}
-                onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
-              />
-            </div>
-
-            <div className="flex justify-end gap-2 pt-3 border-t border-[#163833]">
-              <button
-                type="button"
-                onClick={closeModal}
-                className="px-4 py-2 border border-[#1E4B43] rounded-xl text-xs font-semibold text-[#8DA09D] hover:bg-[#143B35] hover:text-[#E0E2EC] transition-all cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-5 py-2 bg-gradient-to-r from-[#18453E] via-[#225F56] to-[#2B7D70] border border-[#277D6C]/60 text-[#72F5DE] rounded-xl text-xs font-semibold hover:opacity-90 transition-all shadow-md cursor-pointer"
-              >
-                Save Changes
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-    </div>
-  );
-}
-</file>
-
 <file path="src/app/dashboard/leads/page.tsx">
 'use client';
 
@@ -2774,9 +2137,10 @@ import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import {
   Plus, Download, Calendar, CheckCircle2, FileText,
-  Bot, UserCheck, Trash2, PhoneCall, Sparkles, FileCode, X, Edit,
+  Bot, UserCheck, Trash2, Sparkles, FileCode, X, Edit,
   BarChart2, Search, Globe, Building,
-  Flame, Zap, Layers, User, ChevronRight, RefreshCw
+  Flame, Zap, Layers, User, ChevronRight, RefreshCw, Eye, MoreHorizontal,
+  TrendingUp, Activity
 } from 'lucide-react';
 
 interface Lead {
@@ -2993,7 +2357,7 @@ export default function LeadsModule() {
     });
   }, [leads, dateRange, startDate, endDate, filters, searchQuery]);
 
-  // Dashboard Aggregation Analytics Metrics
+  // Aggregation Metrics
   const metrics = useMemo(() => {
     const todayStr = new Date().toDateString();
     const nowTs = new Date().getTime();
@@ -3233,134 +2597,213 @@ export default function LeadsModule() {
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-6 font-sans pb-12 px-2 sm:px-4 md:px-6 text-slate-100">
+    <div className="w-full max-w-7xl mx-auto space-y-6 font-sans pb-16 px-3 sm:px-6 text-[#d0e5e0] bg-[#061915] min-h-screen">
       
-      {/* Executive CRM Header Container */}
-      <div className="bg-[#0b2620]/80 backdrop-blur-xl p-4 sm:p-6 rounded-3xl border border-emerald-800/60 shadow-2xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-5">
-        <div className="flex items-start sm:items-center gap-3.5">
-          <div className="p-3.5 rounded-2xl bg-gradient-to-tr from-emerald-600 via-teal-600 to-cyan-600 text-white shadow-lg shadow-emerald-950/50 shrink-0">
-            <UserCheck className="w-6 h-6 stroke-[2.2]" />
+      {/* Top Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pt-6">
+        <div>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0d2a24] border border-[#1b4a40] text-emerald-400 text-xs font-semibold mb-2">
+            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+            <span>CRM Sales Intelligence</span>
           </div>
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-700/60 text-cyan-300 text-xs font-bold mb-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-cyan-300" />
-              <span>Unified Leads Intelligence</span>
-            </div>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-white">
-              Leads Directory & Pipeline Management
-            </h1>
-            <p className="text-xs sm:text-sm font-semibold text-slate-200 mt-0.5">
-              Real-time lead scoring, acquisition attribution, status tracking, and automated workflows.
-            </p>
-          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+            Leads Directory & Pipeline
+          </h1>
+          <p className="text-xs sm:text-sm text-[#8baab0] mt-1 font-medium">
+            Real-time lead scoring, stage attribution, status tracking, and automated conversion pipelines.
+          </p>
         </div>
 
-        {/* Action Button */}
+        {/* Create Lead Action Button */}
         <button
           onClick={openCreateModal}
-          className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-600 hover:via-teal-600 hover:to-cyan-600 text-white font-bold px-6 py-3.5 rounded-2xl flex items-center justify-center gap-2.5 text-xs sm:text-sm transition-all duration-200 shadow-lg shadow-emerald-950/50 hover:scale-[1.01] active:scale-[0.99] cursor-pointer shrink-0 w-full md:w-auto"
+          className="bg-emerald-500 hover:bg-emerald-400 text-[#061915] font-black px-6 py-3.5 rounded-2xl flex items-center justify-center gap-2 text-xs sm:text-sm transition-all shadow-lg shadow-emerald-950/40 hover:scale-[1.02] active:scale-[0.98] cursor-pointer shrink-0 w-full md:w-auto"
         >
           <Plus className="w-4 h-4 stroke-[3]" />
           <span>Add New Lead Record</span>
         </button>
       </div>
 
-      {/* Analytics Summary Metric Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+      {/* Top Overview Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
-        {/* Metric 1 */}
-        <div className="bg-[#0b2620]/70 backdrop-blur-md p-4 sm:p-4.5 rounded-2xl border border-emerald-800/60 shadow-lg relative overflow-hidden group hover:border-cyan-500/50 transition-all">
-          <div className="flex items-center justify-between text-slate-200 mb-2">
-            <span className="text-[10px] font-black uppercase tracking-wider text-cyan-300">Total Leads</span>
-            <div className="p-2 rounded-xl bg-emerald-950/80 text-cyan-300 border border-emerald-700/60">
-              <Layers className="w-4 h-4" />
+        {/* Metric 1 - Total Leads + Mini Bar Chart */}
+        <div className="bg-[#0b241f]/80 backdrop-blur-xl p-5 rounded-2xl border border-[#16433a] shadow-xl relative overflow-hidden flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[#8baab0]">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#a0c5bd]">Total Leads</span>
+            <MoreHorizontal className="w-4 h-4 cursor-pointer text-[#8baab0]" />
+          </div>
+          
+          <div className="my-2 flex items-end justify-between gap-2">
+            <div>
+              <div className="text-3xl font-extrabold text-white tracking-tight">{metrics.totalLeads}</div>
+              <div className="text-xs text-[#6e9b90] font-semibold mt-0.5">Active database records</div>
+            </div>
+
+            {/* Mini Bar Chart Representation */}
+            <div className="flex items-end gap-1 h-10 px-1 py-1 bg-[#061915]/60 rounded-lg border border-[#16433a]/60">
+              <div className="w-1.5 h-[40%] bg-emerald-500/30 rounded-t-sm"></div>
+              <div className="w-1.5 h-[65%] bg-emerald-500/50 rounded-t-sm"></div>
+              <div className="w-1.5 h-[45%] bg-emerald-500/40 rounded-t-sm"></div>
+              <div className="w-1.5 h-[80%] bg-emerald-500/70 rounded-t-sm"></div>
+              <div className="w-1.5 h-[100%] bg-emerald-400 rounded-t-sm shadow-sm shadow-emerald-400/50"></div>
             </div>
           </div>
-          <div className="text-2xl font-black text-white tracking-tight">{metrics.totalLeads}</div>
-          <div className="mt-1 flex items-center gap-1 text-[11px] font-bold text-cyan-300">
-            <span className="bg-emerald-950/80 px-1.5 py-0.5 rounded-md text-cyan-300 border border-emerald-700/60">+{metrics.newToday} New</span>
-            <span className="text-[10px] text-slate-300 font-semibold">Today</span>
+
+          <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400 pt-2 border-t border-[#16433a]/60">
+            <span className="bg-[#0e352e] px-2 py-0.5 rounded-md text-emerald-400 font-bold border border-[#1d574c]">+{metrics.newToday} New</span>
+            <span className="text-[#8baab0]">Added Today</span>
           </div>
         </div>
 
-        {/* Metric 2 */}
-        <div className="bg-[#0b2620]/70 backdrop-blur-md p-4 sm:p-4.5 rounded-2xl border border-emerald-800/60 shadow-lg relative overflow-hidden group hover:border-amber-500/50 transition-all">
-          <div className="flex items-center justify-between text-slate-200 mb-2">
-            <span className="text-[10px] font-black uppercase tracking-wider text-amber-300">Unassigned</span>
-            <div className="p-2 rounded-xl bg-amber-950/80 text-amber-400 border border-amber-800/50">
-              <User className="w-4 h-4" />
-            </div>
+        {/* Metric 2 - Unassigned & Action Needed + Distribution Progress Bar */}
+        <div className="bg-[#0b241f]/80 backdrop-blur-xl p-5 rounded-2xl border border-[#16433a] shadow-xl relative overflow-hidden flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[#8baab0]">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#a0c5bd]">Unassigned</span>
+            <MoreHorizontal className="w-4 h-4 cursor-pointer text-[#8baab0]" />
           </div>
-          <div className="text-2xl font-black text-amber-400 tracking-tight">{metrics.unassigned}</div>
-          <span className="text-[10px] text-slate-200 font-bold">Pending Sales Action</span>
-        </div>
 
-        {/* Metric 3 */}
-        <div className="bg-[#0b2620]/70 backdrop-blur-md p-4 sm:p-4.5 rounded-2xl border border-emerald-800/60 shadow-lg relative overflow-hidden group hover:border-rose-500/50 transition-all">
-          <div className="flex items-center justify-between text-slate-200 mb-2">
-            <span className="text-[10px] font-black uppercase tracking-wider text-rose-300">Temperature</span>
-            <div className="p-2 rounded-xl bg-rose-950/80 text-rose-400 border border-rose-800/50">
-              <Flame className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-lg font-black text-white flex items-center gap-1 mt-0.5">
-            <span className="text-rose-400">{metrics.hot}</span>
-            <span className="text-slate-500">/</span>
-            <span className="text-amber-400">{metrics.warm}</span>
-            <span className="text-slate-500">/</span>
-            <span className="text-sky-400">{metrics.cold}</span>
-          </div>
-          <div className="mt-1 flex items-center gap-1 text-[10px] font-bold">
-            <span className="text-rose-400 font-black">Hot</span> • <span className="text-amber-400 font-black">Warm</span> • <span className="text-sky-400 font-black">Cold</span>
-          </div>
-        </div>
+          <div className="my-2">
+            <div className="text-3xl font-extrabold text-[#f59e0b] tracking-tight">{metrics.unassigned}</div>
+            <div className="text-xs text-[#6e9b90] font-semibold mt-0.5">Pending rep assignment</div>
 
-        {/* Metric 4 */}
-        <div className="bg-[#0b2620]/70 backdrop-blur-md p-4 sm:p-4.5 rounded-2xl border border-emerald-800/60 shadow-lg relative overflow-hidden group hover:border-teal-500/50 transition-all">
-          <div className="flex items-center justify-between text-slate-200 mb-2">
-            <span className="text-[10px] font-black uppercase tracking-wider text-teal-300">Follow-ups</span>
-            <div className="p-2 rounded-xl bg-teal-950/80 text-teal-300 border border-teal-800/50">
-              <Calendar className="w-4 h-4" />
+            {/* Status Breakdown Bar */}
+            <div className="mt-2 w-full h-2 bg-[#061915] rounded-full overflow-hidden flex">
+              <div 
+                className="bg-amber-500 h-full transition-all duration-300" 
+                style={{ width: `${metrics.totalLeads > 0 ? (metrics.unassigned / metrics.totalLeads) * 100 : 0}%` }}
+                title="Unassigned"
+              ></div>
+              <div 
+                className="bg-emerald-500 h-full transition-all duration-300" 
+                style={{ width: `${metrics.totalLeads > 0 ? ((metrics.totalLeads - metrics.unassigned) / metrics.totalLeads) * 100 : 0}%` }}
+                title="Assigned"
+              ></div>
             </div>
           </div>
-          <div className="text-2xl font-black text-teal-300 tracking-tight">{metrics.followUpsDueToday}</div>
-          <div className="mt-1 text-[10px] font-bold">
-            <span className="text-rose-200 bg-rose-950/80 px-1.5 py-0.5 rounded-md border border-rose-800/60">{metrics.overdueFollowUps} Overdue</span>
+
+          <div className="flex items-center justify-between text-xs font-semibold text-amber-400 pt-2 border-t border-[#16433a]/60">
+            <span>Requires Action</span>
+            <span className="text-[10px] text-[#8baab0]">
+              {metrics.totalLeads > 0 ? Math.round((metrics.unassigned / metrics.totalLeads) * 100) : 0}% of Total
+            </span>
           </div>
         </div>
 
-        {/* Metric 5 */}
-        <div className="bg-[#0b2620]/70 backdrop-blur-md p-4 sm:p-4.5 rounded-2xl border border-emerald-800/60 shadow-lg relative overflow-hidden group hover:border-cyan-500/50 transition-all">
-          <div className="flex items-center justify-between text-slate-200 mb-2">
-            <span className="text-[10px] font-black uppercase tracking-wider text-cyan-300">Avg Response</span>
-            <div className="p-2 rounded-xl bg-emerald-950/80 text-cyan-300 border border-emerald-700/60">
-              <Zap className="w-4 h-4" />
-            </div>
+        {/* Metric 3 - XY Line Graph: Pipeline Volume Trend */}
+        <div className="bg-[#0b241f]/80 backdrop-blur-xl p-5 rounded-2xl border border-[#16433a] shadow-xl relative overflow-hidden flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[#8baab0] mb-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#a0c5bd]">Pipeline Trend</span>
+            <span className="text-xs font-extrabold text-emerald-400">{filteredLeads.length} leads</span>
           </div>
-          <div className="text-xl font-black text-cyan-300 tracking-tight">{metrics.avgResponseTimeHours} <span className="text-xs font-bold text-slate-300">hrs</span></div>
-          <span className="text-[10px] text-slate-200 font-bold">SLA Response Time</span>
+          <div className="w-full h-16 flex items-end">
+            <svg className="w-full h-full overflow-visible" viewBox="0 0 100 40">
+              <defs>
+                <linearGradient id="gradientLine" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#10b981" stopOpacity="0.4" />
+                  <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
+                </linearGradient>
+              </defs>
+              <path
+                d="M 0 35 Q 20 10, 40 25 T 80 15 T 100 5 L 100 40 L 0 40 Z"
+                fill="url(#gradientLine)"
+              />
+              <path
+                d="M 0 35 Q 20 10, 40 25 T 80 15 T 100 5"
+                fill="none"
+                stroke="#10b981"
+                strokeWidth="2.5"
+              />
+              <circle cx="100" cy="5" r="3" fill="#34d399" />
+            </svg>
+          </div>
+          <div className="text-[11px] text-[#6e9b90] font-semibold pt-2 border-t border-[#16433a]/60">
+            Lead acquisition velocity
+          </div>
         </div>
 
-        {/* Metric 6 */}
-        <div className="bg-[#0b2620]/70 backdrop-blur-md p-4 sm:p-4.5 rounded-2xl border border-emerald-800/60 shadow-lg relative overflow-hidden group hover:border-cyan-500/50 transition-all">
-          <div className="flex items-center justify-between text-slate-200 mb-2">
-            <span className="text-[10px] font-black uppercase tracking-wider text-cyan-300">Conversion</span>
-            <div className="p-2 rounded-xl bg-cyan-950/80 text-cyan-400 border border-cyan-800/50">
-              <BarChart2 className="w-4 h-4" />
-            </div>
+        {/* Metric 4 - Donut Chart: Win Rate */}
+        <div className="bg-[#0b241f]/80 backdrop-blur-xl p-5 rounded-2xl border border-[#16433a] shadow-xl relative overflow-hidden flex items-center justify-between">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-wider text-[#a0c5bd] block mb-1">Win Rate</span>
+            <div className="text-3xl font-extrabold text-white tracking-tight">{metrics.conversionRate}%</div>
+            <div className="text-xs text-[#6e9b90] font-semibold mt-1">{metrics.converted} Leads Won</div>
           </div>
-          <div className="text-2xl font-black text-cyan-400 tracking-tight">{metrics.conversionRate}%</div>
-          <span className="text-[10px] text-slate-200 font-bold">{metrics.converted} Leads Converted</span>
+          <div className="relative w-20 h-20 flex items-center justify-center shrink-0">
+            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+              <path
+                className="text-[#0e352e]"
+                strokeWidth="4"
+                stroke="currentColor"
+                fill="none"
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+              />
+              <path
+                className="text-emerald-400"
+                strokeDasharray={`${metrics.conversionRate}, 100`}
+                strokeWidth="4"
+                strokeLinecap="round"
+                stroke="currentColor"
+                fill="none"
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+              />
+            </svg>
+            <span className="absolute text-xs font-extrabold text-white">{metrics.conversionRate}%</span>
+          </div>
+        </div>
+
+      </div>
+
+      {/* Overview Diagram Representation: Lead Temperature Breakdown */}
+      <div className="bg-[#0b241f]/80 backdrop-blur-xl p-4 rounded-2xl border border-[#16433a] shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <Activity className="w-4 h-4 text-emerald-400" />
+          <span className="text-xs font-extrabold text-white uppercase tracking-wider">Lead Temperature Distribution</span>
+        </div>
+        
+        <div className="flex-1 max-w-xl">
+          <div className="w-full h-3 bg-[#061915] rounded-full overflow-hidden flex border border-[#16433a]/80">
+            <div 
+              className="bg-rose-500 h-full transition-all" 
+              style={{ width: `${metrics.totalLeads > 0 ? (metrics.hot / metrics.totalLeads) * 100 : 0}%` }}
+              title="Hot Leads"
+            />
+            <div 
+              className="bg-amber-400 h-full transition-all" 
+              style={{ width: `${metrics.totalLeads > 0 ? (metrics.warm / metrics.totalLeads) * 100 : 0}%` }}
+              title="Warm Leads"
+            />
+            <div 
+              className="bg-sky-400 h-full transition-all" 
+              style={{ width: `${metrics.totalLeads > 0 ? (metrics.cold / metrics.totalLeads) * 100 : 0}%` }}
+              title="Cold Leads"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4 text-xs font-bold">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+            <span className="text-rose-300">Hot ({metrics.hot})</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+            <span className="text-amber-300">Warm ({metrics.warm})</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-sky-400"></span>
+            <span className="text-sky-300">Cold ({metrics.cold})</span>
+          </div>
         </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="w-full overflow-x-auto no-scrollbar py-1">
-        <div className="inline-flex items-center gap-2 p-1.5 bg-[#0b2620]/80 backdrop-blur-md rounded-2xl border border-emerald-800/60 shadow-md max-w-full min-w-max">
+      {/* Navigation Pills */}
+      <div className="flex items-center justify-start py-2">
+        <div className="inline-flex items-center gap-1.5 p-1.5 bg-[#0b241f]/90 backdrop-blur-md rounded-2xl border border-[#16433a] shadow-inner">
           {[
-            { id: 'details', label: 'Lead Directory Table', icon: FileText },
-            { id: 'pipeline', label: 'Kanban Pipeline & Status', icon: CheckCircle2 },
-            { id: 'automation', label: 'Automations & Workflows', icon: Bot },
+            { id: 'details', label: 'Overview Table', icon: FileText },
+            { id: 'pipeline', label: 'Pipeline Stages', icon: CheckCircle2 },
+            { id: 'automation', label: 'Automations', icon: Bot },
           ].map((tab) => {
             const Icon = tab.icon;
             const isSelected = activeTab === tab.id;
@@ -3368,13 +2811,13 @@ export default function LeadsModule() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 whitespace-nowrap cursor-pointer ${
+                className={`flex items-center gap-2 px-5 py-2.5 text-xs font-extrabold rounded-xl transition-all duration-200 cursor-pointer ${
                   isSelected
-                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-950/60'
-                    : 'text-slate-200 hover:text-white hover:bg-emerald-950/60'
+                    ? 'bg-emerald-500 text-[#061915] shadow-md shadow-emerald-950/50'
+                    : 'text-[#8baab0] hover:text-white hover:bg-[#0e352e]'
                 }`}
               >
-                <Icon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-white' : 'text-cyan-300'}`} />
+                <Icon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-[#061915]' : 'text-[#8baab0]'}`} />
                 <span>{tab.label}</span>
               </button>
             );
@@ -3382,40 +2825,40 @@ export default function LeadsModule() {
         </div>
       </div>
 
-      {/* Advanced Multi-Parametric Filter Bar */}
-      <div className="bg-[#0b2620]/80 backdrop-blur-xl p-4 sm:p-5 rounded-3xl border border-emerald-800/60 shadow-2xl space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-3 border-b border-emerald-800/60">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <div className="flex items-center gap-1.5 text-xs font-black text-white bg-emerald-950/80 px-3 py-2 rounded-xl border border-emerald-700/60">
-              <Calendar className="w-3.5 h-3.5 text-cyan-300 shrink-0" />
+      {/* Filter Control Bar */}
+      <div className="bg-[#0b241f]/80 backdrop-blur-xl p-4 sm:p-5 rounded-3xl border border-[#16433a] shadow-xl space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-3 border-b border-[#16433a]/60">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 text-xs font-bold text-white bg-[#0e352e] px-3 py-2 rounded-xl border border-[#1d574c]">
+              <Calendar className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
               <span>Timeline:</span>
             </div>
             <select
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value as any)}
-              className="bg-[#04110d] border border-emerald-700/60 rounded-xl text-xs font-bold px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white cursor-pointer"
+              className="bg-[#061915] border border-[#1d574c] rounded-xl text-xs font-bold px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white cursor-pointer"
             >
-              <option value="all">All Available Dates</option>
-              <option value="daily">Today Only</option>
+              <option value="all">All Dates</option>
+              <option value="daily">Today</option>
               <option value="weekly">Past 7 Days</option>
               <option value="monthly">This Month</option>
-              <option value="custom">Custom Date Range</option>
+              <option value="custom">Custom Range</option>
             </select>
 
             {dateRange === 'custom' && (
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-2">
                 <input
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="bg-[#04110d] border border-emerald-700/60 rounded-xl text-xs font-bold px-2.5 py-1.5 focus:ring-2 focus:ring-emerald-500 text-white"
+                  className="bg-[#061915] border border-[#1d574c] rounded-xl text-xs font-bold px-2.5 py-1.5 text-white"
                 />
-                <span className="text-xs font-bold text-slate-300">to</span>
+                <span className="text-xs font-bold text-[#8baab0]">to</span>
                 <input
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="bg-[#04110d] border border-emerald-700/60 rounded-xl text-xs font-bold px-2.5 py-1.5 focus:ring-2 focus:ring-emerald-500 text-white"
+                  className="bg-[#061915] border border-[#1d574c] rounded-xl text-xs font-bold px-2.5 py-1.5 text-white"
                 />
               </div>
             )}
@@ -3423,23 +2866,23 @@ export default function LeadsModule() {
 
           <button
             onClick={exportCSV}
-            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-950/50 cursor-pointer w-full lg:w-auto"
+            className="bg-[#0e352e] hover:bg-[#13493f] text-emerald-400 border border-[#1d574c] text-xs font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer w-full lg:w-auto"
           >
             <Download className="w-4 h-4 stroke-[2.5]" />
-            <span>Export CSV Data</span>
+            <span>Export CSV</span>
           </button>
         </div>
 
-        {/* Dropdown Filters */}
+        {/* Dynamic Filters Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
           <div>
-            <label className="font-extrabold text-cyan-300 block mb-1 uppercase text-[10px] tracking-wider">Temperature</label>
+            <label className="font-extrabold text-[#a0c5bd] block mb-1 uppercase text-[10px] tracking-wider">Temperature</label>
             <select
-              className="w-full p-2.5 border border-emerald-700/60 rounded-xl bg-[#04110d] text-white font-bold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+              className="w-full p-2.5 border border-[#1d574c] rounded-xl bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
               value={filters.temperature}
               onChange={(e) => setFilters({ ...filters, temperature: e.target.value })}
             >
-              <option value="all">All Temperatures</option>
+              <option value="all">All Temp</option>
               <option value="Hot">🔥 Hot</option>
               <option value="Warm">⚡ Warm</option>
               <option value="Cold">❄️ Cold</option>
@@ -3447,9 +2890,9 @@ export default function LeadsModule() {
           </div>
 
           <div>
-            <label className="font-extrabold text-cyan-300 block mb-1 uppercase text-[10px] tracking-wider">Pipeline Status</label>
+            <label className="font-extrabold text-[#a0c5bd] block mb-1 uppercase text-[10px] tracking-wider">Status</label>
             <select
-              className="w-full p-2.5 border border-emerald-700/60 rounded-xl bg-[#04110d] text-white font-bold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+              className="w-full p-2.5 border border-[#1d574c] rounded-xl bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
               value={filters.status}
               onChange={(e) => setFilters({ ...filters, status: e.target.value })}
             >
@@ -3461,9 +2904,9 @@ export default function LeadsModule() {
           </div>
 
           <div>
-            <label className="font-extrabold text-cyan-300 block mb-1 uppercase text-[10px] tracking-wider">Source Channel</label>
+            <label className="font-extrabold text-[#a0c5bd] block mb-1 uppercase text-[10px] tracking-wider">Source</label>
             <select
-              className="w-full p-2.5 border border-emerald-700/60 rounded-xl bg-[#04110d] text-white font-bold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+              className="w-full p-2.5 border border-[#1d574c] rounded-xl bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
               value={filters.source}
               onChange={(e) => setFilters({ ...filters, source: e.target.value })}
             >
@@ -3477,9 +2920,9 @@ export default function LeadsModule() {
           </div>
 
           <div>
-            <label className="font-extrabold text-cyan-300 block mb-1 uppercase text-[10px] tracking-wider">Branch Office</label>
+            <label className="font-extrabold text-[#a0c5bd] block mb-1 uppercase text-[10px] tracking-wider">Branch</label>
             <select
-              className="w-full p-2.5 border border-emerald-700/60 rounded-xl bg-[#04110d] text-white font-bold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+              className="w-full p-2.5 border border-[#1d574c] rounded-xl bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
               value={filters.branch}
               onChange={(e) => setFilters({ ...filters, branch: e.target.value })}
             >
@@ -3491,9 +2934,9 @@ export default function LeadsModule() {
           </div>
 
           <div>
-            <label className="font-extrabold text-cyan-300 block mb-1 uppercase text-[10px] tracking-wider">Target Service</label>
+            <label className="font-extrabold text-[#a0c5bd] block mb-1 uppercase text-[10px] tracking-wider">Service</label>
             <select
-              className="w-full p-2.5 border border-emerald-700/60 rounded-xl bg-[#04110d] text-white font-bold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+              className="w-full p-2.5 border border-[#1d574c] rounded-xl bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
               value={filters.service}
               onChange={(e) => setFilters({ ...filters, service: e.target.value })}
             >
@@ -3522,61 +2965,54 @@ export default function LeadsModule() {
                   maxScore: 100,
                 })
               }
-              className="w-full bg-[#04110d] hover:bg-emerald-950 text-white font-bold p-2.5 rounded-xl text-xs transition-colors cursor-pointer border border-emerald-700/60 flex items-center justify-center gap-1.5"
+              className="w-full bg-[#061915] hover:bg-[#0e352e] text-[#8baab0] hover:text-white font-extrabold p-2.5 rounded-xl text-xs transition-colors cursor-pointer border border-[#1d574c] flex items-center justify-center gap-1.5"
             >
-              <RefreshCw className="w-3.5 h-3.5 text-cyan-300" />
+              <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />
               <span>Reset Filters</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Pipeline Tab View */}
+      {/* Pipeline Kanban Tab */}
       {activeTab === 'pipeline' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 overflow-x-auto pb-4">
           {leadFlow.map((stage) => {
             const stageLeads = filteredLeads.filter((l) => l.status === stage);
             return (
-              <div key={stage} className="bg-[#0b2620]/80 backdrop-blur-xl p-4 rounded-3xl border border-emerald-800/60 flex flex-col h-full min-w-[280px]">
-                <div className="flex items-center justify-between pb-3 mb-3 border-b border-emerald-800/60">
-                  <h4 className="font-black text-xs uppercase tracking-wider text-cyan-300 flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-cyan-400" />
+              <div key={stage} className="bg-[#0b241f]/80 backdrop-blur-xl p-4 rounded-3xl border border-[#16433a] flex flex-col h-full min-w-[280px]">
+                <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#16433a]/60">
+                  <h4 className="font-extrabold text-xs uppercase tracking-wider text-[#a0c5bd] flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
                     {stage}
                   </h4>
-                  <span className="text-xs bg-[#04110d] px-2.5 py-0.5 rounded-full font-black text-white border border-emerald-700/60">
+                  <span className="text-xs bg-[#061915] px-2.5 py-0.5 rounded-full font-black text-white border border-[#1d574c]">
                     {stageLeads.length}
                   </span>
                 </div>
                 <div className="space-y-3 flex-1 overflow-y-auto max-h-[600px] pr-1">
                   {stageLeads.length === 0 ? (
-                    <div className="text-xs text-slate-300 font-semibold italic text-center py-10 bg-[#04110d]/50 rounded-2xl border border-dashed border-emerald-800/60">
-                      No leads in {stage}
+                    <div className="text-xs text-[#6e9b90] font-semibold italic text-center py-10 bg-[#061915]/50 rounded-2xl border border-dashed border-[#16433a]">
+                      No leads in stage
                     </div>
                   ) : (
                     stageLeads.map((lead) => (
-                      <div key={lead.id} className="bg-[#04110d] p-4 rounded-2xl border border-emerald-800/60 shadow-lg space-y-2.5 hover:border-cyan-500/50 transition-all">
+                      <div key={lead.id} className="bg-[#061915] p-4 rounded-2xl border border-[#16433a] shadow-md space-y-2.5 hover:border-emerald-500/40 transition-all">
                         <div className="font-bold text-white text-sm flex items-center justify-between">
                           <span className="truncate max-w-[170px] text-white">{lead.name}</span>
                           <button
                             onClick={() => openEditModal(lead)}
-                            className="text-cyan-300 hover:text-white p-1 cursor-pointer shrink-0 rounded-lg hover:bg-emerald-950/60"
+                            className="text-emerald-400 hover:text-white p-1 cursor-pointer shrink-0 rounded-lg hover:bg-[#0e352e]"
                             title="Edit Lead"
                           >
                             <Edit className="w-3.5 h-3.5" />
                           </button>
                         </div>
-                        <div className="text-xs font-medium text-slate-200 whitespace-pre-line truncate">{lead.contact_info || lead.phone || lead.email}</div>
-                        
-                        {lead.requirements && (
-                          <div className="text-xs bg-[#0b2620] border border-emerald-800/60 p-2 rounded-xl text-slate-100 mt-1 line-clamp-2">
-                            <span className="font-bold text-cyan-300">Req: </span>
-                            {lead.requirements}
-                          </div>
-                        )}
+                        <div className="text-xs font-semibold text-[#8baab0]">{lead.company || 'Personal Lead'}</div>
 
                         <div className="flex items-center justify-between pt-1">
                           <span
-                            className={`px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
+                            className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
                               lead.lead_temperature === 'Hot'
                                 ? 'bg-rose-950/80 text-rose-300 border border-rose-800/60'
                                 : lead.lead_temperature === 'Cold'
@@ -3586,17 +3022,20 @@ export default function LeadsModule() {
                           >
                             {lead.lead_temperature || 'Warm'}
                           </span>
-                          <span className="text-[11px] font-black text-cyan-300">Score: {lead.lead_score || 0}</span>
+                          <span className="text-[11px] font-extrabold text-[#a0c5bd]">Score: {lead.lead_score || 0}</span>
                         </div>
 
-                        <div className="pt-2 border-t border-emerald-800/60 flex items-center justify-between gap-2">
-                          <span className="text-[10px] text-slate-300 font-bold truncate">
-                            {formatDateDDMMYYYY(lead.created_at)}
-                          </span>
+                        <div className="pt-2 border-t border-[#16433a]/60 flex items-center justify-between gap-2">
+                          <button
+                            onClick={() => setSelectedLead(lead)}
+                            className="text-[11px] font-bold text-emerald-400 hover:underline flex items-center gap-1"
+                          >
+                            <Eye className="w-3 h-3" /> Details
+                          </button>
                           <select
                             value={lead.status}
                             onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
-                            className="text-[11px] p-1 border border-emerald-700/60 rounded-lg bg-[#0b2620] text-white font-bold max-w-[120px] cursor-pointer"
+                            className="text-[11px] p-1 border border-[#1d574c] rounded-lg bg-[#0b241f] text-white font-bold max-w-[120px] cursor-pointer"
                           >
                             {leadFlow.map((st) => (
                               <option key={st} value={st}>{st}</option>
@@ -3613,41 +3052,35 @@ export default function LeadsModule() {
         </div>
       )}
 
-      {/* Automation Tab View */}
+      {/* Automation Tab */}
       {activeTab === 'automation' && (
-        <div className="bg-[#0b2620]/80 backdrop-blur-xl p-5 sm:p-6 rounded-3xl border border-emerald-800/60 shadow-2xl space-y-4">
-          <div className="flex items-center gap-2.5 text-white font-black text-base">
-            <div className="p-2.5 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-950/50">
-              <Sparkles className="w-5 h-5 stroke-[2.2]" />
+        <div className="bg-[#0b241f]/80 backdrop-blur-xl p-6 rounded-3xl border border-[#16433a] shadow-xl space-y-4">
+          <div className="flex items-center gap-2 text-white font-extrabold text-base">
+            <div className="p-2 rounded-xl bg-emerald-500 text-[#061915]">
+              <Sparkles className="w-5 h-5 stroke-[2.5]" />
             </div>
-            <span>CRM Lead Automations & Activity Schedule</span>
+            <span>CRM Workflow Trigger Engine</span>
           </div>
-          <p className="text-xs text-slate-200 font-semibold">Automated workflow logs and scheduled actions based on current lead pipelines.</p>
+          <p className="text-xs text-[#8baab0] font-medium">Automated actions, follow-up notifications, and SLA task scheduling.</p>
 
-          <div className="divide-y divide-emerald-800/60">
+          <div className="divide-y divide-[#16433a]/60">
             {filteredLeads.map((lead) => (
               <div key={lead.id} className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="space-y-1">
                   <div className="font-bold text-white text-sm flex items-center gap-2">
                     {lead.name}
-                    <span className="text-[10px] bg-emerald-950/80 text-cyan-300 px-2.5 py-0.5 rounded-full font-extrabold border border-emerald-700/60">{lead.status}</span>
+                    <span className="text-[10px] bg-[#0e352e] text-emerald-400 px-2 py-0.5 rounded-full font-bold border border-[#1d574c]">{lead.status}</span>
                   </div>
-                  <div className="text-xs text-slate-200 flex flex-wrap items-center gap-2 font-semibold">
-                    <span>Source: <strong className="text-white">{lead.source}</strong></span> • 
-                    <span>Pipeline Status: <strong className="text-white">{lead.status}</strong></span>
+                  <div className="text-xs text-[#8baab0] font-semibold">
+                    Company: <strong className="text-white">{lead.company || 'N/A'}</strong> | Source: <strong className="text-white">{lead.source || 'Website'}</strong>
                   </div>
-                  {lead.requirements && (
-                    <div className="text-xs text-slate-100 line-clamp-1 bg-[#04110d] p-2 rounded-xl border border-emerald-800/60 max-w-2xl font-medium">
-                      <span className="font-bold text-cyan-300">Requirements:</span> {lead.requirements}
-                    </div>
-                  )}
                 </div>
 
                 <button
-                  onClick={() => alert(`Automated follow-up task triggered for ${lead.name}`)}
-                  className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow-md shadow-emerald-950/50 cursor-pointer shrink-0 w-full sm:w-auto text-center"
+                  onClick={() => alert(`Automated follow-up triggered for ${lead.name}`)}
+                  className="bg-[#0e352e] hover:bg-emerald-500 hover:text-[#061915] text-emerald-400 font-extrabold text-xs px-4 py-2.5 rounded-xl transition-all border border-[#1d574c] cursor-pointer shrink-0 w-full sm:w-auto text-center"
                 >
-                  Trigger Follow-up Action
+                  Trigger Follow-up Task
                 </button>
               </div>
             ))}
@@ -3655,83 +3088,60 @@ export default function LeadsModule() {
         </div>
       )}
 
-      {/* Main Directory Table View */}
+      {/* Optimized De-Congested Lead Table */}
       {activeTab === 'details' && (
-        <div className="bg-[#0b2620]/80 backdrop-blur-xl rounded-3xl border border-emerald-800/60 shadow-2xl overflow-hidden">
-          <div className="p-4 border-b border-emerald-800/60 flex flex-col sm:flex-row justify-between items-center gap-3 bg-[#04110d]/40">
+        <div className="bg-[#0b241f]/80 backdrop-blur-xl rounded-3xl border border-[#16433a] shadow-2xl overflow-hidden">
+          <div className="p-4 border-b border-[#16433a]/60 flex flex-col sm:flex-row justify-between items-center gap-3 bg-[#061915]/40">
             <div className="relative flex-1 max-w-md w-full">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-cyan-300" />
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6e9b90]" />
               <input
                 type="text"
                 placeholder="Search leads by name, email, or company..."
-                className="w-full pl-9 pr-3 py-2 border border-emerald-700/60 rounded-xl text-xs bg-[#04110d] text-white font-bold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full pl-10 pr-3 py-2 border border-[#1d574c] rounded-xl text-xs bg-[#061915] text-white font-semibold placeholder:text-[#6e9b90] focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <div className="text-xs text-slate-200 font-bold self-end sm:self-center">
-              Showing <span className="font-black text-white">{filteredLeads.length}</span> matching leads
+            <div className="text-xs text-[#8baab0] font-semibold">
+              Showing <span className="font-extrabold text-white">{filteredLeads.length}</span> leads
             </div>
           </div>
 
           {loading ? (
-            <div className="p-12 text-center text-slate-200 text-sm font-bold">Loading lead database...</div>
+            <div className="p-12 text-center text-[#8baab0] text-sm font-semibold">Loading CRM records...</div>
           ) : filteredLeads.length === 0 ? (
-            <div className="p-12 text-center text-slate-200 text-sm font-bold">No lead records found for selected filter criteria.</div>
+            <div className="p-12 text-center text-[#8baab0] text-sm font-semibold">No leads matched your criteria.</div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[950px]">
-                <thead className="bg-[#04110d] border-b border-emerald-800/60 text-cyan-300 font-black uppercase text-[10px] tracking-wider">
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-[#061915] border-b border-[#16433a]/60 text-[#a0c5bd] font-extrabold uppercase text-[10px] tracking-wider">
                   <tr>
-                    <th className="p-4">Lead Contact</th>
-                    <th className="p-4">Company & Service</th>
-                    <th className="p-4 max-w-xs">Requirements</th>
-                    <th className="p-4">Campaign Source</th>
-                    <th className="p-4">Score & Temp</th>
-                    <th className="p-4">Date Created</th>
-                    <th className="p-4">Lead Status</th>
+                    <th className="p-4">Lead Name & Job Title</th>
+                    <th className="p-4">Company & Industry</th>
+                    <th className="p-4">Temperature & Score</th>
+                    <th className="p-4">Pipeline Status</th>
                     <th className="p-4 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-emerald-800/50 text-sm font-medium">
+                <tbody className="divide-y divide-[#16433a]/40 text-sm font-medium">
                   {filteredLeads.map((lead) => (
-                    <tr key={lead.id} className="hover:bg-[#0d2a23]/50 transition-colors">
-                      <td className="p-4 align-top">
-                        <div className="flex items-start gap-3">
-                          <div className="w-9 h-9 rounded-2xl bg-emerald-950/80 border border-emerald-700/60 flex items-center justify-center text-cyan-300 shrink-0 mt-0.5">
-                            <User className="w-4 h-4 stroke-[2.2]" />
+                    <tr key={lead.id} className="hover:bg-[#0e352e]/40 transition-colors">
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-[#0e352e] border border-[#1d574c] flex items-center justify-center text-emerald-400 shrink-0 font-extrabold text-xs">
+                            {lead.name.charAt(0).toUpperCase()}
                           </div>
                           <div>
                             <div className="font-bold text-white text-sm">{lead.name}</div>
-                            <div className="text-xs text-slate-200 font-semibold flex items-start gap-1.5 mt-1 whitespace-pre-line">
-                              <PhoneCall className="w-3.5 h-3.5 text-cyan-300 shrink-0 mt-0.5" /> 
-                              <span>{lead.contact_info || lead.phone || lead.email}</span>
-                            </div>
+                            <div className="text-xs text-[#8baab0] font-medium">{lead.job_title || 'Lead Contact'}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="p-4 align-top">
+                      <td className="p-4">
                         <div className="font-bold text-white">{lead.company || '—'}</div>
-                        <div className="text-[11px] font-extrabold text-cyan-300 mt-0.5">{lead.interested_service || lead.industry || 'IT Client'}</div>
+                        <div className="text-[11px] font-semibold text-[#6e9b90]">{lead.interested_service || lead.industry || 'Client'}</div>
                       </td>
-                      <td className="p-4 align-top max-w-xs">
-                        {lead.requirements ? (
-                          <div 
-                            onClick={() => setSelectedLead(lead)}
-                            className="text-xs text-slate-100 bg-[#04110d] p-2.5 rounded-xl border border-emerald-800/60 line-clamp-2 cursor-pointer hover:border-cyan-500/50 transition-all font-medium"
-                            title="Click to view full requirements & full lead profile"
-                          >
-                            {lead.requirements}
-                          </div>
-                        ) : (
-                          <span className="text-xs text-slate-400 font-medium italic">No requirements specified</span>
-                        )}
-                      </td>
-                      <td className="p-4 align-top text-xs font-bold text-slate-100">
-                        <span className="bg-[#04110d] px-2.5 py-1 rounded-lg text-slate-100 font-black border border-emerald-700/60">{lead.source || 'Website'}</span>
-                        {lead.campaign_name && <div className="text-[10px] text-cyan-300 mt-1 font-semibold">{lead.campaign_name}</div>}
-                      </td>
-                      <td className="p-4 align-top">
+                      <td className="p-4">
                         <div className="flex items-center gap-2">
                           <span
                             className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
@@ -3744,41 +3154,39 @@ export default function LeadsModule() {
                           >
                             {lead.lead_temperature || 'Warm'}
                           </span>
-                          <span className="font-black text-white text-xs">{lead.lead_score || 0}</span>
+                          <span className="font-extrabold text-[#a0c5bd] text-xs">Score: {lead.lead_score || 0}</span>
                         </div>
                       </td>
-                      <td className="p-4 align-top text-xs font-bold text-slate-200">
-                        {formatDateDDMMYYYY(lead.created_at)}
-                      </td>
-                      <td className="p-4 align-top">
+                      <td className="p-4">
                         <select
                           value={lead.status}
                           onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
-                          className="bg-[#04110d] border border-emerald-700/60 rounded-xl text-xs font-bold px-2.5 py-1.5 focus:ring-2 focus:ring-emerald-500 text-white cursor-pointer"
+                          className="bg-[#061915] border border-[#1d574c] rounded-xl text-xs font-bold px-2.5 py-1.5 text-white cursor-pointer focus:ring-2 focus:ring-emerald-500"
                         >
                           {leadFlow.map((st) => (
                             <option key={st} value={st}>{st}</option>
                           ))}
                         </select>
                       </td>
-                      <td className="p-4 align-top text-right">
-                        <div className="flex items-center justify-end gap-1.5">
+                      <td className="p-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => setSelectedLead(lead)}
-                            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                            className="bg-[#0e352e] hover:bg-emerald-500 hover:text-[#061915] text-emerald-400 px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all border border-[#1d574c] cursor-pointer flex items-center gap-1.5"
                           >
-                            View
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>View</span>
                           </button>
                           <button
                             onClick={() => openEditModal(lead)}
-                            className="text-cyan-300 hover:text-white p-1.5 rounded-xl transition-colors cursor-pointer hover:bg-emerald-950/60"
+                            className="text-[#8baab0] hover:text-white p-1.5 rounded-xl hover:bg-[#0e352e] cursor-pointer transition-colors"
                             title="Edit Lead"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => deleteLead(lead.id)}
-                            className="text-rose-400 hover:text-rose-300 p-1.5 rounded-xl transition-colors cursor-pointer hover:bg-rose-950/50"
+                            className="text-rose-400 hover:text-rose-300 p-1.5 rounded-xl hover:bg-rose-950/50 cursor-pointer transition-colors"
                             title="Delete Lead"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -3794,111 +3202,111 @@ export default function LeadsModule() {
         </div>
       )}
 
-      {/* Extended Profile & Requirements Modal */}
+      {/* Detailed Full Profile Modal */}
       {selectedLead && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto">
-          <div className="bg-[#0b2620] rounded-3xl p-5 sm:p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto space-y-6 shadow-2xl my-auto border border-emerald-800/60 relative text-slate-100">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-[#0b241f] rounded-3xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto space-y-6 shadow-2xl border border-[#16433a] relative text-[#d0e5e0]">
             
-            {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-emerald-800/60 pb-4">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-[#16433a] pb-4">
               <div>
-                <span className="text-[10px] font-black text-cyan-300 uppercase tracking-widest block">
-                  Lead Profile #{selectedLead.id.slice(0, 8)}
+                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest block">
+                  CRM Lead Profile Record
                 </span>
-                <h2 className="text-lg sm:text-xl font-black text-white flex items-center gap-2">
-                  <FileCode className="w-5 h-5 text-cyan-300 shrink-0" />
+                <h2 className="text-xl font-extrabold text-white flex items-center gap-2 mt-1">
+                  <UserCheck className="w-5 h-5 text-emerald-400 shrink-0" />
                   <span>{selectedLead.name}</span>
                 </h2>
-                <p className="text-xs text-slate-200 font-bold">{selectedLead.job_title || 'Decision Maker'} at <span className="font-black text-white">{selectedLead.company || 'Personal / N/A'}</span></p>
+                <p className="text-xs text-[#8baab0] font-semibold mt-0.5">{selectedLead.job_title || 'Contact Person'} at <span className="text-white font-bold">{selectedLead.company || 'N/A'}</span></p>
               </div>
               <button 
                 onClick={() => setSelectedLead(null)}
-                className="text-slate-300 hover:text-white p-2 rounded-xl hover:bg-emerald-950/60 cursor-pointer shrink-0 transition-colors"
+                className="text-[#8baab0] hover:text-white p-2 rounded-xl hover:bg-[#0e352e] cursor-pointer transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Structured Profile Breakdown */}
+            {/* Structured Info Sections */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               
-              {/* Section 1: Personal Details */}
-              <div className="bg-[#04110d] p-4 rounded-2xl border border-emerald-800/60 space-y-3">
-                <h3 className="text-xs font-black text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
-                  <UserCheck className="w-4 h-4" /> Personal Details
+              {/* Personal Contact */}
+              <div className="bg-[#061915] p-4 rounded-2xl border border-[#16433a] space-y-2.5">
+                <h3 className="text-xs font-black text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <User className="w-4 h-4" /> Contact Information
                 </h3>
-                <div className="text-xs space-y-2 text-white font-bold">
-                  <p><span className="font-extrabold text-cyan-300 block text-[10px] uppercase">Email:</span> {selectedLead.email}</p>
-                  <p><span className="font-extrabold text-cyan-300 block text-[10px] uppercase">Phone:</span> {selectedLead.mobile_number || selectedLead.phone || selectedLead.contact_info || 'N/A'}</p>
-                  <p><span className="font-extrabold text-cyan-300 block text-[10px] uppercase">Preferred Method:</span> {selectedLead.preferred_contact_method || 'Email'}</p>
-                  <p><span className="font-extrabold text-cyan-300 block text-[10px] uppercase">Location:</span> {selectedLead.city || 'Dubai'}, {selectedLead.country || 'UAE'}</p>
+                <div className="text-xs space-y-2 text-white font-semibold">
+                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">Email:</span> {selectedLead.email}</p>
+                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">Phone:</span> {selectedLead.phone || selectedLead.mobile_number || selectedLead.contact_info || 'N/A'}</p>
+                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">Preferred Method:</span> {selectedLead.preferred_contact_method || 'Email'}</p>
+                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">Location:</span> {selectedLead.city || 'Dubai'}, {selectedLead.country || 'UAE'}</p>
                 </div>
               </div>
 
-              {/* Section 2: Company Details */}
-              <div className="bg-[#04110d] p-4 rounded-2xl border border-emerald-800/60 space-y-3">
-                <h3 className="text-xs font-black text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
-                  <Building className="w-4 h-4" /> Company Details
+              {/* Company Info */}
+              <div className="bg-[#061915] p-4 rounded-2xl border border-[#16433a] space-y-2.5">
+                <h3 className="text-xs font-black text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Building className="w-4 h-4" /> Company Profile
                 </h3>
-                <div className="text-xs space-y-2 text-white font-bold">
-                  <p><span className="font-extrabold text-cyan-300 block text-[10px] uppercase">Company:</span> {selectedLead.company || 'N/A'}</p>
-                  <p><span className="font-extrabold text-cyan-300 block text-[10px] uppercase">Industry:</span> {selectedLead.industry || 'IT Services'}</p>
-                  <p><span className="font-extrabold text-cyan-300 block text-[10px] uppercase">Website:</span> {selectedLead.company_website || 'N/A'}</p>
-                  <p><span className="font-extrabold text-cyan-300 block text-[10px] uppercase">VAT / TRN:</span> {selectedLead.vat_trn_number || 'N/A'}</p>
+                <div className="text-xs space-y-2 text-white font-semibold">
+                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">Company Name:</span> {selectedLead.company || 'N/A'}</p>
+                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">Industry Sector:</span> {selectedLead.industry || 'IT / Enterprise'}</p>
+                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">Website:</span> {selectedLead.company_website || 'N/A'}</p>
+                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">VAT / TRN:</span> {selectedLead.vat_trn_number || 'N/A'}</p>
                 </div>
               </div>
 
-              {/* Section 3: Requirements & Budget */}
-              <div className="bg-[#04110d] p-4 rounded-2xl border border-emerald-800/60 space-y-3">
-                <h3 className="text-xs font-black text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
-                  <FileText className="w-4 h-4" /> Requirements & Budget
+              {/* Requirement & Budget */}
+              <div className="bg-[#061915] p-4 rounded-2xl border border-[#16433a] space-y-2.5">
+                <h3 className="text-xs font-black text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <FileText className="w-4 h-4" /> Deal Specifications
                 </h3>
-                <div className="text-xs space-y-2 text-white font-bold">
-                  <p><span className="font-extrabold text-cyan-300 block text-[10px] uppercase">Service:</span> {selectedLead.interested_service || 'IT Solutions'}</p>
-                  <p><span className="font-extrabold text-cyan-300 block text-[10px] uppercase">Est. Budget:</span> ${selectedLead.estimated_budget?.toLocaleString() || '0'}</p>
-                  <p><span className="font-extrabold text-cyan-300 block text-[10px] uppercase">Timeline:</span> {selectedLead.project_timeline || '1-3 Months'}</p>
-                  <p><span className="font-extrabold text-cyan-300 block text-[10px] uppercase">Urgency:</span> {selectedLead.urgency || 'Medium'}</p>
+                <div className="text-xs space-y-2 text-white font-semibold">
+                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">Service Category:</span> {selectedLead.interested_service || 'IT Services'}</p>
+                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">Estimated Budget:</span> ${selectedLead.estimated_budget?.toLocaleString() || '0'}</p>
+                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">Timeline:</span> {selectedLead.project_timeline || '1-3 Months'}</p>
+                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">Creation Date:</span> {formatDateDDMMYYYY(selectedLead.created_at)}</p>
                 </div>
               </div>
             </div>
 
             {/* Detailed Requirements Description */}
             <div className="space-y-2">
-              <label className="text-xs font-black text-white uppercase tracking-wider">Requirements Specifications</label>
-              <div className="bg-[#04110d] p-4 rounded-2xl border border-emerald-800/60 text-sm text-slate-100 font-medium whitespace-pre-wrap min-h-[90px]">
-                {selectedLead.requirements || selectedLead.requirement_description || 'No custom requirements specified.'}
+              <label className="text-xs font-black text-white uppercase tracking-wider">Detailed Lead Requirements</label>
+              <div className="bg-[#061915] p-4 rounded-2xl border border-[#16433a] text-xs text-[#d0e5e0] font-medium whitespace-pre-wrap min-h-[90px]">
+                {selectedLead.requirements || selectedLead.requirement_description || 'No detailed requirements submitted for this record.'}
               </div>
             </div>
 
-            {/* Marketing Source Attribution Section */}
-            <div className="bg-[#04110d] p-4 rounded-2xl border border-emerald-800/60 space-y-2">
-              <h3 className="text-xs font-black text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
-                <Globe className="w-4 h-4" /> Marketing Attribution & Source
+            {/* Marketing Attribution Details */}
+            <div className="bg-[#061915] p-4 rounded-2xl border border-[#16433a] space-y-2">
+              <h3 className="text-xs font-black text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Globe className="w-4 h-4" /> Attribution & Source Metrics
               </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs text-white pt-1">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs pt-1">
                 <div>
-                  <span className="font-extrabold text-cyan-300 text-[10px] uppercase block">Lead Source</span>
-                  <span className="font-black text-white">{selectedLead.source || 'Website'}</span>
+                  <span className="text-[#6e9b90] text-[10px] uppercase font-bold block">Lead Source</span>
+                  <span className="font-extrabold text-white">{selectedLead.source || 'Website'}</span>
                 </div>
                 <div>
-                  <span className="font-extrabold text-cyan-300 text-[10px] uppercase block">Campaign Name</span>
-                  <span className="font-black text-white">{selectedLead.campaign_name || 'Direct / Organic'}</span>
+                  <span className="text-[#6e9b90] text-[10px] uppercase font-bold block">Campaign</span>
+                  <span className="font-extrabold text-white">{selectedLead.campaign_name || 'Direct / Organic'}</span>
                 </div>
                 <div>
-                  <span className="font-extrabold text-cyan-300 text-[10px] uppercase block">UTM Source</span>
-                  <span className="font-black text-white">{selectedLead.utm_source || 'google'}</span>
+                  <span className="text-[#6e9b90] text-[10px] uppercase font-bold block">UTM Source</span>
+                  <span className="font-extrabold text-white">{selectedLead.utm_source || 'organic'}</span>
                 </div>
                 <div>
-                  <span className="font-extrabold text-cyan-300 text-[10px] uppercase block">UTM Medium</span>
-                  <span className="font-black text-white">{selectedLead.utm_medium || 'cpc'}</span>
+                  <span className="text-[#6e9b90] text-[10px] uppercase font-bold block">UTM Medium</span>
+                  <span className="font-extrabold text-white">{selectedLead.utm_medium || 'cpc'}</span>
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-end pt-3 border-t border-emerald-800/60">
+            <div className="flex justify-end pt-3 border-t border-[#16433a]/60">
               <button
                 onClick={() => setSelectedLead(null)}
-                className="px-6 py-2.5 bg-emerald-950 hover:bg-emerald-900 text-white font-bold text-xs rounded-xl transition-all cursor-pointer w-full sm:w-auto text-center border border-emerald-700/60"
+                className="px-6 py-2.5 bg-[#0e352e] hover:bg-[#13493f] text-white font-extrabold text-xs rounded-xl transition-all border border-[#1d574c] cursor-pointer"
               >
                 Close Profile
               </button>
@@ -3907,32 +3315,32 @@ export default function LeadsModule() {
         </div>
       )}
 
-      {/* Create / Edit Lead Modal */}
+      {/* Edit / Create Lead Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto">
-          <form onSubmit={saveLead} className="bg-[#0b2620] rounded-3xl p-5 sm:p-6 w-full max-w-xl max-h-[90vh] overflow-y-auto space-y-4 shadow-2xl my-auto border border-emerald-800/60 text-slate-100">
-            <h2 className="text-lg font-black text-white border-b border-emerald-800/60 pb-3">
-              {editingLead ? 'Edit Lead Details' : 'Add New Lead Contact'}
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <form onSubmit={saveLead} className="bg-[#0b241f] rounded-3xl p-6 w-full max-w-xl max-h-[90vh] overflow-y-auto space-y-4 shadow-2xl border border-[#16433a] text-[#d0e5e0]">
+            <h2 className="text-lg font-extrabold text-white border-b border-[#16433a] pb-3">
+              {editingLead ? 'Edit Lead Record' : 'Add New Lead Contact'}
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-extrabold text-slate-200 block mb-1">Full Name</label>
+                <label className="text-xs font-bold text-[#a0c5bd] block mb-1">Full Name</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Alex Morgan"
-                  className="w-full p-2.5 border border-emerald-700/60 rounded-xl text-sm bg-[#04110d] text-white font-bold focus:ring-2 focus:ring-emerald-500 placeholder:text-slate-400"
+                  className="w-full p-2.5 border border-[#1d574c] rounded-xl text-xs bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 placeholder:text-[#6e9b90]"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 />
               </div>
               <div>
-                <label className="text-xs font-extrabold text-slate-200 block mb-1">Job Title / Designation</label>
+                <label className="text-xs font-bold text-[#a0c5bd] block mb-1">Job Title</label>
                 <input
                   type="text"
                   placeholder="e.g. IT Director"
-                  className="w-full p-2.5 border border-emerald-700/60 rounded-xl text-sm bg-[#04110d] text-white font-bold focus:ring-2 focus:ring-emerald-500 placeholder:text-slate-400"
+                  className="w-full p-2.5 border border-[#1d574c] rounded-xl text-xs bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 placeholder:text-[#6e9b90]"
                   value={formData.job_title}
                   onChange={(e) => setFormData({ ...formData, job_title: e.target.value })}
                 />
@@ -3940,12 +3348,12 @@ export default function LeadsModule() {
             </div>
 
             <div>
-              <label className="text-xs font-extrabold text-slate-200 block mb-1">Contact Details (Phone / Email / Address)</label>
+              <label className="text-xs font-bold text-[#a0c5bd] block mb-1">Contact Info (Phone / Email)</label>
               <textarea
                 rows={2}
                 required
-                placeholder={"+1 (555) 000-0000\nemail@company.com\n123 Business St, Suite 100"}
-                className="w-full p-2.5 border border-emerald-700/60 rounded-xl text-sm bg-[#04110d] text-white font-bold focus:ring-2 focus:ring-emerald-500 placeholder:text-slate-400"
+                placeholder={"+1 (555) 000-0000\nemail@company.com"}
+                className="w-full p-2.5 border border-[#1d574c] rounded-xl text-xs bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 placeholder:text-[#6e9b90]"
                 value={formData.contact_info}
                 onChange={(e) => setFormData({ ...formData, contact_info: e.target.value })}
               />
@@ -3953,21 +3361,21 @@ export default function LeadsModule() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-extrabold text-slate-200 block mb-1">Company Name</label>
+                <label className="text-xs font-bold text-[#a0c5bd] block mb-1">Company</label>
                 <input
                   type="text"
                   placeholder="Enterprise Inc."
-                  className="w-full p-2.5 border border-emerald-700/60 rounded-xl text-sm bg-[#04110d] text-white font-bold focus:ring-2 focus:ring-emerald-500 placeholder:text-slate-400"
+                  className="w-full p-2.5 border border-[#1d574c] rounded-xl text-xs bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 placeholder:text-[#6e9b90]"
                   value={formData.company}
                   onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                 />
               </div>
               <div>
-                <label className="text-xs font-extrabold text-slate-200 block mb-1">Company Website</label>
+                <label className="text-xs font-bold text-[#a0c5bd] block mb-1">Website</label>
                 <input
                   type="text"
                   placeholder="https://company.com"
-                  className="w-full p-2.5 border border-emerald-700/60 rounded-xl text-sm bg-[#04110d] text-white font-bold focus:ring-2 focus:ring-emerald-500 placeholder:text-slate-400"
+                  className="w-full p-2.5 border border-[#1d574c] rounded-xl text-xs bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 placeholder:text-[#6e9b90]"
                   value={formData.company_website}
                   onChange={(e) => setFormData({ ...formData, company_website: e.target.value })}
                 />
@@ -3976,11 +3384,11 @@ export default function LeadsModule() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-extrabold text-slate-200 block mb-1">Pipeline Status</label>
+                <label className="text-xs font-bold text-[#a0c5bd] block mb-1">Pipeline Status</label>
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  className="w-full p-2.5 border border-emerald-700/60 rounded-xl text-sm bg-[#04110d] text-white font-bold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                  className="w-full p-2.5 border border-[#1d574c] rounded-xl text-xs bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
                 >
                   {leadFlow.map((st) => (
                     <option key={st} value={st}>{st}</option>
@@ -3988,9 +3396,9 @@ export default function LeadsModule() {
                 </select>
               </div>
               <div>
-                <label className="text-xs font-extrabold text-slate-200 block mb-1">Lead Source</label>
+                <label className="text-xs font-bold text-[#a0c5bd] block mb-1">Lead Source</label>
                 <select
-                  className="w-full p-2.5 border border-emerald-700/60 rounded-xl text-sm bg-[#04110d] text-white font-bold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                  className="w-full p-2.5 border border-[#1d574c] rounded-xl text-xs bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
                   value={formData.source}
                   onChange={(e) => setFormData({ ...formData, source: e.target.value })}
                 >
@@ -4005,9 +3413,9 @@ export default function LeadsModule() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-extrabold text-slate-200 block mb-1">Lead Temperature</label>
+                <label className="text-xs font-bold text-[#a0c5bd] block mb-1">Lead Temperature</label>
                 <select
-                  className="w-full p-2.5 border border-emerald-700/60 rounded-xl text-sm bg-[#04110d] text-white font-bold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                  className="w-full p-2.5 border border-[#1d574c] rounded-xl text-xs bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
                   value={formData.lead_temperature}
                   onChange={(e) => setFormData({ ...formData, lead_temperature: e.target.value as any })}
                 >
@@ -4017,12 +3425,12 @@ export default function LeadsModule() {
                 </select>
               </div>
               <div>
-                <label className="text-xs font-extrabold text-slate-200 block mb-1">Lead Score (0-100)</label>
+                <label className="text-xs font-bold text-[#a0c5bd] block mb-1">Lead Score (0-100)</label>
                 <input
                   type="number"
                   min={0}
                   max={100}
-                  className="w-full p-2.5 border border-emerald-700/60 rounded-xl text-sm bg-[#04110d] text-white font-bold focus:ring-2 focus:ring-emerald-500"
+                  className="w-full p-2.5 border border-[#1d574c] rounded-xl text-xs bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500"
                   value={formData.lead_score}
                   onChange={(e) => setFormData({ ...formData, lead_score: parseInt(e.target.value) || 0 })}
                 />
@@ -4030,28 +3438,28 @@ export default function LeadsModule() {
             </div>
 
             <div>
-              <label className="text-xs font-extrabold text-slate-200 block mb-1">Requirements Details</label>
+              <label className="text-xs font-bold text-[#a0c5bd] block mb-1">Requirements Details</label>
               <textarea
                 rows={3}
                 placeholder="Enter client technical or project requirements..."
-                className="w-full p-2.5 border border-emerald-700/60 rounded-xl text-sm bg-[#04110d] text-white font-bold focus:ring-2 focus:ring-emerald-500 placeholder:text-slate-400"
+                className="w-full p-2.5 border border-[#1d574c] rounded-xl text-xs bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 placeholder:text-[#6e9b90]"
                 value={formData.requirements}
                 onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
               />
             </div>
 
-            <div className="flex flex-col sm:flex-row justify-end gap-2.5 pt-4 border-t border-emerald-800/60">
+            <div className="flex justify-end gap-2.5 pt-4 border-t border-[#16433a]">
               <button
                 type="button"
                 onClick={closeModal}
-                className="px-4 py-2.5 border border-emerald-700/60 rounded-xl text-xs font-bold text-slate-200 hover:bg-emerald-950/60 cursor-pointer w-full sm:w-auto text-center"
+                className="px-4 py-2.5 border border-[#1d574c] rounded-xl text-xs font-bold text-[#8baab0] hover:bg-[#0e352e] cursor-pointer"
               >
                 Cancel
               </button>
               
               <button 
                 type="submit" 
-                className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-700 hover:via-teal-700 hover:to-cyan-700 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-950/50 cursor-pointer w-full sm:w-auto text-center"
+                className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-[#061915] font-black rounded-xl text-xs transition-all shadow-md cursor-pointer"
               >
                 {editingLead ? 'Update Lead' : 'Save Lead'}
               </button>
@@ -4225,7 +3633,6 @@ export default function DashboardLayout({
 
   const menuItems = [
     { name: 'Overview', path: '/dashboard/overview', icon: LayoutDashboard },
-    { name: 'Website Enquiries', path: '/dashboard/website-contact-form-enquiries', icon: Globe },
     { name: 'Leads Management', path: '/dashboard/leads', icon: Target },
     { name: 'IT Projects', path: '/dashboard/projects', icon: FolderKanban },
     { name: 'Service Tickets', path: '/dashboard/tickets', icon: Ticket },
