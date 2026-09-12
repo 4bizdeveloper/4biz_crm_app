@@ -16,7 +16,8 @@ import {
   CheckCircle2,
   Clock,
   AlertTriangle,
-  Briefcase
+  Briefcase,
+  SlidersHorizontal
 } from 'lucide-react';
 
 // ==========================================
@@ -156,7 +157,7 @@ function VerticalBarChart({
           const heightPercent = Math.max(Math.round((item.count / item.max) * 100), 12);
           return (
             <div key={idx} className="relative z-10 flex-1 flex flex-col items-center h-full justify-end group">
-              <span className="text-[10px] font-semibold text-slate-800 opacity-0 group-hover:opacity-100 transition-opacity mb-1">
+              <span className="text-[11px] font-semibold text-slate-800 opacity-0 group-hover:opacity-100 transition-opacity mb-1">
                 {item.count}
               </span>
               <div className="w-full max-w-[36px] bg-slate-100 rounded-lg h-full flex items-end p-1 overflow-hidden border border-slate-200">
@@ -171,9 +172,9 @@ function VerticalBarChart({
       </div>
 
       {/* X Labels */}
-      <div className="flex justify-between gap-2 px-1 pt-2.5">
+      <div className="flex justify-between gap-2 px-1 pt-3">
         {data.map((item, idx) => (
-          <span key={idx} className="flex-1 text-center text-[10px] font-medium text-slate-500 truncate">
+          <span key={idx} className="flex-1 text-center text-[11px] font-medium text-slate-600 truncate">
             {item.label}
           </span>
         ))}
@@ -255,7 +256,9 @@ export default function OverviewPage() {
   });
 
   const [loading, setLoading] = useState(true);
-  const [dateRange, setDateRange] = useState<'all' | 'weekly' | 'monthly' | 'annually'>('all');
+  const [dateRange, setDateRange] = useState<'all' | 'weekly' | 'monthly' | 'annually' | 'custom'>('all');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
 
   const fetchOverviewData = useCallback(async () => {
     setLoading(true);
@@ -279,6 +282,7 @@ export default function OverviewPage() {
       return items.filter((item) => {
         if (!item[dateField]) return true;
         const itemDate = new Date(item[dateField]);
+        
         if (dateRange === 'weekly') {
           const oneWeekAgo = new Date();
           oneWeekAgo.setDate(now.getDate() - 7);
@@ -289,6 +293,13 @@ export default function OverviewPage() {
         }
         if (dateRange === 'annually') {
           return itemDate.getFullYear() === now.getFullYear();
+        }
+        if (dateRange === 'custom') {
+          if (!startDate && !endDate) return true;
+          const start = startDate ? new Date(startDate) : new Date(0);
+          const end = endDate ? new Date(endDate) : new Date();
+          end.setHours(23, 59, 59, 999);
+          return itemDate >= start && itemDate <= end;
         }
         return true;
       });
@@ -363,7 +374,7 @@ export default function OverviewPage() {
     });
 
     setLoading(false);
-  }, [dateRange]);
+  }, [dateRange, startDate, endDate]);
 
   useEffect(() => {
     fetchOverviewData();
@@ -395,23 +406,23 @@ export default function OverviewPage() {
   }, [stats]);
 
   return (
-    <div className="min-h-screen bg-transparent text-slate-700 p-3 sm:p-5 md:p-6 font-sans space-y-4 md:space-y-6">
+    <div className="min-h-screen bg-transparent text-slate-700 p-4 sm:p-6 md:p-8 font-sans space-y-6 md:space-y-8">
       
       {/* HEADER BAR */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm">
-        <div className="text-center sm:text-left">
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">Sales & Operations Overview</h1>
-          <p className="text-xs text-slate-500 mt-0.5">Real-time performance tracking across leads, projects, staff, and SLAs.</p>
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="text-left">
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight leading-snug">Sales & Operations Overview</h1>
+          <p className="text-sm text-slate-500 mt-1">Real-time performance tracking across leads, projects, staff, and SLAs.</p>
         </div>
 
-        <div className="flex items-center justify-center sm:justify-end gap-2.5">
+        <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-start xl:justify-end gap-3">
           {/* Timeline Filter */}
-          <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-medium">
-            {(['all', 'weekly', 'monthly', 'annually'] as const).map((r) => (
+          <div className="flex flex-wrap items-center bg-slate-100 p-1.5 rounded-xl border border-slate-200 text-xs font-medium gap-1">
+            {(['all', 'weekly', 'monthly', 'annually', 'custom'] as const).map((r) => (
               <button
                 key={r}
                 onClick={() => setDateRange(r)}
-                className={`px-2.5 py-1 rounded-lg capitalize transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg capitalize transition-all cursor-pointer ${
                   dateRange === r
                     ? 'bg-white text-slate-800 font-semibold shadow-sm border border-slate-200'
                     : 'text-slate-500 hover:text-slate-800'
@@ -422,68 +433,87 @@ export default function OverviewPage() {
             ))}
           </div>
 
+          {/* Custom Date Inputs */}
+          {dateRange === 'custom' && (
+            <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200 text-xs">
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-slate-700 focus:outline-none focus:ring-1 focus:ring-teal-500"
+              />
+              <span className="text-slate-400 font-medium">to</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-slate-700 focus:outline-none focus:ring-1 focus:ring-teal-500"
+              />
+            </div>
+          )}
+
           <button
             onClick={fetchOverviewData}
-            className="p-2 bg-white hover:bg-slate-50 text-teal-600 border border-slate-200 rounded-xl transition-all cursor-pointer shadow-sm flex items-center justify-center"
+            className="p-2.5 bg-white hover:bg-slate-50 text-teal-600 border border-slate-200 rounded-xl transition-all cursor-pointer shadow-sm flex items-center justify-center shrink-0"
             title="Refresh Data"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
       </div>
 
       {/* TOP TOP-LEVEL METRIC CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         
         {/* Card 1: Total Leads */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center group hover:border-slate-300 transition-all">
-          <div className="flex items-center justify-between w-full mb-1">
-            <span className="text-xs font-medium text-slate-500">Total Pipeline Leads</span>
-            <MoreHorizontal className="w-3.5 h-3.5 text-slate-400 cursor-pointer" />
+        <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-start justify-between text-left group hover:border-slate-300 transition-all space-y-3">
+          <div className="flex items-center justify-between w-full">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Pipeline Leads</span>
+            <MoreHorizontal className="w-4 h-4 text-slate-400 cursor-pointer" />
           </div>
-          <div className="text-xl sm:text-2xl font-extrabold text-slate-800 tracking-tight my-1">
-            {stats.totalLeads} <span className="text-xs font-semibold text-teal-600">Active</span>
+          <div className="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight">
+            {stats.totalLeads} <span className="text-xs font-semibold text-teal-600 ml-1">Active</span>
           </div>
-          <p className="text-[11px] text-slate-500 font-medium flex items-center gap-1 justify-center">
-            <TrendingUp className="w-3 h-3 text-teal-600" /> +14.2% from last cycle
+          <p className="text-xs text-slate-500 font-medium flex items-center gap-1.5 leading-relaxed">
+            <TrendingUp className="w-3.5 h-3.5 text-teal-600 shrink-0" /> +14.2% from last cycle
           </p>
         </div>
 
         {/* Card 2: Active Projects */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center group hover:border-slate-300 transition-all">
-          <div className="flex items-center justify-between w-full mb-1">
-            <span className="text-xs font-medium text-slate-500">Active Projects</span>
-            <MoreHorizontal className="w-3.5 h-3.5 text-slate-400 cursor-pointer" />
+        <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-start justify-between text-left group hover:border-slate-300 transition-all space-y-3">
+          <div className="flex items-center justify-between w-full">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Active Projects</span>
+            <MoreHorizontal className="w-4 h-4 text-slate-400 cursor-pointer" />
           </div>
-          <div className="text-xl sm:text-2xl font-extrabold text-slate-800 tracking-tight my-1">
-            {stats.activeProjects} <span className="text-xs font-semibold text-emerald-600">In Flight</span>
+          <div className="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight">
+            {stats.activeProjects} <span className="text-xs font-semibold text-emerald-600 ml-1">In Flight</span>
           </div>
-          <p className="text-[11px] text-slate-500 font-medium flex items-center gap-1 justify-center">
-            <Zap className="w-3 h-3 text-emerald-600" /> 89% on-time milestone delivery
+          <p className="text-xs text-slate-500 font-medium flex items-center gap-1.5 leading-relaxed">
+            <Zap className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> 89% on-time milestone delivery
           </p>
         </div>
 
         {/* Card 3: Open Support Tickets */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center group hover:border-slate-300 transition-all">
-          <div className="flex items-center justify-between w-full mb-1">
-            <span className="text-xs font-medium text-slate-500">Open Support Desk</span>
-            <MoreHorizontal className="w-3.5 h-3.5 text-slate-400 cursor-pointer" />
+        <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-start justify-between text-left group hover:border-slate-300 transition-all space-y-3">
+          <div className="flex items-center justify-between w-full">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Open Support Desk</span>
+            <MoreHorizontal className="w-4 h-4 text-slate-400 cursor-pointer" />
           </div>
-          <div className="text-xl sm:text-2xl font-extrabold text-slate-800 tracking-tight my-1">
-            {stats.openTickets} <span className="text-xs font-semibold text-amber-600">Pending</span>
+          <div className="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight">
+            {stats.openTickets} <span className="text-xs font-semibold text-amber-600 ml-1">Pending</span>
           </div>
-          <p className="text-[11px] text-slate-500 font-medium flex items-center gap-1 justify-center">
-            <Clock className="w-3 h-3 text-amber-600" /> Avg SLA response: 18m
+          <p className="text-xs text-slate-500 font-medium flex items-center gap-1.5 leading-relaxed">
+            <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" /> Avg SLA response: 18m
           </p>
         </div>
 
         {/* Card 4: Radial Gauge (Win Rate / Execution Rate) */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-around text-left hover:border-slate-300 transition-all">
-          <div className="flex flex-col items-start">
-            <span className="text-xs font-medium text-slate-500 block mb-0.5">Win & Close Rate</span>
-            <span className="text-base font-bold text-slate-800 block">Target: 80%</span>
-            <span className="text-[11px] text-teal-600 font-medium flex items-center gap-1 mt-0.5">
-              <ArrowUpRight className="w-3 h-3" /> Exceeding Avg
+        <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between text-left hover:border-slate-300 transition-all">
+          <div className="flex flex-col items-start space-y-1.5">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Win & Close Rate</span>
+            <span className="text-lg font-bold text-slate-800 block">Target: 80%</span>
+            <span className="text-xs text-teal-600 font-medium flex items-center gap-1">
+              <ArrowUpRight className="w-3.5 h-3.5 shrink-0" /> Exceeding Avg
             </span>
           </div>
           <RadialWinRate percentage={stats.winRate} />
@@ -491,37 +521,37 @@ export default function OverviewPage() {
       </div>
 
       {/* GRAPH SECTION: XY LINE DIAGRAM & VERTICAL BAR CHART */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 md:gap-6">
         
         {/* XY Line Diagram (Pipeline Analytics) */}
-        <div className="lg:col-span-7 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div className="lg:col-span-7 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between space-y-4">
           <div>
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-4">
               <h2 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Pipeline Operational Velocity</h2>
-              <MoreHorizontal className="w-3.5 h-3.5 text-slate-400 cursor-pointer" />
+              <MoreHorizontal className="w-4 h-4 text-slate-400 cursor-pointer" />
             </div>
             <ModernXYLineChart data={pipelineTrendData} />
           </div>
-          <div className="flex items-center justify-center gap-6 pt-3 border-t border-slate-200 text-xs text-slate-500">
-            <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-teal-600" /> Realized Output
+          <div className="flex items-center justify-center gap-6 pt-4 border-t border-slate-200 text-xs font-medium text-slate-600">
+            <span className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-teal-600" /> Realized Output
             </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-slate-400" /> Projected Capacity
+            <span className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-slate-400" /> Projected Capacity
             </span>
           </div>
         </div>
 
         {/* Vertical Bar Graph (Deals / Projects by Stage) */}
-        <div className="lg:col-span-5 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div className="lg:col-span-5 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between space-y-4">
           <div>
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-4">
               <h2 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Volume by Operations Stage</h2>
-              <MoreHorizontal className="w-3.5 h-3.5 text-slate-400 cursor-pointer" />
+              <MoreHorizontal className="w-4 h-4 text-slate-400 cursor-pointer" />
             </div>
             <VerticalBarChart data={barChartData} />
           </div>
-          <div className="pt-3 border-t border-slate-200 flex justify-between items-center text-xs text-slate-500">
+          <div className="pt-4 border-t border-slate-200 flex justify-between items-center text-xs font-medium text-slate-600">
             <span>Updated real-time</span>
             <span className="text-teal-600 font-semibold">{stats.totalLeads + stats.activeProjects} Total Items</span>
           </div>
@@ -529,98 +559,98 @@ export default function OverviewPage() {
       </div>
 
       {/* BOTTOM SECTION: ALL CRM OPERATIONS OVERVIEW */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 md:gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-5 md:gap-6">
         
         {/* Incident Tickets Breakdown */}
-        <div className="lg:col-span-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3 flex flex-col justify-between">
-          <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
-            <h2 className="text-xs font-bold text-slate-800 flex items-center gap-1.5 uppercase tracking-wider">
-              <Ticket className="w-3.5 h-3.5 text-amber-500" /> Support Workload SLA
+        <div className="lg:col-span-4 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4 flex flex-col justify-between">
+          <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+            <h2 className="text-xs font-bold text-slate-800 flex items-center gap-2 uppercase tracking-wider">
+              <Ticket className="w-4 h-4 text-amber-500" /> Support Workload SLA
             </h2>
-            <span className="text-[9px] font-bold uppercase bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full border border-emerald-200">
+            <span className="text-[10px] font-bold uppercase bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-full border border-emerald-200">
               Live Desk
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-2.5">
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center">
-              <span className="text-[10px] font-bold text-rose-600 uppercase tracking-wider">Urgent</span>
-              <span className="text-xl font-black text-rose-700 mt-1">{stats.ticketsByPriority['Urgent'] || 0}</span>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center">
+              <span className="text-[11px] font-bold text-rose-600 uppercase tracking-wider">Urgent</span>
+              <span className="text-2xl font-black text-rose-700 mt-1">{stats.ticketsByPriority['Urgent'] || 0}</span>
             </div>
 
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center">
-              <span className="text-[10px] font-bold text-orange-600 uppercase tracking-wider">High</span>
-              <span className="text-xl font-black text-orange-700 mt-1">{stats.ticketsByPriority['High'] || 0}</span>
+            <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center">
+              <span className="text-[11px] font-bold text-orange-600 uppercase tracking-wider">High</span>
+              <span className="text-2xl font-black text-orange-700 mt-1">{stats.ticketsByPriority['High'] || 0}</span>
             </div>
 
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center">
-              <span className="text-[10px] font-bold text-teal-600 uppercase tracking-wider">Medium</span>
-              <span className="text-xl font-black text-teal-700 mt-1">{stats.ticketsByPriority['Medium'] || 0}</span>
+            <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center">
+              <span className="text-[11px] font-bold text-teal-600 uppercase tracking-wider">Medium</span>
+              <span className="text-2xl font-black text-teal-700 mt-1">{stats.ticketsByPriority['Medium'] || 0}</span>
             </div>
 
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Low</span>
-              <span className="text-xl font-black text-slate-700 mt-1">{stats.ticketsByPriority['Low'] || 0}</span>
+            <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Low</span>
+              <span className="text-2xl font-black text-slate-700 mt-1">{stats.ticketsByPriority['Low'] || 0}</span>
             </div>
           </div>
         </div>
 
         {/* Live Operational Timeline */}
-        <div className="lg:col-span-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div className="lg:col-span-4 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between space-y-4">
           <div>
-            <div className="flex items-center justify-between border-b border-slate-200 pb-2.5 mb-3">
-              <h2 className="text-xs font-bold text-slate-800 flex items-center gap-1.5 uppercase tracking-wider">
-                <Clock className="w-3.5 h-3.5 text-teal-600" /> Recent Operational Logs
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
+              <h2 className="text-xs font-bold text-slate-800 flex items-center gap-2 uppercase tracking-wider">
+                <Clock className="w-4 h-4 text-teal-600" /> Recent Operational Logs
               </h2>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {stats.recentActivities.length === 0 ? (
-                <p className="text-xs text-slate-400 italic text-center py-2">No recent log entries.</p>
+                <p className="text-xs text-slate-400 italic text-center py-4">No recent log entries.</p>
               ) : (
                 stats.recentActivities.map((act, index) => (
                   <div
                     key={index}
-                    className="p-2 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs"
+                    className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs"
                   >
-                    <div className="flex items-center gap-2 truncate pr-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-teal-600 shrink-0" />
+                    <div className="flex items-center gap-2.5 truncate pr-2">
+                      <span className="w-2 h-2 rounded-full bg-teal-600 shrink-0" />
                       <span className="font-medium text-slate-700 truncate">{act.title}</span>
                     </div>
-                    <span className="text-[10px] font-semibold text-slate-400 shrink-0">{act.time}</span>
+                    <span className="text-[11px] font-semibold text-slate-400 shrink-0">{act.time}</span>
                   </div>
                 ))
               )}
             </div>
           </div>
 
-          <div className="pt-2.5 mt-3 border-t border-slate-200 text-center text-[10px] text-slate-400">
+          <div className="pt-3 border-t border-slate-200 text-center text-[11px] text-slate-400 font-medium">
             Connected to Supabase Realtime DB
           </div>
         </div>
 
         {/* Staff & Department Allocation */}
-        <div className="md:col-span-2 lg:col-span-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3 flex flex-col justify-between">
-          <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
-            <h2 className="text-xs font-bold text-slate-800 flex items-center gap-1.5 uppercase tracking-wider">
-              <Users className="w-3.5 h-3.5 text-purple-600" /> Workforce Allocation
+        <div className="md:col-span-2 lg:col-span-4 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4 flex flex-col justify-between">
+          <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+            <h2 className="text-xs font-bold text-slate-800 flex items-center gap-2 uppercase tracking-wider">
+              <Users className="w-4 h-4 text-purple-600" /> Workforce Allocation
             </h2>
             <span className="text-xs font-bold text-slate-800">{stats.totalEmployees} Active</span>
           </div>
 
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-2 gap-3">
             {Object.entries(stats.employeesByDept).map(([dept, count]) => (
               <div
                 key={dept}
-                className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col items-center justify-center text-center"
+                className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex flex-col items-center justify-center text-center"
               >
-                <span className="text-[10px] font-medium text-slate-500 truncate w-full">{dept}</span>
-                <span className="text-base font-bold text-slate-800 mt-0.5">{count} Staff</span>
+                <span className="text-[11px] font-medium text-slate-500 truncate w-full">{dept}</span>
+                <span className="text-base font-bold text-slate-800 mt-1">{count} Staff</span>
               </div>
             ))}
 
             {Object.keys(stats.employeesByDept).length === 0 && (
-              <div className="text-xs text-slate-400 italic col-span-2 text-center py-2">No active department allocations found.</div>
+              <div className="text-xs text-slate-400 italic col-span-2 text-center py-4">No active department allocations found.</div>
             )}
           </div>
         </div>

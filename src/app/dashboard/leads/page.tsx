@@ -464,19 +464,19 @@ export default function LeadsModule() {
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-6 font-sans pb-16 px-3 sm:px-6 text-[#d0e5e0] bg-[#061915] min-h-screen">
+    <div className="w-full max-w-7xl mx-auto space-y-8 font-sans pb-20 px-4 sm:px-6 lg:px-8 text-slate-800 bg-slate-50 min-h-screen leading-relaxed">
       
       {/* Top Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pt-6">
-        <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0d2a24] border border-[#1b4a40] text-emerald-400 text-xs font-semibold mb-2">
-            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pt-8">
+        <div className="space-y-1.5">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-teal-50 border border-teal-200 text-teal-700 text-xs font-semibold mb-1">
+            <Sparkles className="w-3.5 h-3.5 text-teal-600 shrink-0" />
             <span>CRM Sales Intelligence</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-slate-900 leading-tight">
             Leads Directory & Pipeline
           </h1>
-          <p className="text-xs sm:text-sm text-[#8baab0] mt-1 font-medium">
+          <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed max-w-2xl">
             Real-time lead scoring, stage attribution, status tracking, and automated conversion pipelines.
           </p>
         </div>
@@ -484,7 +484,7 @@ export default function LeadsModule() {
         {/* Create Lead Action Button */}
         <button
           onClick={openCreateModal}
-          className="bg-emerald-500 hover:bg-emerald-400 text-[#061915] font-black px-6 py-3.5 rounded-2xl flex items-center justify-center gap-2 text-xs sm:text-sm transition-all shadow-lg shadow-emerald-950/40 hover:scale-[1.02] active:scale-[0.98] cursor-pointer shrink-0 w-full md:w-auto"
+          className="bg-teal-600 hover:bg-teal-700 text-white font-bold px-6 py-3.5 rounded-2xl flex items-center justify-center gap-2.5 text-xs sm:text-sm transition-all shadow-sm hover:scale-[1.02] active:scale-[0.98] cursor-pointer shrink-0 w-full md:w-auto"
         >
           <Plus className="w-4 h-4 stroke-[3]" />
           <span>Add New Lead Record</span>
@@ -492,83 +492,83 @@ export default function LeadsModule() {
       </div>
 
       {/* Top Overview Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         
         {/* Metric 1 - Total Leads + Mini Bar Chart */}
-        <div className="bg-[#0b241f]/80 backdrop-blur-xl p-5 rounded-2xl border border-[#16433a] shadow-xl relative overflow-hidden flex flex-col justify-between">
-          <div className="flex items-center justify-between text-[#8baab0]">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#a0c5bd]">Total Leads</span>
-            <MoreHorizontal className="w-4 h-4 cursor-pointer text-[#8baab0]" />
+        <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-6 relative overflow-hidden flex flex-col justify-between space-y-4">
+          <div className="flex items-center justify-between text-slate-500">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Total Leads</span>
+            <MoreHorizontal className="w-4 h-4 cursor-pointer text-slate-400 hover:text-slate-600" />
           </div>
           
-          <div className="my-2 flex items-end justify-between gap-2">
-            <div>
-              <div className="text-3xl font-extrabold text-white tracking-tight">{metrics.totalLeads}</div>
-              <div className="text-xs text-[#6e9b90] font-semibold mt-0.5">Active database records</div>
+          <div className="my-1 flex items-end justify-between gap-3">
+            <div className="space-y-1">
+              <div className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-none">{metrics.totalLeads}</div>
+              <div className="text-xs text-slate-500 font-semibold leading-relaxed">Active database records</div>
             </div>
 
             {/* Mini Bar Chart Representation */}
-            <div className="flex items-end gap-1 h-10 px-1 py-1 bg-[#061915]/60 rounded-lg border border-[#16433a]/60">
-              <div className="w-1.5 h-[40%] bg-emerald-500/30 rounded-t-sm"></div>
-              <div className="w-1.5 h-[65%] bg-emerald-500/50 rounded-t-sm"></div>
-              <div className="w-1.5 h-[45%] bg-emerald-500/40 rounded-t-sm"></div>
-              <div className="w-1.5 h-[80%] bg-emerald-500/70 rounded-t-sm"></div>
-              <div className="w-1.5 h-[100%] bg-emerald-400 rounded-t-sm shadow-sm shadow-emerald-400/50"></div>
+            <div className="flex items-end gap-1.5 h-12 px-2 py-1.5 bg-slate-50 rounded-lg border border-slate-200 shrink-0">
+              <div className="w-1.5 h-[40%] bg-teal-200 rounded-t-sm"></div>
+              <div className="w-1.5 h-[65%] bg-teal-300 rounded-t-sm"></div>
+              <div className="w-1.5 h-[45%] bg-teal-300 rounded-t-sm"></div>
+              <div className="w-1.5 h-[80%] bg-teal-400 rounded-t-sm"></div>
+              <div className="w-1.5 h-[100%] bg-teal-600 rounded-t-sm shadow-sm"></div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400 pt-2 border-t border-[#16433a]/60">
-            <span className="bg-[#0e352e] px-2 py-0.5 rounded-md text-emerald-400 font-bold border border-[#1d574c]">+{metrics.newToday} New</span>
-            <span className="text-[#8baab0]">Added Today</span>
+          <div className="flex items-center gap-2 text-xs font-semibold text-teal-700 pt-3 border-t border-slate-100">
+            <span className="bg-teal-50 px-2 py-0.5 rounded-md text-teal-700 font-bold border border-teal-200">+{metrics.newToday} New</span>
+            <span className="text-slate-500">Added Today</span>
           </div>
         </div>
 
         {/* Metric 2 - Unassigned & Action Needed + Distribution Progress Bar */}
-        <div className="bg-[#0b241f]/80 backdrop-blur-xl p-5 rounded-2xl border border-[#16433a] shadow-xl relative overflow-hidden flex flex-col justify-between">
-          <div className="flex items-center justify-between text-[#8baab0]">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#a0c5bd]">Unassigned</span>
-            <MoreHorizontal className="w-4 h-4 cursor-pointer text-[#8baab0]" />
+        <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-6 relative overflow-hidden flex flex-col justify-between space-y-4">
+          <div className="flex items-center justify-between text-slate-500">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Unassigned</span>
+            <MoreHorizontal className="w-4 h-4 cursor-pointer text-slate-400 hover:text-slate-600" />
           </div>
 
-          <div className="my-2">
-            <div className="text-3xl font-extrabold text-[#f59e0b] tracking-tight">{metrics.unassigned}</div>
-            <div className="text-xs text-[#6e9b90] font-semibold mt-0.5">Pending rep assignment</div>
+          <div className="my-1 space-y-2">
+            <div className="text-3xl sm:text-4xl font-extrabold text-amber-600 tracking-tight leading-none">{metrics.unassigned}</div>
+            <div className="text-xs text-slate-500 font-semibold leading-relaxed">Pending rep assignment</div>
 
             {/* Status Breakdown Bar */}
-            <div className="mt-2 w-full h-2 bg-[#061915] rounded-full overflow-hidden flex">
+            <div className="mt-3 w-full h-2.5 bg-slate-100 rounded-full overflow-hidden flex">
               <div 
                 className="bg-amber-500 h-full transition-all duration-300" 
                 style={{ width: `${metrics.totalLeads > 0 ? (metrics.unassigned / metrics.totalLeads) * 100 : 0}%` }}
                 title="Unassigned"
               ></div>
               <div 
-                className="bg-emerald-500 h-full transition-all duration-300" 
+                className="bg-teal-600 h-full transition-all duration-300" 
                 style={{ width: `${metrics.totalLeads > 0 ? ((metrics.totalLeads - metrics.unassigned) / metrics.totalLeads) * 100 : 0}%` }}
                 title="Assigned"
               ></div>
             </div>
           </div>
 
-          <div className="flex items-center justify-between text-xs font-semibold text-amber-400 pt-2 border-t border-[#16433a]/60">
+          <div className="flex items-center justify-between text-xs font-semibold text-amber-600 pt-3 border-t border-slate-100">
             <span>Requires Action</span>
-            <span className="text-[10px] text-[#8baab0]">
+            <span className="text-[11px] text-slate-400">
               {metrics.totalLeads > 0 ? Math.round((metrics.unassigned / metrics.totalLeads) * 100) : 0}% of Total
             </span>
           </div>
         </div>
 
-        {/* Metric 3 - XY Line Graph: Pipeline Volume Trend */}
-        <div className="bg-[#0b241f]/80 backdrop-blur-xl p-5 rounded-2xl border border-[#16433a] shadow-xl relative overflow-hidden flex flex-col justify-between">
-          <div className="flex items-center justify-between text-[#8baab0] mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#a0c5bd]">Pipeline Trend</span>
-            <span className="text-xs font-extrabold text-emerald-400">{filteredLeads.length} leads</span>
+        {/* Metric 3 - Dynamic Line Graph: Pipeline Volume Trend */}
+        <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-6 relative overflow-hidden flex flex-col justify-between space-y-4">
+          <div className="flex items-center justify-between text-slate-500">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Pipeline Trend</span>
+            <span className="text-xs font-extrabold text-teal-600">{filteredLeads.length} leads</span>
           </div>
-          <div className="w-full h-16 flex items-end">
+          <div className="w-full h-16 flex items-end my-1">
             <svg className="w-full h-full overflow-visible" viewBox="0 0 100 40">
               <defs>
                 <linearGradient id="gradientLine" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#10b981" stopOpacity="0.4" />
-                  <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
+                  <stop offset="0%" stopColor="#0d9488" stopOpacity="0.25" />
+                  <stop offset="100%" stopColor="#0d9488" stopOpacity="0.0" />
                 </linearGradient>
               </defs>
               <path
@@ -578,35 +578,35 @@ export default function LeadsModule() {
               <path
                 d="M 0 35 Q 20 10, 40 25 T 80 15 T 100 5"
                 fill="none"
-                stroke="#10b981"
+                stroke="#0d9488"
                 strokeWidth="2.5"
               />
-              <circle cx="100" cy="5" r="3" fill="#34d399" />
+              <circle cx="100" cy="5" r="3" fill="#0d9488" />
             </svg>
           </div>
-          <div className="text-[11px] text-[#6e9b90] font-semibold pt-2 border-t border-[#16433a]/60">
+          <div className="text-xs text-slate-500 font-semibold pt-3 border-t border-slate-100 leading-relaxed">
             Lead acquisition velocity
           </div>
         </div>
 
         {/* Metric 4 - Donut Chart: Win Rate */}
-        <div className="bg-[#0b241f]/80 backdrop-blur-xl p-5 rounded-2xl border border-[#16433a] shadow-xl relative overflow-hidden flex items-center justify-between">
-          <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-[#a0c5bd] block mb-1">Win Rate</span>
-            <div className="text-3xl font-extrabold text-white tracking-tight">{metrics.conversionRate}%</div>
-            <div className="text-xs text-[#6e9b90] font-semibold mt-1">{metrics.converted} Leads Won</div>
+        <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-6 relative overflow-hidden flex items-center justify-between gap-3">
+          <div className="space-y-1">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block">Win Rate</span>
+            <div className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-none">{metrics.conversionRate}%</div>
+            <div className="text-xs text-slate-500 font-semibold leading-relaxed pt-1">{metrics.converted} Leads Won</div>
           </div>
           <div className="relative w-20 h-20 flex items-center justify-center shrink-0">
             <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
               <path
-                className="text-[#0e352e]"
+                className="text-slate-100"
                 strokeWidth="4"
                 stroke="currentColor"
                 fill="none"
                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
               />
               <path
-                className="text-emerald-400"
+                className="text-teal-600"
                 strokeDasharray={`${metrics.conversionRate}, 100`}
                 strokeWidth="4"
                 strokeLinecap="round"
@@ -615,58 +615,58 @@ export default function LeadsModule() {
                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
               />
             </svg>
-            <span className="absolute text-xs font-extrabold text-white">{metrics.conversionRate}%</span>
+            <span className="absolute text-xs font-extrabold text-slate-800">{metrics.conversionRate}%</span>
           </div>
         </div>
 
       </div>
 
       {/* Overview Diagram Representation: Lead Temperature Breakdown */}
-      <div className="bg-[#0b241f]/80 backdrop-blur-xl p-4 rounded-2xl border border-[#16433a] shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <Activity className="w-4 h-4 text-emerald-400" />
-          <span className="text-xs font-extrabold text-white uppercase tracking-wider">Lead Temperature Distribution</span>
+      <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-5 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-5">
+        <div className="flex items-center gap-2.5 shrink-0">
+          <Activity className="w-4 h-4 text-teal-600" />
+          <span className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">Lead Temperature Distribution</span>
         </div>
         
-        <div className="flex-1 max-w-xl">
-          <div className="w-full h-3 bg-[#061915] rounded-full overflow-hidden flex border border-[#16433a]/80">
+        <div className="flex-1 max-w-xl w-full">
+          <div className="w-full h-3.5 bg-slate-100 rounded-full overflow-hidden flex border border-slate-200">
             <div 
               className="bg-rose-500 h-full transition-all" 
               style={{ width: `${metrics.totalLeads > 0 ? (metrics.hot / metrics.totalLeads) * 100 : 0}%` }}
               title="Hot Leads"
             />
             <div 
-              className="bg-amber-400 h-full transition-all" 
+              className="bg-amber-500 h-full transition-all" 
               style={{ width: `${metrics.totalLeads > 0 ? (metrics.warm / metrics.totalLeads) * 100 : 0}%` }}
               title="Warm Leads"
             />
             <div 
-              className="bg-sky-400 h-full transition-all" 
+              className="bg-sky-500 h-full transition-all" 
               style={{ width: `${metrics.totalLeads > 0 ? (metrics.cold / metrics.totalLeads) * 100 : 0}%` }}
               title="Cold Leads"
             />
           </div>
         </div>
 
-        <div className="flex items-center gap-4 text-xs font-bold">
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
-            <span className="text-rose-300">Hot ({metrics.hot})</span>
+        <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs font-bold shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0"></span>
+            <span className="text-rose-700">Hot ({metrics.hot})</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-            <span className="text-amber-300">Warm ({metrics.warm})</span>
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0"></span>
+            <span className="text-amber-700">Warm ({metrics.warm})</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-sky-400"></span>
-            <span className="text-sky-300">Cold ({metrics.cold})</span>
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-sky-500 shrink-0"></span>
+            <span className="text-sky-700">Cold ({metrics.cold})</span>
           </div>
         </div>
       </div>
 
       {/* Navigation Pills */}
-      <div className="flex items-center justify-start py-2">
-        <div className="inline-flex items-center gap-1.5 p-1.5 bg-[#0b241f]/90 backdrop-blur-md rounded-2xl border border-[#16433a] shadow-inner">
+      <div className="flex items-center justify-start py-1 overflow-x-auto">
+        <div className="inline-flex items-center gap-1.5 p-1.5 bg-slate-100 border border-slate-200 rounded-2xl shadow-inner min-w-max">
           {[
             { id: 'details', label: 'Overview Table', icon: FileText },
             { id: 'pipeline', label: 'Pipeline Stages', icon: CheckCircle2 },
@@ -678,13 +678,13 @@ export default function LeadsModule() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-5 py-2.5 text-xs font-extrabold rounded-xl transition-all duration-200 cursor-pointer ${
+                className={`flex items-center gap-2 px-5 py-2.5 text-xs rounded-xl transition-all duration-200 cursor-pointer ${
                   isSelected
-                    ? 'bg-emerald-500 text-[#061915] shadow-md shadow-emerald-950/50'
-                    : 'text-[#8baab0] hover:text-white hover:bg-[#0e352e]'
+                    ? 'bg-white text-slate-800 font-semibold shadow-sm border border-slate-200'
+                    : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
-                <Icon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-[#061915]' : 'text-[#8baab0]'}`} />
+                <Icon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-teal-600' : 'text-slate-400'}`} />
                 <span>{tab.label}</span>
               </button>
             );
@@ -693,17 +693,17 @@ export default function LeadsModule() {
       </div>
 
       {/* Filter Control Bar */}
-      <div className="bg-[#0b241f]/80 backdrop-blur-xl p-4 sm:p-5 rounded-3xl border border-[#16433a] shadow-xl space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-3 border-b border-[#16433a]/60">
+      <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-5 sm:p-6 space-y-5">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-200">
           <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 text-xs font-bold text-white bg-[#0e352e] px-3 py-2 rounded-xl border border-[#1d574c]">
-              <Calendar className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-700 bg-slate-50 px-3.5 py-2.5 rounded-xl border border-slate-200">
+              <Calendar className="w-3.5 h-3.5 text-teal-600 shrink-0" />
               <span>Timeline:</span>
             </div>
             <select
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value as any)}
-              className="bg-[#061915] border border-[#1d574c] rounded-xl text-xs font-bold px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white cursor-pointer"
+              className="bg-white border border-slate-200 rounded-xl text-xs font-bold px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-600 text-slate-800 cursor-pointer"
             >
               <option value="all">All Dates</option>
               <option value="daily">Today</option>
@@ -713,19 +713,19 @@ export default function LeadsModule() {
             </select>
 
             {dateRange === 'custom' && (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <input
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="bg-[#061915] border border-[#1d574c] rounded-xl text-xs font-bold px-2.5 py-1.5 text-white"
+                  className="bg-white border border-slate-200 rounded-xl text-xs font-bold px-3 py-2 text-slate-800"
                 />
-                <span className="text-xs font-bold text-[#8baab0]">to</span>
+                <span className="text-xs font-bold text-slate-400">to</span>
                 <input
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="bg-[#061915] border border-[#1d574c] rounded-xl text-xs font-bold px-2.5 py-1.5 text-white"
+                  className="bg-white border border-slate-200 rounded-xl text-xs font-bold px-3 py-2 text-slate-800"
                 />
               </div>
             )}
@@ -733,7 +733,7 @@ export default function LeadsModule() {
 
           <button
             onClick={exportCSV}
-            className="bg-[#0e352e] hover:bg-[#13493f] text-emerald-400 border border-[#1d574c] text-xs font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer w-full lg:w-auto"
+            className="bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer w-full lg:w-auto"
           >
             <Download className="w-4 h-4 stroke-[2.5]" />
             <span>Export CSV</span>
@@ -741,11 +741,11 @@ export default function LeadsModule() {
         </div>
 
         {/* Dynamic Filters Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
-          <div>
-            <label className="font-extrabold text-[#a0c5bd] block mb-1 uppercase text-[10px] tracking-wider">Temperature</label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-xs">
+          <div className="space-y-1.5">
+            <label className="font-extrabold text-slate-500 block uppercase text-[10px] tracking-wider">Temperature</label>
             <select
-              className="w-full p-2.5 border border-[#1d574c] rounded-xl bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+              className="w-full p-2.5 border border-slate-200 rounded-xl bg-white text-slate-800 font-bold focus:ring-2 focus:ring-teal-600 cursor-pointer"
               value={filters.temperature}
               onChange={(e) => setFilters({ ...filters, temperature: e.target.value })}
             >
@@ -756,10 +756,10 @@ export default function LeadsModule() {
             </select>
           </div>
 
-          <div>
-            <label className="font-extrabold text-[#a0c5bd] block mb-1 uppercase text-[10px] tracking-wider">Status</label>
+          <div className="space-y-1.5">
+            <label className="font-extrabold text-slate-500 block uppercase text-[10px] tracking-wider">Status</label>
             <select
-              className="w-full p-2.5 border border-[#1d574c] rounded-xl bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+              className="w-full p-2.5 border border-slate-200 rounded-xl bg-white text-slate-800 font-bold focus:ring-2 focus:ring-teal-600 cursor-pointer"
               value={filters.status}
               onChange={(e) => setFilters({ ...filters, status: e.target.value })}
             >
@@ -770,10 +770,10 @@ export default function LeadsModule() {
             </select>
           </div>
 
-          <div>
-            <label className="font-extrabold text-[#a0c5bd] block mb-1 uppercase text-[10px] tracking-wider">Source</label>
+          <div className="space-y-1.5">
+            <label className="font-extrabold text-slate-500 block uppercase text-[10px] tracking-wider">Source</label>
             <select
-              className="w-full p-2.5 border border-[#1d574c] rounded-xl bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+              className="w-full p-2.5 border border-slate-200 rounded-xl bg-white text-slate-800 font-bold focus:ring-2 focus:ring-teal-600 cursor-pointer"
               value={filters.source}
               onChange={(e) => setFilters({ ...filters, source: e.target.value })}
             >
@@ -786,10 +786,10 @@ export default function LeadsModule() {
             </select>
           </div>
 
-          <div>
-            <label className="font-extrabold text-[#a0c5bd] block mb-1 uppercase text-[10px] tracking-wider">Branch</label>
+          <div className="space-y-1.5">
+            <label className="font-extrabold text-slate-500 block uppercase text-[10px] tracking-wider">Branch</label>
             <select
-              className="w-full p-2.5 border border-[#1d574c] rounded-xl bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+              className="w-full p-2.5 border border-slate-200 rounded-xl bg-white text-slate-800 font-bold focus:ring-2 focus:ring-teal-600 cursor-pointer"
               value={filters.branch}
               onChange={(e) => setFilters({ ...filters, branch: e.target.value })}
             >
@@ -800,10 +800,10 @@ export default function LeadsModule() {
             </select>
           </div>
 
-          <div>
-            <label className="font-extrabold text-[#a0c5bd] block mb-1 uppercase text-[10px] tracking-wider">Service</label>
+          <div className="space-y-1.5">
+            <label className="font-extrabold text-slate-500 block uppercase text-[10px] tracking-wider">Service</label>
             <select
-              className="w-full p-2.5 border border-[#1d574c] rounded-xl bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+              className="w-full p-2.5 border border-slate-200 rounded-xl bg-white text-slate-800 font-bold focus:ring-2 focus:ring-teal-600 cursor-pointer"
               value={filters.service}
               onChange={(e) => setFilters({ ...filters, service: e.target.value })}
             >
@@ -832,9 +832,9 @@ export default function LeadsModule() {
                   maxScore: 100,
                 })
               }
-              className="w-full bg-[#061915] hover:bg-[#0e352e] text-[#8baab0] hover:text-white font-extrabold p-2.5 rounded-xl text-xs transition-colors cursor-pointer border border-[#1d574c] flex items-center justify-center gap-1.5"
+              className="w-full bg-slate-50 hover:bg-slate-100 text-slate-600 font-extrabold p-2.5 rounded-xl text-xs transition-colors cursor-pointer border border-slate-200 flex items-center justify-center gap-2"
             >
-              <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />
+              <RefreshCw className="w-3.5 h-3.5 text-teal-600 shrink-0" />
               <span>Reset Filters</span>
             </button>
           </div>
@@ -843,66 +843,66 @@ export default function LeadsModule() {
 
       {/* Pipeline Kanban Tab */}
       {activeTab === 'pipeline' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 overflow-x-auto pb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 overflow-x-auto pb-4">
           {leadFlow.map((stage) => {
             const stageLeads = filteredLeads.filter((l) => l.status === stage);
             return (
-              <div key={stage} className="bg-[#0b241f]/80 backdrop-blur-xl p-4 rounded-3xl border border-[#16433a] flex flex-col h-full min-w-[280px]">
-                <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#16433a]/60">
-                  <h4 className="font-extrabold text-xs uppercase tracking-wider text-[#a0c5bd] flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+              <div key={stage} className="bg-white border border-slate-200 shadow-sm p-5 rounded-2xl flex flex-col h-full min-w-[280px]">
+                <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-slate-200">
+                  <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-600 flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-teal-600 shrink-0" />
                     {stage}
                   </h4>
-                  <span className="text-xs bg-[#061915] px-2.5 py-0.5 rounded-full font-black text-white border border-[#1d574c]">
+                  <span className="text-xs bg-slate-100 px-2.5 py-0.5 rounded-full font-black text-slate-700 border border-slate-200">
                     {stageLeads.length}
                   </span>
                 </div>
-                <div className="space-y-3 flex-1 overflow-y-auto max-h-[600px] pr-1">
+                <div className="space-y-4 flex-1 overflow-y-auto max-h-[600px] pr-1">
                   {stageLeads.length === 0 ? (
-                    <div className="text-xs text-[#6e9b90] font-semibold italic text-center py-10 bg-[#061915]/50 rounded-2xl border border-dashed border-[#16433a]">
+                    <div className="text-xs text-slate-400 font-semibold italic text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200">
                       No leads in stage
                     </div>
                   ) : (
                     stageLeads.map((lead) => (
-                      <div key={lead.id} className="bg-[#061915] p-4 rounded-2xl border border-[#16433a] shadow-md space-y-2.5 hover:border-emerald-500/40 transition-all">
-                        <div className="font-bold text-white text-sm flex items-center justify-between">
-                          <span className="truncate max-w-[170px] text-white">{lead.name}</span>
+                      <div key={lead.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-sm space-y-3 hover:border-teal-600 transition-all">
+                        <div className="font-bold text-slate-800 text-sm flex items-center justify-between gap-2">
+                          <span className="truncate max-w-[170px] text-slate-800 leading-snug">{lead.name}</span>
                           <button
                             onClick={() => openEditModal(lead)}
-                            className="text-emerald-400 hover:text-white p-1 cursor-pointer shrink-0 rounded-lg hover:bg-[#0e352e]"
+                            className="text-slate-500 hover:text-teal-600 p-1 cursor-pointer shrink-0 rounded-lg hover:bg-slate-200/60 transition-colors"
                             title="Edit Lead"
                           >
                             <Edit className="w-3.5 h-3.5" />
                           </button>
                         </div>
-                        <div className="text-xs font-semibold text-[#8baab0]">{lead.company || 'Personal Lead'}</div>
+                        <div className="text-xs font-semibold text-slate-600 leading-relaxed">{lead.company || 'Personal Lead'}</div>
 
                         <div className="flex items-center justify-between pt-1">
                           <span
                             className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
                               lead.lead_temperature === 'Hot'
-                                ? 'bg-rose-950/80 text-rose-300 border border-rose-800/60'
+                                ? 'bg-rose-50 text-rose-700 border border-rose-200'
                                 : lead.lead_temperature === 'Cold'
-                                ? 'bg-sky-950/80 text-sky-300 border border-sky-800/60'
-                                : 'bg-amber-950/80 text-amber-300 border border-amber-800/60'
+                                ? 'bg-sky-50 text-sky-700 border border-sky-200'
+                                : 'bg-amber-50 text-amber-700 border border-amber-200'
                             }`}
                           >
                             {lead.lead_temperature || 'Warm'}
                           </span>
-                          <span className="text-[11px] font-extrabold text-[#a0c5bd]">Score: {lead.lead_score || 0}</span>
+                          <span className="text-[11px] font-extrabold text-slate-600">Score: {lead.lead_score || 0}</span>
                         </div>
 
-                        <div className="pt-2 border-t border-[#16433a]/60 flex items-center justify-between gap-2">
+                        <div className="pt-3 border-t border-slate-200 flex items-center justify-between gap-2">
                           <button
                             onClick={() => setSelectedLead(lead)}
-                            className="text-[11px] font-bold text-emerald-400 hover:underline flex items-center gap-1"
+                            className="text-[11px] font-bold text-teal-600 hover:underline flex items-center gap-1"
                           >
                             <Eye className="w-3 h-3" /> Details
                           </button>
                           <select
                             value={lead.status}
                             onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
-                            className="text-[11px] p-1 border border-[#1d574c] rounded-lg bg-[#0b241f] text-white font-bold max-w-[120px] cursor-pointer"
+                            className="text-[11px] p-1.5 border border-slate-200 rounded-lg bg-white text-slate-800 font-bold max-w-[120px] cursor-pointer focus:ring-2 focus:ring-teal-600"
                           >
                             {leadFlow.map((st) => (
                               <option key={st} value={st}>{st}</option>
@@ -921,31 +921,33 @@ export default function LeadsModule() {
 
       {/* Automation Tab */}
       {activeTab === 'automation' && (
-        <div className="bg-[#0b241f]/80 backdrop-blur-xl p-6 rounded-3xl border border-[#16433a] shadow-xl space-y-4">
-          <div className="flex items-center gap-2 text-white font-extrabold text-base">
-            <div className="p-2 rounded-xl bg-emerald-500 text-[#061915]">
-              <Sparkles className="w-5 h-5 stroke-[2.5]" />
+        <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-6 sm:p-8 space-y-5">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2.5 text-slate-800 font-extrabold text-base sm:text-lg">
+              <div className="p-2 rounded-xl bg-teal-50 text-teal-600 border border-teal-200 shrink-0">
+                <Sparkles className="w-5 h-5 stroke-[2.5]" />
+              </div>
+              <span>CRM Workflow Trigger Engine</span>
             </div>
-            <span>CRM Workflow Trigger Engine</span>
+            <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">Automated actions, follow-up notifications, and SLA task scheduling.</p>
           </div>
-          <p className="text-xs text-[#8baab0] font-medium">Automated actions, follow-up notifications, and SLA task scheduling.</p>
 
-          <div className="divide-y divide-[#16433a]/60">
+          <div className="divide-y divide-slate-100">
             {filteredLeads.map((lead) => (
-              <div key={lead.id} className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="space-y-1">
-                  <div className="font-bold text-white text-sm flex items-center gap-2">
+              <div key={lead.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1.5">
+                  <div className="font-bold text-slate-800 text-sm flex items-center gap-2">
                     {lead.name}
-                    <span className="text-[10px] bg-[#0e352e] text-emerald-400 px-2 py-0.5 rounded-full font-bold border border-[#1d574c]">{lead.status}</span>
+                    <span className="text-[10px] bg-teal-50 text-teal-700 px-2 py-0.5 rounded-full font-bold border border-teal-200">{lead.status}</span>
                   </div>
-                  <div className="text-xs text-[#8baab0] font-semibold">
-                    Company: <strong className="text-white">{lead.company || 'N/A'}</strong> | Source: <strong className="text-white">{lead.source || 'Website'}</strong>
+                  <div className="text-xs text-slate-500 font-semibold leading-relaxed">
+                    Company: <strong className="text-slate-800">{lead.company || 'N/A'}</strong> | Source: <strong className="text-slate-800">{lead.source || 'Website'}</strong>
                   </div>
                 </div>
 
                 <button
                   onClick={() => alert(`Automated follow-up triggered for ${lead.name}`)}
-                  className="bg-[#0e352e] hover:bg-emerald-500 hover:text-[#061915] text-emerald-400 font-extrabold text-xs px-4 py-2.5 rounded-xl transition-all border border-[#1d574c] cursor-pointer shrink-0 w-full sm:w-auto text-center"
+                  className="bg-slate-50 hover:bg-teal-600 hover:text-white text-teal-700 font-extrabold text-xs px-4 py-2.5 rounded-xl transition-all border border-slate-200 cursor-pointer shrink-0 w-full sm:w-auto text-center"
                 >
                   Trigger Follow-up Task
                 </button>
@@ -955,105 +957,107 @@ export default function LeadsModule() {
         </div>
       )}
 
-      {/* Optimized De-Congested Lead Table */}
+      {/* Lead Table */}
       {activeTab === 'details' && (
-        <div className="bg-[#0b241f]/80 backdrop-blur-xl rounded-3xl border border-[#16433a] shadow-2xl overflow-hidden">
-          <div className="p-4 border-b border-[#16433a]/60 flex flex-col sm:flex-row justify-between items-center gap-3 bg-[#061915]/40">
+        <div className="bg-white border border-slate-200 shadow-sm rounded-2xl overflow-hidden">
+          <div className="p-5 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/50">
             <div className="relative flex-1 max-w-md w-full">
-              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6e9b90]" />
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 shrink-0" />
               <input
                 type="text"
                 placeholder="Search leads by name, email, or company..."
-                className="w-full pl-10 pr-3 py-2 border border-[#1d574c] rounded-xl text-xs bg-[#061915] text-white font-semibold placeholder:text-[#6e9b90] focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-xs bg-white text-slate-800 font-semibold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <div className="text-xs text-[#8baab0] font-semibold">
-              Showing <span className="font-extrabold text-white">{filteredLeads.length}</span> leads
+            <div className="text-xs text-slate-500 font-semibold">
+              Showing <span className="font-extrabold text-slate-800">{filteredLeads.length}</span> leads
             </div>
           </div>
 
           {loading ? (
-            <div className="p-12 text-center text-[#8baab0] text-sm font-semibold">Loading CRM records...</div>
+            <div className="p-12 text-center text-slate-500 text-sm font-semibold">Loading CRM records...</div>
           ) : filteredLeads.length === 0 ? (
-            <div className="p-12 text-center text-[#8baab0] text-sm font-semibold">No leads matched your criteria.</div>
+            <div className="p-12 text-center text-slate-500 text-sm font-semibold">No leads matched your criteria.</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
-                <thead className="bg-[#061915] border-b border-[#16433a]/60 text-[#a0c5bd] font-extrabold uppercase text-[10px] tracking-wider">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-extrabold uppercase text-[10px] tracking-wider">
                   <tr>
-                    <th className="p-4">Lead Name & Job Title</th>
-                    <th className="p-4">Company & Industry</th>
-                    <th className="p-4">Temperature & Score</th>
-                    <th className="p-4">Pipeline Status</th>
-                    <th className="p-4 text-right">Actions</th>
+                    <th className="py-4 px-5">Lead Name & Job Title</th>
+                    <th className="py-4 px-5">Company & Industry</th>
+                    <th className="py-4 px-5">Temperature & Score</th>
+                    <th className="py-4 px-5">Pipeline Status</th>
+                    <th className="py-4 px-5 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#16433a]/40 text-sm font-medium">
+                <tbody className="divide-y divide-slate-100 text-sm font-medium">
                   {filteredLeads.map((lead) => (
-                    <tr key={lead.id} className="hover:bg-[#0e352e]/40 transition-colors">
-                      <td className="p-4">
+                    <tr key={lead.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="py-4 px-5">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-[#0e352e] border border-[#1d574c] flex items-center justify-center text-emerald-400 shrink-0 font-extrabold text-xs">
+                          <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-700 shrink-0 font-extrabold text-xs">
                             {lead.name.charAt(0).toUpperCase()}
                           </div>
-                          <div>
-                            <div className="font-bold text-white text-sm">{lead.name}</div>
-                            <div className="text-xs text-[#8baab0] font-medium">{lead.job_title || 'Lead Contact'}</div>
+                          <div className="space-y-0.5">
+                            <div className="font-bold text-slate-800 text-sm leading-snug">{lead.name}</div>
+                            <div className="text-xs text-slate-500 font-medium leading-relaxed">{lead.job_title || 'Lead Contact'}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="p-4">
-                        <div className="font-bold text-white">{lead.company || '—'}</div>
-                        <div className="text-[11px] font-semibold text-[#6e9b90]">{lead.interested_service || lead.industry || 'Client'}</div>
+                      <td className="py-4 px-5">
+                        <div className="space-y-0.5">
+                          <div className="font-bold text-slate-800 leading-snug">{lead.company || '—'}</div>
+                          <div className="text-[11px] font-semibold text-slate-500 leading-relaxed">{lead.interested_service || lead.industry || 'Client'}</div>
+                        </div>
                       </td>
-                      <td className="p-4">
+                      <td className="py-4 px-5">
                         <div className="flex items-center gap-2">
                           <span
                             className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
                               lead.lead_temperature === 'Hot'
-                                ? 'bg-rose-950/80 text-rose-300 border border-rose-800/60'
+                                ? 'bg-rose-50 text-rose-700 border border-rose-200'
                                 : lead.lead_temperature === 'Cold'
-                                ? 'bg-sky-950/80 text-sky-300 border border-sky-800/60'
-                                : 'bg-amber-950/80 text-amber-300 border border-amber-800/60'
+                                ? 'bg-sky-50 text-sky-700 border border-sky-200'
+                                : 'bg-amber-50 text-amber-700 border border-amber-200'
                             }`}
                           >
                             {lead.lead_temperature || 'Warm'}
                           </span>
-                          <span className="font-extrabold text-[#a0c5bd] text-xs">Score: {lead.lead_score || 0}</span>
+                          <span className="font-extrabold text-slate-600 text-xs">Score: {lead.lead_score || 0}</span>
                         </div>
                       </td>
-                      <td className="p-4">
+                      <td className="py-4 px-5">
                         <select
                           value={lead.status}
                           onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
-                          className="bg-[#061915] border border-[#1d574c] rounded-xl text-xs font-bold px-2.5 py-1.5 text-white cursor-pointer focus:ring-2 focus:ring-emerald-500"
+                          className="bg-white border border-slate-200 rounded-xl text-xs font-bold px-3 py-2 text-slate-800 cursor-pointer focus:ring-2 focus:ring-teal-600"
                         >
                           {leadFlow.map((st) => (
                             <option key={st} value={st}>{st}</option>
                           ))}
                         </select>
                       </td>
-                      <td className="p-4 text-right">
+                      <td className="py-4 px-5 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => setSelectedLead(lead)}
-                            className="bg-[#0e352e] hover:bg-emerald-500 hover:text-[#061915] text-emerald-400 px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all border border-[#1d574c] cursor-pointer flex items-center gap-1.5"
+                            className="bg-slate-50 hover:bg-teal-600 hover:text-white text-teal-700 px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all border border-slate-200 cursor-pointer flex items-center gap-1.5"
                           >
-                            <Eye className="w-3.5 h-3.5" />
+                            <Eye className="w-3.5 h-3.5 shrink-0" />
                             <span>View</span>
                           </button>
                           <button
                             onClick={() => openEditModal(lead)}
-                            className="text-[#8baab0] hover:text-white p-1.5 rounded-xl hover:bg-[#0e352e] cursor-pointer transition-colors"
+                            className="text-slate-400 hover:text-slate-800 p-2 rounded-xl hover:bg-slate-100 cursor-pointer transition-colors"
                             title="Edit Lead"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => deleteLead(lead.id)}
-                            className="text-rose-400 hover:text-rose-300 p-1.5 rounded-xl hover:bg-rose-950/50 cursor-pointer transition-colors"
+                            className="text-rose-500 hover:text-rose-700 p-2 rounded-xl hover:bg-rose-50 cursor-pointer transition-colors"
                             title="Delete Lead"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -1071,109 +1075,109 @@ export default function LeadsModule() {
 
       {/* Detailed Full Profile Modal */}
       {selectedLead && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-[#0b241f] rounded-3xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto space-y-6 shadow-2xl border border-[#16433a] relative text-[#d0e5e0]">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 z-50 overflow-y-auto">
+          <div className="bg-white rounded-2xl p-6 sm:p-8 w-full max-w-4xl max-h-[90vh] overflow-y-auto space-y-6 shadow-xl border border-slate-200 relative text-slate-800 leading-relaxed">
             
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-[#16433a] pb-4">
-              <div>
-                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest block">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-5">
+              <div className="space-y-1">
+                <span className="text-[10px] font-black text-teal-600 uppercase tracking-widest block">
                   CRM Lead Profile Record
                 </span>
-                <h2 className="text-xl font-extrabold text-white flex items-center gap-2 mt-1">
-                  <UserCheck className="w-5 h-5 text-emerald-400 shrink-0" />
+                <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 flex items-center gap-2 mt-1">
+                  <UserCheck className="w-5 h-5 text-teal-600 shrink-0" />
                   <span>{selectedLead.name}</span>
                 </h2>
-                <p className="text-xs text-[#8baab0] font-semibold mt-0.5">{selectedLead.job_title || 'Contact Person'} at <span className="text-white font-bold">{selectedLead.company || 'N/A'}</span></p>
+                <p className="text-xs sm:text-sm text-slate-500 font-semibold leading-relaxed">{selectedLead.job_title || 'Contact Person'} at <span className="text-slate-800 font-bold">{selectedLead.company || 'N/A'}</span></p>
               </div>
               <button 
                 onClick={() => setSelectedLead(null)}
-                className="text-[#8baab0] hover:text-white p-2 rounded-xl hover:bg-[#0e352e] cursor-pointer transition-colors"
+                className="text-slate-400 hover:text-slate-700 p-2 rounded-xl hover:bg-slate-100 cursor-pointer transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Structured Info Sections */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               
               {/* Personal Contact */}
-              <div className="bg-[#061915] p-4 rounded-2xl border border-[#16433a] space-y-2.5">
-                <h3 className="text-xs font-black text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <User className="w-4 h-4" /> Contact Information
+              <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-3">
+                <h3 className="text-xs font-black text-teal-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <User className="w-4 h-4 shrink-0" /> Contact Information
                 </h3>
-                <div className="text-xs space-y-2 text-white font-semibold">
-                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">Email:</span> {selectedLead.email}</p>
-                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">Phone:</span> {selectedLead.phone || selectedLead.mobile_number || selectedLead.contact_info || 'N/A'}</p>
-                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">Preferred Method:</span> {selectedLead.preferred_contact_method || 'Email'}</p>
-                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">Location:</span> {selectedLead.city || 'Dubai'}, {selectedLead.country || 'UAE'}</p>
+                <div className="text-xs space-y-2.5 text-slate-800 font-semibold leading-relaxed">
+                  <p><span className="text-slate-500 block text-[10px] uppercase font-bold">Email:</span> {selectedLead.email}</p>
+                  <p><span className="text-slate-500 block text-[10px] uppercase font-bold">Phone:</span> {selectedLead.phone || selectedLead.mobile_number || selectedLead.contact_info || 'N/A'}</p>
+                  <p><span className="text-slate-500 block text-[10px] uppercase font-bold">Preferred Method:</span> {selectedLead.preferred_contact_method || 'Email'}</p>
+                  <p><span className="text-slate-500 block text-[10px] uppercase font-bold">Location:</span> {selectedLead.city || 'Dubai'}, {selectedLead.country || 'UAE'}</p>
                 </div>
               </div>
 
               {/* Company Info */}
-              <div className="bg-[#061915] p-4 rounded-2xl border border-[#16433a] space-y-2.5">
-                <h3 className="text-xs font-black text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <Building className="w-4 h-4" /> Company Profile
+              <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-3">
+                <h3 className="text-xs font-black text-teal-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <Building className="w-4 h-4 shrink-0" /> Company Profile
                 </h3>
-                <div className="text-xs space-y-2 text-white font-semibold">
-                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">Company Name:</span> {selectedLead.company || 'N/A'}</p>
-                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">Industry Sector:</span> {selectedLead.industry || 'IT / Enterprise'}</p>
-                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">Website:</span> {selectedLead.company_website || 'N/A'}</p>
-                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">VAT / TRN:</span> {selectedLead.vat_trn_number || 'N/A'}</p>
+                <div className="text-xs space-y-2.5 text-slate-800 font-semibold leading-relaxed">
+                  <p><span className="text-slate-500 block text-[10px] uppercase font-bold">Company Name:</span> {selectedLead.company || 'N/A'}</p>
+                  <p><span className="text-slate-500 block text-[10px] uppercase font-bold">Industry Sector:</span> {selectedLead.industry || 'IT / Enterprise'}</p>
+                  <p><span className="text-slate-500 block text-[10px] uppercase font-bold">Website:</span> {selectedLead.company_website || 'N/A'}</p>
+                  <p><span className="text-slate-500 block text-[10px] uppercase font-bold">VAT / TRN:</span> {selectedLead.vat_trn_number || 'N/A'}</p>
                 </div>
               </div>
 
               {/* Requirement & Budget */}
-              <div className="bg-[#061915] p-4 rounded-2xl border border-[#16433a] space-y-2.5">
-                <h3 className="text-xs font-black text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <FileText className="w-4 h-4" /> Deal Specifications
+              <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-3">
+                <h3 className="text-xs font-black text-teal-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <FileText className="w-4 h-4 shrink-0" /> Deal Specifications
                 </h3>
-                <div className="text-xs space-y-2 text-white font-semibold">
-                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">Service Category:</span> {selectedLead.interested_service || 'IT Services'}</p>
-                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">Estimated Budget:</span> ${selectedLead.estimated_budget?.toLocaleString() || '0'}</p>
-                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">Timeline:</span> {selectedLead.project_timeline || '1-3 Months'}</p>
-                  <p><span className="text-[#6e9b90] block text-[10px] uppercase font-bold">Creation Date:</span> {formatDateDDMMYYYY(selectedLead.created_at)}</p>
+                <div className="text-xs space-y-2.5 text-slate-800 font-semibold leading-relaxed">
+                  <p><span className="text-slate-500 block text-[10px] uppercase font-bold">Service Category:</span> {selectedLead.interested_service || 'IT Services'}</p>
+                  <p><span className="text-slate-500 block text-[10px] uppercase font-bold">Estimated Budget:</span> ${selectedLead.estimated_budget?.toLocaleString() || '0'}</p>
+                  <p><span className="text-slate-500 block text-[10px] uppercase font-bold">Timeline:</span> {selectedLead.project_timeline || '1-3 Months'}</p>
+                  <p><span className="text-slate-500 block text-[10px] uppercase font-bold">Creation Date:</span> {formatDateDDMMYYYY(selectedLead.created_at)}</p>
                 </div>
               </div>
             </div>
 
             {/* Detailed Requirements Description */}
             <div className="space-y-2">
-              <label className="text-xs font-black text-white uppercase tracking-wider">Detailed Lead Requirements</label>
-              <div className="bg-[#061915] p-4 rounded-2xl border border-[#16433a] text-xs text-[#d0e5e0] font-medium whitespace-pre-wrap min-h-[90px]">
+              <label className="text-xs font-black text-slate-800 uppercase tracking-wider">Detailed Lead Requirements</label>
+              <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 text-xs text-slate-700 font-medium whitespace-pre-wrap min-h-[100px] leading-relaxed">
                 {selectedLead.requirements || selectedLead.requirement_description || 'No detailed requirements submitted for this record.'}
               </div>
             </div>
 
             {/* Marketing Attribution Details */}
-            <div className="bg-[#061915] p-4 rounded-2xl border border-[#16433a] space-y-2">
-              <h3 className="text-xs font-black text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Globe className="w-4 h-4" /> Attribution & Source Metrics
+            <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-3">
+              <h3 className="text-xs font-black text-teal-700 uppercase tracking-wider flex items-center gap-1.5">
+                <Globe className="w-4 h-4 shrink-0" /> Attribution & Source Metrics
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs pt-1">
-                <div>
-                  <span className="text-[#6e9b90] text-[10px] uppercase font-bold block">Lead Source</span>
-                  <span className="font-extrabold text-white">{selectedLead.source || 'Website'}</span>
+                <div className="space-y-1">
+                  <span className="text-slate-500 text-[10px] uppercase font-bold block">Lead Source</span>
+                  <span className="font-extrabold text-slate-800 block leading-snug">{selectedLead.source || 'Website'}</span>
                 </div>
-                <div>
-                  <span className="text-[#6e9b90] text-[10px] uppercase font-bold block">Campaign</span>
-                  <span className="font-extrabold text-white">{selectedLead.campaign_name || 'Direct / Organic'}</span>
+                <div className="space-y-1">
+                  <span className="text-slate-500 text-[10px] uppercase font-bold block">Campaign</span>
+                  <span className="font-extrabold text-slate-800 block leading-snug">{selectedLead.campaign_name || 'Direct / Organic'}</span>
                 </div>
-                <div>
-                  <span className="text-[#6e9b90] text-[10px] uppercase font-bold block">UTM Source</span>
-                  <span className="font-extrabold text-white">{selectedLead.utm_source || 'organic'}</span>
+                <div className="space-y-1">
+                  <span className="text-slate-500 text-[10px] uppercase font-bold block">UTM Source</span>
+                  <span className="font-extrabold text-slate-800 block leading-snug">{selectedLead.utm_source || 'organic'}</span>
                 </div>
-                <div>
-                  <span className="text-[#6e9b90] text-[10px] uppercase font-bold block">UTM Medium</span>
-                  <span className="font-extrabold text-white">{selectedLead.utm_medium || 'cpc'}</span>
+                <div className="space-y-1">
+                  <span className="text-slate-500 text-[10px] uppercase font-bold block">UTM Medium</span>
+                  <span className="font-extrabold text-slate-800 block leading-snug">{selectedLead.utm_medium || 'cpc'}</span>
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-end pt-3 border-t border-[#16433a]/60">
+            <div className="flex justify-end pt-4 border-t border-slate-200">
               <button
                 onClick={() => setSelectedLead(null)}
-                className="px-6 py-2.5 bg-[#0e352e] hover:bg-[#13493f] text-white font-extrabold text-xs rounded-xl transition-all border border-[#1d574c] cursor-pointer"
+                className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs rounded-xl transition-all border border-slate-200 cursor-pointer"
               >
                 Close Profile
               </button>
@@ -1184,65 +1188,65 @@ export default function LeadsModule() {
 
       {/* Edit / Create Lead Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <form onSubmit={saveLead} className="bg-[#0b241f] rounded-3xl p-6 w-full max-w-xl max-h-[90vh] overflow-y-auto space-y-4 shadow-2xl border border-[#16433a] text-[#d0e5e0]">
-            <h2 className="text-lg font-extrabold text-white border-b border-[#16433a] pb-3">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 z-50 overflow-y-auto">
+          <form onSubmit={saveLead} className="bg-white rounded-2xl p-6 sm:p-8 w-full max-w-xl max-h-[90vh] overflow-y-auto space-y-5 shadow-xl border border-slate-200 text-slate-800 leading-relaxed">
+            <h2 className="text-lg font-extrabold text-slate-900 border-b border-slate-200 pb-4">
               {editingLead ? 'Edit Lead Record' : 'Add New Lead Contact'}
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-bold text-[#a0c5bd] block mb-1">Full Name</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 block">Full Name</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Alex Morgan"
-                  className="w-full p-2.5 border border-[#1d574c] rounded-xl text-xs bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 placeholder:text-[#6e9b90]"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl text-xs bg-white text-slate-800 font-bold focus:ring-2 focus:ring-teal-600 placeholder:text-slate-400"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 />
               </div>
-              <div>
-                <label className="text-xs font-bold text-[#a0c5bd] block mb-1">Job Title</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 block">Job Title</label>
                 <input
                   type="text"
                   placeholder="e.g. IT Director"
-                  className="w-full p-2.5 border border-[#1d574c] rounded-xl text-xs bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 placeholder:text-[#6e9b90]"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl text-xs bg-white text-slate-800 font-bold focus:ring-2 focus:ring-teal-600 placeholder:text-slate-400"
                   value={formData.job_title}
                   onChange={(e) => setFormData({ ...formData, job_title: e.target.value })}
                 />
               </div>
             </div>
 
-            <div>
-              <label className="text-xs font-bold text-[#a0c5bd] block mb-1">Contact Info (Phone / Email)</label>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 block">Contact Info (Phone / Email)</label>
               <textarea
                 rows={2}
                 required
                 placeholder={"+1 (555) 000-0000\nemail@company.com"}
-                className="w-full p-2.5 border border-[#1d574c] rounded-xl text-xs bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 placeholder:text-[#6e9b90]"
+                className="w-full p-2.5 border border-slate-200 rounded-xl text-xs bg-white text-slate-800 font-bold focus:ring-2 focus:ring-teal-600 placeholder:text-slate-400 leading-relaxed"
                 value={formData.contact_info}
                 onChange={(e) => setFormData({ ...formData, contact_info: e.target.value })}
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-bold text-[#a0c5bd] block mb-1">Company</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 block">Company</label>
                 <input
                   type="text"
                   placeholder="Enterprise Inc."
-                  className="w-full p-2.5 border border-[#1d574c] rounded-xl text-xs bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 placeholder:text-[#6e9b90]"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl text-xs bg-white text-slate-800 font-bold focus:ring-2 focus:ring-teal-600 placeholder:text-slate-400"
                   value={formData.company}
                   onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                 />
               </div>
-              <div>
-                <label className="text-xs font-bold text-[#a0c5bd] block mb-1">Website</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 block">Website</label>
                 <input
                   type="text"
                   placeholder="https://company.com"
-                  className="w-full p-2.5 border border-[#1d574c] rounded-xl text-xs bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 placeholder:text-[#6e9b90]"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl text-xs bg-white text-slate-800 font-bold focus:ring-2 focus:ring-teal-600 placeholder:text-slate-400"
                   value={formData.company_website}
                   onChange={(e) => setFormData({ ...formData, company_website: e.target.value })}
                 />
@@ -1250,22 +1254,22 @@ export default function LeadsModule() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-bold text-[#a0c5bd] block mb-1">Pipeline Status</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 block">Pipeline Status</label>
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  className="w-full p-2.5 border border-[#1d574c] rounded-xl text-xs bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl text-xs bg-white text-slate-800 font-bold focus:ring-2 focus:ring-teal-600 cursor-pointer"
                 >
                   {leadFlow.map((st) => (
                     <option key={st} value={st}>{st}</option>
                   ))}
                 </select>
               </div>
-              <div>
-                <label className="text-xs font-bold text-[#a0c5bd] block mb-1">Lead Source</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 block">Lead Source</label>
                 <select
-                  className="w-full p-2.5 border border-[#1d574c] rounded-xl text-xs bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl text-xs bg-white text-slate-800 font-bold focus:ring-2 focus:ring-teal-600 cursor-pointer"
                   value={formData.source}
                   onChange={(e) => setFormData({ ...formData, source: e.target.value })}
                 >
@@ -1279,10 +1283,10 @@ export default function LeadsModule() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-bold text-[#a0c5bd] block mb-1">Lead Temperature</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 block">Lead Temperature</label>
                 <select
-                  className="w-full p-2.5 border border-[#1d574c] rounded-xl text-xs bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl text-xs bg-white text-slate-800 font-bold focus:ring-2 focus:ring-teal-600 cursor-pointer"
                   value={formData.lead_temperature}
                   onChange={(e) => setFormData({ ...formData, lead_temperature: e.target.value as any })}
                 >
@@ -1291,42 +1295,42 @@ export default function LeadsModule() {
                   <option value="Cold">❄️ Cold</option>
                 </select>
               </div>
-              <div>
-                <label className="text-xs font-bold text-[#a0c5bd] block mb-1">Lead Score (0-100)</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 block">Lead Score (0-100)</label>
                 <input
                   type="number"
                   min={0}
                   max={100}
-                  className="w-full p-2.5 border border-[#1d574c] rounded-xl text-xs bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl text-xs bg-white text-slate-800 font-bold focus:ring-2 focus:ring-teal-600"
                   value={formData.lead_score}
                   onChange={(e) => setFormData({ ...formData, lead_score: parseInt(e.target.value) || 0 })}
                 />
               </div>
             </div>
 
-            <div>
-              <label className="text-xs font-bold text-[#a0c5bd] block mb-1">Requirements Details</label>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 block">Requirements Details</label>
               <textarea
                 rows={3}
                 placeholder="Enter client technical or project requirements..."
-                className="w-full p-2.5 border border-[#1d574c] rounded-xl text-xs bg-[#061915] text-white font-bold focus:ring-2 focus:ring-emerald-500 placeholder:text-[#6e9b90]"
+                className="w-full p-2.5 border border-slate-200 rounded-xl text-xs bg-white text-slate-800 font-bold focus:ring-2 focus:ring-teal-600 placeholder:text-slate-400 leading-relaxed"
                 value={formData.requirements}
                 onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
               />
             </div>
 
-            <div className="flex justify-end gap-2.5 pt-4 border-t border-[#16433a]">
+            <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
               <button
                 type="button"
                 onClick={closeModal}
-                className="px-4 py-2.5 border border-[#1d574c] rounded-xl text-xs font-bold text-[#8baab0] hover:bg-[#0e352e] cursor-pointer"
+                className="px-5 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
               >
                 Cancel
               </button>
               
               <button 
                 type="submit" 
-                className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-[#061915] font-black rounded-xl text-xs transition-all shadow-md cursor-pointer"
+                className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl text-xs transition-all shadow-sm cursor-pointer"
               >
                 {editingLead ? 'Update Lead' : 'Save Lead'}
               </button>
