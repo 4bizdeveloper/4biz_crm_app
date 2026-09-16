@@ -1,10 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { AuthUser } from '@/types/crm';
+import { User, LogOut, ShieldCheck, ChevronDown, Key } from 'lucide-react';
 
-export default function HeaderProfile({ user }: { user: AuthUser }) {
-  const [isOpen, setIsOpen] = useState(false);
+interface HeaderProfileProps {
+  user: {
+    name: string;
+    email: string;
+    role: string;
+    department?: string;
+  };
+}
+
+export default function HeaderProfile({ user }: HeaderProfileProps) {
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -14,42 +23,44 @@ export default function HeaderProfile({ user }: { user: AuthUser }) {
   return (
     <div className="relative">
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-100 transition-colors"
+        onClick={() => setDropdownOpen(!dropdownOpen)}
+        className="flex items-center gap-3 p-2 rounded-xl bg-white border border-slate-200 shadow-sm hover:border-slate-300 transition-all cursor-pointer"
       >
-        <div className="w-9 h-9 rounded-full bg-blue-600 text-white font-semibold flex items-center justify-center text-sm shadow">
-          {user.avatar_url ? (
-            <img src={user.avatar_url} alt={user.name} className="w-full h-full rounded-full object-cover" />
-          ) : (
-            user.name.charAt(0).toUpperCase()
-          )}
+        <div className="w-9 h-9 rounded-lg bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-700 font-extrabold text-xs shrink-0">
+          <User className="w-5 h-5" />
         </div>
         <div className="text-left hidden sm:block">
-          <p className="text-sm font-semibold text-slate-800 leading-tight">{user.name}</p>
-          <span className="text-xs text-blue-600 font-medium bg-blue-50 px-1.5 py-0.5 rounded">
-            {user.role} ({user.department})
-          </span>
+          <div className="text-xs font-bold text-slate-800 leading-tight">{user.name}</div>
+          <div className="text-[10px] text-slate-500 font-medium leading-tight">
+            {user.department ? `${user.department} • ` : ''}{user.role}
+          </div>
         </div>
+        <ChevronDown className="w-4 h-4 text-slate-400" />
       </button>
 
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-50">
-          <div className="px-4 py-3 border-b border-slate-100">
-            <p className="text-xs text-slate-400 font-medium">Signed in as</p>
-            <p className="text-sm font-semibold text-slate-800 truncate">{user.email}</p>
+      {dropdownOpen && (
+        <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-2xl shadow-xl py-2 z-50 text-xs font-semibold">
+          <div className="px-4 py-3 border-b border-slate-100 space-y-1">
+            <p className="font-extrabold text-slate-900">{user.name}</p>
+            <p className="text-slate-500 truncate">{user.email}</p>
+            <span className="inline-block mt-1 px-2 py-0.5 rounded-md bg-teal-50 border border-teal-200 text-teal-700 text-[10px] font-bold">
+              Role: {user.role}
+            </span>
           </div>
-          <div className="px-4 py-2 space-y-1">
-            <p className="text-xs text-slate-500">Department: <span className="font-semibold text-slate-700">{user.department}</span></p>
-            <p className="text-xs text-slate-500">Access Level: <span className="font-semibold text-slate-700">{user.role}</span></p>
-          </div>
-          <div className="border-t border-slate-100 mt-2 pt-2 px-2">
-            <button
-              onClick={handleLogout}
-              className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors font-medium"
-            >
-              Log Out
-            </button>
-          </div>
+
+          <button
+            onClick={() => alert('Update Credentials Triggered')}
+            className="w-full text-left px-4 py-2.5 text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+          >
+            <Key className="w-4 h-4 text-slate-400" /> Update Email / Password
+          </button>
+
+          <button
+            onClick={handleLogout}
+            className="w-full text-left px-4 py-2.5 text-rose-600 hover:bg-rose-50 flex items-center gap-2 border-t border-slate-100"
+          >
+            <LogOut className="w-4 h-4 text-rose-500" /> Sign Out
+          </button>
         </div>
       )}
     </div>
