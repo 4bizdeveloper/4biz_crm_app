@@ -1,3 +1,5 @@
+// src/types/crm.ts
+
 // Roles exported as both a TypeScript type and a runtime Enum/Object
 export enum Role {
   ADMIN = 'ADMIN',
