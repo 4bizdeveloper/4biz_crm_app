@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { Role, RoleType } from '@/types/crm';
+import HeaderProfile from '@/components/HeaderProfile';
 import {
   LayoutDashboard,
   Target,
@@ -23,9 +24,6 @@ import {
   GripVertical,
   Bell,
   Search,
-  ChevronDown,
-  Building2,
-  CheckCircle2
 } from 'lucide-react';
 
 interface ActiveUser {
@@ -47,9 +45,8 @@ export default function DashboardLayout({
 
   const [isMounted, setIsMounted] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
-  // Default active user session state
+  // User State
   const [user, setUser] = useState<ActiveUser>({
     id: 'usr-1',
     name: 'Super Admin',
@@ -121,7 +118,7 @@ export default function DashboardLayout({
     }
   };
 
-  // Department and Role-Based Nav Navigation Setup
+  // Nav Items Setup
   const menuItems = [
     { name: 'Overview', path: '/dashboard/overview', icon: LayoutDashboard, roles: [Role.ADMIN, Role.MANAGER, Role.EMPLOYEE, Role.USER] },
     { name: 'Leads Management', path: '/dashboard/leads', icon: Target, roles: [Role.ADMIN, Role.MANAGER, Role.EMPLOYEE] },
@@ -135,13 +132,33 @@ export default function DashboardLayout({
   const getRoleBadge = (role: RoleType) => {
     switch (role) {
       case Role.ADMIN:
-        return { label: 'Super Admin', sub: 'Global Management', icon: Shield, bg: 'bg-amber-100 text-amber-800 border-amber-300' };
+        return {
+          label: 'Super Admin',
+          sub: 'Full System Control',
+          icon: Shield,
+          bg: 'bg-amber-100 text-amber-800 border-amber-300',
+        };
       case Role.MANAGER:
-        return { label: 'Dept Head', sub: `${user.department} Lead`, icon: Briefcase, bg: 'bg-purple-100 text-purple-800 border-purple-300' };
+        return {
+          label: `${user.department} Lead`,
+          sub: 'Department Head',
+          icon: Briefcase,
+          bg: 'bg-purple-100 text-purple-800 border-purple-300',
+        };
       case Role.EMPLOYEE:
-        return { label: 'Specialist', sub: `${user.department} Staff`, icon: User, bg: 'bg-teal-100 text-teal-800 border-teal-300' };
+        return {
+          label: `${user.department} Employee`,
+          sub: `${user.department} Staff`,
+          icon: User,
+          bg: 'bg-teal-100 text-teal-800 border-teal-300',
+        };
       default:
-        return { label: 'Standard User', sub: 'Limited Access', icon: Users, bg: 'bg-slate-100 text-slate-800 border-slate-300' };
+        return {
+          label: 'Standard User',
+          sub: 'Limited Access',
+          icon: Users,
+          bg: 'bg-slate-100 text-slate-800 border-slate-300',
+        };
     }
   };
 
@@ -176,7 +193,7 @@ export default function DashboardLayout({
         </button>
       </header>
 
-      {/* Mobile Menu Overlay */}
+      {/* Mobile Overlay */}
       {mobileMenuOpen && (
         <div
           className="lg:hidden fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm transition-opacity"
@@ -253,7 +270,7 @@ export default function DashboardLayout({
             </div>
           </div>
 
-          {/* Sidebar Menu Items */}
+          {/* Nav Items */}
           <nav className="p-4 space-y-1.5 flex-1">
             {!isCollapsed && (
               <div className="px-3 pb-2 text-[10px] font-extrabold uppercase tracking-wider text-teal-700 opacity-90 truncate">
@@ -302,7 +319,7 @@ export default function DashboardLayout({
           </nav>
         </div>
 
-        {/* Sidebar Sign Out */}
+        {/* Sidebar Logout */}
         <div className={`p-4 border-t border-slate-200 bg-slate-50 space-y-2 ${isCollapsed ? 'px-2' : ''}`}>
           <button
             onClick={handleLogout}
@@ -317,13 +334,13 @@ export default function DashboardLayout({
         </div>
       </aside>
 
-      {/* Main Container Area */}
+      {/* Main Workspace */}
       <div className="flex-1 flex flex-col min-w-0 min-h-screen">
         
-        {/* Top Header Navbar with User Profile Icon */}
+        {/* Top Navbar Header */}
         <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200 px-6 py-3 flex items-center justify-between shadow-xs">
           
-          {/* Quick Search */}
+          {/* Search */}
           <div className="hidden sm:flex items-center bg-slate-100 border border-slate-200 rounded-xl px-3 py-1.5 w-64 md:w-80 focus-within:ring-2 focus-within:ring-teal-500/20 focus-within:border-teal-500 transition-all">
             <Search className="w-4 h-4 text-slate-400 mr-2 shrink-0" />
             <input
@@ -333,10 +350,10 @@ export default function DashboardLayout({
             />
           </div>
 
-          {/* Right Header Navigation Options */}
+          {/* Right Header Navigation */}
           <div className="flex items-center space-x-4 ml-auto">
             
-            {/* Notification Icon */}
+            {/* Bell Icon */}
             <button className="relative p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors border border-transparent hover:border-slate-200">
               <Bell className="w-5 h-5" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-teal-500 ring-2 ring-white" />
@@ -344,78 +361,12 @@ export default function DashboardLayout({
 
             <div className="h-6 w-px bg-slate-200" />
 
-            {/* Profile Dropdown Component */}
-            <div className="relative">
-              <button
-                onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                className="flex items-center space-x-3 p-1.5 rounded-xl hover:bg-slate-100 transition-colors border border-transparent hover:border-slate-200 focus:outline-none"
-              >
-                <div className="w-9 h-9 rounded-xl bg-teal-600 text-white font-extrabold text-sm flex items-center justify-center shadow-sm">
-                  {user.avatar_url ? (
-                    <img src={user.avatar_url} alt={user.name} className="w-full h-full rounded-xl object-cover" />
-                  ) : (
-                    user.name.charAt(0).toUpperCase()
-                  )}
-                </div>
-                
-                <div className="hidden md:flex flex-col text-left">
-                  <div className="flex items-center space-x-1.5">
-                    <span className="text-xs font-bold text-slate-900 leading-tight">{user.name}</span>
-                    <span className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded border ${roleInfo.bg}`}>
-                      {user.role}
-                    </span>
-                  </div>
-                  <span className="text-[10px] text-slate-500 font-semibold">{user.department} Department</span>
-                </div>
-
-                <ChevronDown className="w-4 h-4 text-slate-400" />
-              </button>
-
-              {/* Profile Context Dropdown Modal */}
-              {profileDropdownOpen && (
-                <div 
-                  className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150"
-                  onMouseLeave={() => setProfileDropdownOpen(false)}
-                >
-                  <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50">
-                    <p className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">Signed in as</p>
-                    <p className="text-xs font-bold text-slate-900 truncate">{user.name}</p>
-                    <p className="text-[11px] text-slate-500 truncate">{user.email}</p>
-                  </div>
-
-                  <div className="p-2 space-y-1">
-                    <div className="px-3 py-1.5 text-xs text-slate-600 flex justify-between items-center rounded-lg hover:bg-slate-50">
-                      <span className="flex items-center text-slate-500"><Building2 className="w-3.5 h-3.5 mr-2 text-slate-400" /> Department:</span>
-                      <span className="font-bold text-slate-800">{user.department}</span>
-                    </div>
-
-                    <div className="px-3 py-1.5 text-xs text-slate-600 flex justify-between items-center rounded-lg hover:bg-slate-50">
-                      <span className="flex items-center text-slate-500"><Shield className="w-3.5 h-3.5 mr-2 text-slate-400" /> Access Role:</span>
-                      <span className="font-bold text-slate-800">{user.role}</span>
-                    </div>
-
-                    <div className="px-3 py-1.5 text-xs text-slate-600 flex justify-between items-center rounded-lg hover:bg-slate-50">
-                      <span className="flex items-center text-slate-500"><CheckCircle2 className="w-3.5 h-3.5 mr-2 text-emerald-500" /> Status:</span>
-                      <span className="font-bold text-emerald-600">Active</span>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-slate-100 pt-1 mt-1 px-2">
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-3 py-2 text-xs text-rose-600 hover:bg-rose-50 rounded-xl transition-colors font-bold flex items-center space-x-2"
-                    >
-                      <LogOut className="w-3.5 h-3.5" />
-                      <span>Sign Out</span>
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+            {/* HeaderProfile Component */}
+            <HeaderProfile user={user} />
           </div>
         </header>
 
-        {/* Dynamic Page Workspace */}
+        {/* Dynamic Page Content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto text-slate-900">
           {children}
         </main>
