@@ -4,10 +4,8 @@ import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import {
   Plus, Download, Calendar, CheckCircle2, FileText,
-  Bot, UserCheck, Trash2, Sparkles, FileCode, X, Edit,
-  BarChart2, Search, Globe, Building,
-  Flame, Zap, Layers, User, ChevronRight, RefreshCw, Eye, MoreHorizontal,
-  TrendingUp, Activity
+  Bot, UserCheck, Trash2, Sparkles, X, Edit,
+  Search, Globe, Building, User, RefreshCw, Eye, MoreHorizontal, Activity
 } from 'lucide-react';
 
 interface Lead {
