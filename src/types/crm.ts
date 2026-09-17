@@ -1,107 +1,15 @@
 // src/types/crm.ts
-
-// Roles exported as both a TypeScript type and a runtime Enum/Object
-export enum Role {
-  ADMIN = 'ADMIN',
-  USER = 'USER',
-  EMPLOYEE = 'EMPLOYEE',
-  MANAGER = 'MANAGER',
-}
-
+export enum Role { ADMIN='ADMIN', USER='USER', EMPLOYEE='EMPLOYEE', MANAGER='MANAGER' }
 export type RoleType = Role;
+export type DepartmentType = 'Marketing'|'Sales'|'Operations'|'HR'|'Finance';
+export type LeadStatus = string;
 
 export interface Lead {
-  id: string;
-  name: string;
-  email: string;
-  contact_info?: string;
-  phone?: string;
-  company?: string;
-  source?: string;
-  campaign_name?: string;
-  requirements?: string;
-  status: string;
-  assigned_to?: string | null;
-  notes?: string;
-  created_at: string;
-
-  // Extended CRM Schema Fields
-  first_name?: string;
-  last_name?: string;
-  display_name?: string;
-  job_title?: string;
-  department?: string;
-  secondary_email?: string;
-  mobile_number?: string;
-  alternative_number?: string;
-  whatsapp_number?: string;
-  preferred_contact_method?: string;
-  preferred_language?: string;
-  contact_time_preference?: string;
-  country?: string;
-  emirate_state?: string;
-  city?: string;
-  address?: string;
-  time_zone?: string;
-  company_website?: string;
-  industry?: string;
-  company_size?: string;
-  number_of_employees?: number;
-  annual_revenue_range?: string;
-  business_type?: string;
-  company_location?: string;
-  vat_trn_number?: string;
-  customer_type?: string;
-  parent_company?: string;
-  linkedin_company_url?: string;
-  interested_service?: string;
-  sub_service?: string;
-  product_category?: string;
-  requirement_description?: string;
-  main_pain_point?: string;
-  expected_solution?: string;
-  estimated_budget?: number;
-  expected_purchase_date?: string;
-  project_timeline?: string;
-  urgency?: string;
-  quantity?: number;
-  project_location?: string;
-  existing_vendor?: string;
-  competitors_considered?: string;
-  additional_requirements?: string;
-  sub_source?: string;
-  campaign_id?: string;
-  ad_set?: string;
-  ad_name?: string;
-  keyword?: string;
-  landing_page?: string;
-  referral_url?: string;
-  utm_source?: string;
-  utm_medium?: string;
-  utm_campaign?: string;
-  utm_content?: string;
-  utm_term?: string;
-  first_touch_source?: string;
-  latest_touch_source?: string;
-  lead_temperature?: 'Hot' | 'Warm' | 'Cold';
-  lead_score?: number;
-  branch?: string;
-  team?: string;
-  last_activity_at?: string;
-  follow_up_date?: string;
-  first_response_time_minutes?: number;
+ id:string; name:string; email:string; company?:string; value?:number; created_at:string; phone?:string; source?:string; notes?:string; assigned_to?:string|null; requirements?:string; campaign_name?:string; status:LeadStatus; payment_status?:string; assigned_department?:DepartmentType; assigned_dept_head_id?:string|null; assigned_employee_id?:string|null; is_high_conversion_probable?:boolean; marketing_notes?:string; sales_notes?:string; assigned_marketing_id?:string|null; assigned_sales_id?:string|null; follow_up_date?:string|null; call_scheduled_at?:string|null; lead_score?:number; lead_temperature?:'Hot'|'Warm'|'Cold'; last_activity_at?:string;
+ [key:string]: unknown;
 }
-
-export interface CRMFilterState {
-  leadOwner: string;
-  team: string;
-  branch: string;
-  source: string;
-  campaign: string;
-  status: string;
-  service: string;
-  country: string;
-  temperature: string;
-  minScore: number;
-  maxScore: number;
-}
+export interface Employee { id:string; first_name:string; last_name:string; email:string; phone?:string; department?:string; job_title?:string; role:string; status:string; user_role:string; department_type:DepartmentType; avatar_url?:string; hire_date:string; created_at:string; }
+export interface Invoice { id:string; lead_id?:string|null; project_id?:string|null; client_name:string; amount:number; tax_amount:number; status:string; due_date:string; created_at:string; created_by?:string|null; }
+export interface Project { id:string; client_name:string; project_name:string; budget:number; assigned_to?:string|null; created_at:string; start_date:string; due_date?:string|null; description?:string; status:string; }
+export interface DepartmentTask { id:string; title:string; description?:string|null; department:DepartmentType; assigned_to?:string|null; lead_id?:string|null; scheduled_at:string; is_completed:boolean; created_at:string; }
+export interface CRMFilterState { leadOwner:string; team:string; branch:string; source:string; campaign:string; status:string; service:string; country:string; temperature:string; minScore:number; maxScore:number; }
