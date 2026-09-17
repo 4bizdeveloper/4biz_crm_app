@@ -4,13 +4,19 @@ import { canAccessDepartment, canEditAssignedRecord, getAuthContext } from '@/li
 
 const departments = ['Marketing', 'Sales'] as const;
 type Department = (typeof departments)[number];
+const leadStatuses = ['New', 'Assigned', 'Contacted', 'Follow-up', 'Qualified', 'Converted', 'Disqualified'] as const;
+
+function isLeadStatus(value: unknown): value is (typeof leadStatuses)[number] {
+  return typeof value === 'string' && leadStatuses.includes(value as (typeof leadStatuses)[number]);
+}
 
 export async function GET(request: Request) {
   const ctx = await getAuthContext();
   if (!ctx.employeeId && !ctx.isAdmin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { searchParams } = new URL(request.url);
-  const department = (searchParams.get('department') ?? ctx.department ?? 'Sales') as Department;
+  const requestedDepartment = searchParams.get('department');
+  const department = (requestedDepartment ?? ctx.department ?? 'Sales') as Department;
   if (!departments.includes(department) || !canAccessDepartment(ctx, department)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
@@ -23,14 +29,20 @@ export async function GET(request: Request) {
   }
 
   const employeeId = searchParams.get('employeeId');
-  if (employeeId) query = query.eq(department === 'Marketing' ? 'assigned_marketing_id' : 'assigned_sales_id', employeeId);
+  if (employeeId) {
+    query = query.eq(department === 'Marketing' ? 'assigned_marketing_id' : 'assigned_sales_id', employeeId);
+  }
 
-  const today = searchParams.get('today');
-  if (today === 'true') {
-    const start = new Date(); start.setHours(0, 0, 0, 0);
-    const end = new Date(start); end.setDate(end.getDate() + 1);
-    query = query.or(`follow_up_date.gte.${start.toISOString()},call_scheduled_at.gte.${start.toISOString()}`)
-      .lt('follow_up_date', end.toISOString());
+  if (searchParams.get('today') === 'true') {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    query = query.or(
+      `follow_up_date.gte.${start.toISOString()},call_scheduled_at.gte.${start.toISOString()}`,
+    ).or(
+      `follow_up_date.lt.${end.toISOString()},call_scheduled_at.lt.${end.toISOString()}`,
+    );
   }
 
   const { data, error } = await query;
@@ -53,10 +65,14 @@ export async function PATCH(request: Request) {
 
   if (action === 'marketing_assign') {
     if (!canAccessDepartment(ctx, 'Marketing')) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    payload.assigned_marketing_id = body.employeeId;
+    payload.assigned_marketing_id = body.employeeId ?? null;
     payload.assigned_department = 'Marketing';
+    if (body.employeeId) payload.status = 'Assigned';
   } else if (action === 'marketing_update') {
     if (!canEditAssignedRecord(ctx, lead.assigned_marketing_id)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    if (body.status !== undefined && !isLeadStatus(body.status)) {
+      return NextResponse.json({ error: 'Invalid lead status' }, { status: 400 });
+    }
     payload.status = body.status ?? lead.status;
     payload.marketing_notes = body.notes ?? lead.marketing_notes;
     if (typeof body.isHighConversion === 'boolean') payload.is_high_conversion_probable = body.isHighConversion;
@@ -68,17 +84,20 @@ export async function PATCH(request: Request) {
     payload.assigned_department = 'Sales';
     payload.assigned_dept_head_id = body.salesLeadId ?? null;
     payload.assigned_sales_id = null;
-    payload.status = 'Marketing Qualified';
+    payload.status = 'Qualified';
   } else if (action === 'sales_assign') {
     if (!canAccessDepartment(ctx, 'Sales') || lead.assigned_department !== 'Sales') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    payload.assigned_sales_id = body.employeeId;
-    payload.status = 'Assigned To Sales';
+    payload.assigned_sales_id = body.employeeId ?? null;
+    if (body.employeeId) payload.status = 'Assigned';
   } else if (action === 'sales_update') {
     if (!canEditAssignedRecord(ctx, lead.assigned_sales_id)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    if (body.status !== undefined && !isLeadStatus(body.status)) {
+      return NextResponse.json({ error: 'Invalid lead status' }, { status: 400 });
+    }
     payload.status = body.status ?? lead.status;
     payload.sales_notes = body.notes ?? lead.sales_notes;
-    payload.follow_up_date = body.followUpDate ?? null;
-    payload.call_scheduled_at = body.callScheduledAt ?? null;
+    if (body.followUpDate !== undefined) payload.follow_up_date = body.followUpDate || null;
+    if (body.callScheduledAt !== undefined) payload.call_scheduled_at = body.callScheduledAt || null;
   } else {
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
   }
