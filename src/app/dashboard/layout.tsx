@@ -5,8 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { Role, RoleType } from '@/types/crm';
-import HeaderProfile from '@/components/HeaderProfile';
-import { LayoutDashboard, Target, FolderKanban, Ticket, LogOut, Menu, X, ChevronRight, User, Shield, Briefcase, Users, PanelLeftClose, PanelLeftOpen, GripVertical, Bell, Search, Megaphone, DollarSign, Cog, ListTodo } from 'lucide-react';
+import { LayoutDashboard, Target, FolderKanban, Ticket, LogOut, Menu, X, User, Shield, Briefcase, Users, PanelLeftClose, PanelLeftOpen, Bell, Search, Megaphone, DollarSign, Cog, ListTodo, Building2 } from 'lucide-react';
 
 interface ActiveUser { id:string; name:string; email:string; role:RoleType; department:'HR'|'Finance'|'Marketing'|'Sales'|'Operations'; avatar_url?:string; }
 
@@ -18,6 +17,7 @@ export default function DashboardLayout({children}:{children:React.ReactNode}){
  const handleLogout=async()=>{await fetch('/api/auth/logout',{method:'POST'});router.push('/login');router.refresh()};
  const menuItems=[
   {name:'Overview',path:'/dashboard/overview',icon:LayoutDashboard,roles:[Role.ADMIN,Role.MANAGER,Role.EMPLOYEE,Role.USER]},
+  {name:'Department Center',path:'/dashboard/departments',icon:Building2,roles:[Role.ADMIN,Role.MANAGER,Role.EMPLOYEE]},
   {name:'Leads Management',path:'/dashboard/leads',icon:Target,roles:[Role.ADMIN,Role.MANAGER,Role.EMPLOYEE]},
   {name:'Marketing',path:'/dashboard/marketing',icon:Megaphone,roles:[Role.ADMIN,Role.MANAGER,Role.EMPLOYEE]},
   {name:'Sales Pipeline',path:'/dashboard/sales',icon:Target,roles:[Role.ADMIN,Role.MANAGER,Role.EMPLOYEE]},
