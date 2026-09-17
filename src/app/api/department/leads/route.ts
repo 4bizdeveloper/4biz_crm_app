@@ -1,13 +1,15 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
 import { canAccessDepartment, canEditAssignedRecord, getAuthContext } from '@/lib/department-auth';
+import { supabase } from '@/lib/supabase';
 
 const departments = ['Marketing', 'Sales'] as const;
 type Department = (typeof departments)[number];
 const leadStatuses = ['New', 'Assigned', 'Contacted', 'Follow-up', 'Qualified', 'Converted', 'Disqualified'] as const;
 
-function isLeadStatus(value: unknown): value is (typeof leadStatuses)[number] {
-  return typeof value === 'string' && leadStatuses.includes(value as (typeof leadStatuses)[number]);
+type LeadStatus = (typeof leadStatuses)[number];
+
+function isLeadStatus(value: unknown): value is LeadStatus {
+  return typeof value === 'string' && leadStatuses.includes(value as LeadStatus);
 }
 
 export async function GET(request: Request) {
@@ -15,18 +17,15 @@ export async function GET(request: Request) {
   if (!ctx.employeeId && !ctx.isAdmin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { searchParams } = new URL(request.url);
-  const requestedDepartment = searchParams.get('department');
-  const department = (requestedDepartment ?? ctx.department ?? 'Sales') as Department;
+  const department = (searchParams.get('department') ?? ctx.department ?? 'Sales') as Department;
   if (!departments.includes(department) || !canAccessDepartment(ctx, department)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   let query = supabase.from('leads').select('*').order('last_activity_at', { ascending: false });
-  if (department === 'Marketing') {
-    query = query.eq('assigned_department', 'Marketing');
-  } else {
-    query = query.eq('assigned_department', 'Sales').eq('is_high_conversion_probable', true);
-  }
+  query = department === 'Marketing'
+    ? query.eq('assigned_department', 'Marketing')
+    : query.eq('assigned_department', 'Sales').eq('is_high_conversion_probable', true);
 
   const employeeId = searchParams.get('employeeId');
   if (employeeId) {
@@ -38,11 +37,9 @@ export async function GET(request: Request) {
     start.setHours(0, 0, 0, 0);
     const end = new Date(start);
     end.setDate(end.getDate() + 1);
-    query = query.or(
-      `follow_up_date.gte.${start.toISOString()},call_scheduled_at.gte.${start.toISOString()}`,
-    ).or(
-      `follow_up_date.lt.${end.toISOString()},call_scheduled_at.lt.${end.toISOString()}`,
-    );
+    const from = start.toISOString();
+    const to = end.toISOString();
+    query = query.or(`and(follow_up_date.gte.${from},follow_up_date.lt.${to}),and(call_scheduled_at.gte.${from},call_scheduled_at.lt.${to})`);
   }
 
   const { data, error } = await query;
@@ -70,9 +67,7 @@ export async function PATCH(request: Request) {
     if (body.employeeId) payload.status = 'Assigned';
   } else if (action === 'marketing_update') {
     if (!canEditAssignedRecord(ctx, lead.assigned_marketing_id)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    if (body.status !== undefined && !isLeadStatus(body.status)) {
-      return NextResponse.json({ error: 'Invalid lead status' }, { status: 400 });
-    }
+    if (body.status !== undefined && !isLeadStatus(body.status)) return NextResponse.json({ error: 'Invalid lead status' }, { status: 400 });
     payload.status = body.status ?? lead.status;
     payload.marketing_notes = body.notes ?? lead.marketing_notes;
     if (typeof body.isHighConversion === 'boolean') payload.is_high_conversion_probable = body.isHighConversion;
@@ -91,9 +86,7 @@ export async function PATCH(request: Request) {
     if (body.employeeId) payload.status = 'Assigned';
   } else if (action === 'sales_update') {
     if (!canEditAssignedRecord(ctx, lead.assigned_sales_id)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    if (body.status !== undefined && !isLeadStatus(body.status)) {
-      return NextResponse.json({ error: 'Invalid lead status' }, { status: 400 });
-    }
+    if (body.status !== undefined && !isLeadStatus(body.status)) return NextResponse.json({ error: 'Invalid lead status' }, { status: 400 });
     payload.status = body.status ?? lead.status;
     payload.sales_notes = body.notes ?? lead.sales_notes;
     if (body.followUpDate !== undefined) payload.follow_up_date = body.followUpDate || null;
