@@ -1,12 +1,10 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { verifySessionToken } from '@/lib/auth-session';
 
-export async function middleware(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const session = request.cookies.get('crm_session')?.value;
   const isLoginPage = pathname === '/login';
-  const token = request.cookies.get('crm_session')?.value;
-  const session = await verifySessionToken(token);
 
   if (!session && pathname.startsWith('/dashboard')) {
     return NextResponse.redirect(new URL('/login', request.url));
