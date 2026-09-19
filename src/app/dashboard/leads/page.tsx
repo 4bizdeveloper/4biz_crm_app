@@ -20,6 +20,9 @@ interface Lead {
   status: string;
   assigned_to?: string | null;
   assigned_marketing_id?: string | null;
+  assigned_sales_id?: string | null;
+  assigned_employee_id?: string | null;
+  assigned_dept_head_id?: string | null;
   assigned_department?: string | null;
   notes?: string;
   created_at: string;
