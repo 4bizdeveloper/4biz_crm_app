@@ -5,8 +5,13 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 const db = supabaseAdmin ?? supabase;
 
+function isMarketingAdmin(ctx: Awaited<ReturnType<typeof getAuthContext>>) {
+  return ctx.department === 'Marketing' && ctx.userRole === 'Admin';
+}
+
 function canManage(ctx: Awaited<ReturnType<typeof getAuthContext>>, lead: any) {
   if (ctx.isAdmin) return true;
+  if (isMarketingAdmin(ctx) && (!lead.assigned_department || lead.assigned_department === 'Marketing')) return true;
   if (!ctx.employeeId || !ctx.department || lead.assigned_department !== ctx.department) return false;
   return isDepartmentHead(ctx)
     || lead.assigned_employee_id === ctx.employeeId
@@ -20,8 +25,13 @@ export async function GET() {
 
   let query = db.from('leads').select('*').order('created_at', { ascending: false });
   if (!ctx.isAdmin) {
-    if (isDepartmentHead(ctx)) query = query.eq('assigned_department', ctx.department);
-    else query = query.or(`assigned_employee_id.eq.${ctx.employeeId},assigned_marketing_id.eq.${ctx.employeeId},assigned_sales_id.eq.${ctx.employeeId}`);
+    if (isMarketingAdmin(ctx)) {
+      query = query.or('assigned_department.eq.Marketing,assigned_department.is.null');
+    } else if (isDepartmentHead(ctx)) {
+      query = query.eq('assigned_department', ctx.department);
+    } else {
+      query = query.or(`assigned_employee_id.eq.${ctx.employeeId},assigned_marketing_id.eq.${ctx.employeeId},assigned_sales_id.eq.${ctx.employeeId}`);
+    }
   }
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
