@@ -27,7 +27,7 @@ export async function POST(request: Request) {
   const body = await request.json();
   const department = String(body.department_type || body.department || ctx.department || '');
   if (!canManageTarget(ctx, department)) return NextResponse.json({ error: 'You can only manage users in your department.' }, { status: 403 });
-  const requestedRole = String(body.user_role || 'Employee');
+  const requestedRole = String(body.user_role || 'Employee') === 'Admin' ? 'DeptHead' : String(body.user_role || 'Employee');
   if (!ctx.isAdmin && requestedRole !== 'Employee') return NextResponse.json({ error: 'Department leads can create employee accounts only.' }, { status: 403 });
 
   const password = String(body.password || 'changeMe123');
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
     job_title: body.job_title || null,
     role: body.role || 'Sales',
     user_role: requestedRole,
-    status: body.status || 'Active',
+    status: body.status === 'Inactive' ? 'Terminated' : (body.status || 'Active'),
     password: null,
     password_hash: hash,
     password_salt: salt,
@@ -67,7 +67,7 @@ export async function PATCH(request: Request) {
   if (findError || !existing) return NextResponse.json({ error: 'User not found.' }, { status: 404 });
   if (!canManageTarget(ctx, existing.department_type)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const nextRole = String(body.user_role ?? existing.user_role);
+  const nextRole = String(body.user_role ?? existing.user_role) === 'Admin' ? 'DeptHead' : String(body.user_role ?? existing.user_role);
   if (!ctx.isAdmin && nextRole !== 'Employee') return NextResponse.json({ error: 'Department leads cannot elevate account privileges.' }, { status: 403 });
 
   const payload: Record<string, unknown> = {
@@ -80,7 +80,7 @@ export async function PATCH(request: Request) {
     job_title: body.job_title || null,
     role: body.role || 'Sales',
     user_role: nextRole,
-    status: body.status || 'Active',
+    status: body.status === 'Inactive' ? 'Terminated' : (body.status || 'Active'),
     reports_to_id: body.reports_to_id || ctx.employeeId || null,
     employee_code: body.employee_code || null,
     work_location: body.work_location || null,
@@ -94,5 +94,25 @@ export async function PATCH(request: Request) {
   }
   const { data, error } = await db.from('employees').update(payload).eq('id', id).select(publicFields).single();
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  return NextResponse.json({ data });
+}
+
+
+export async function DELETE(request: Request) {
+  const ctx = await getAuthContext();
+  if (!ctx.isAdmin) return NextResponse.json({ error: 'Only Super Admin can delete users.' }, { status: 403 });
+  const body = await request.json();
+  const id = String(body.id || '');
+  if (!id) return NextResponse.json({ error: 'User id is required.' }, { status: 400 });
+  if (id === ctx.employeeId) return NextResponse.json({ error: 'You cannot delete the account you are currently using.' }, { status: 400 });
+
+  const { data, error } = await db.from('employees')
+    .update({ status: 'Terminated', password: null, password_hash: null, password_salt: null })
+    .eq('id', id)
+    .select(publicFields)
+    .maybeSingle();
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (!data) return NextResponse.json({ error: 'User not found.' }, { status: 404 });
   return NextResponse.json({ data });
 }
