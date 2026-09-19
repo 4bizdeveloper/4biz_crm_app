@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   const department = (searchParams.get('department') ?? ctx.department) as any;
   const roleFilter = searchParams.get('role');
 
-  const canListRequestedDepartment = ctx.isAdmin || (ctx.department === department && isDepartmentHead(ctx));
+  const canListRequestedDepartment = ctx.isAdmin || (ctx.department === department && (isDepartmentHead(ctx) || ctx.userRole === 'Admin'));
   if (!department || !canListRequestedDepartment) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
