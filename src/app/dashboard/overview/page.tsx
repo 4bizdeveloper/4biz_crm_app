@@ -227,6 +227,17 @@ function RadialWinRate({ percentage }: { percentage: number }) {
 // ==========================================
 // TYPES & DATA FETCHING
 // ==========================================
+interface OverviewItem {
+  status?: string | null;
+  priority?: string | null;
+  department?: string | null;
+  name?: string | null;
+  project_name?: string | null;
+  title?: string | null;
+  created_at?: string | null;
+  joined_date?: string | null;
+}
+
 interface OverviewStats {
   totalLeads: number;
   leadsByStatus: Record<string, number>;
@@ -266,13 +277,13 @@ export default function OverviewPage() {
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.error || 'Unable to load overview.');
 
-    let leads = payload.leads || [];
-    let projects = payload.projects || [];
-    let tickets = payload.tickets || [];
-    let employees = payload.employees || [];
+    let leads: OverviewItem[] = Array.isArray(payload.leads) ? payload.leads : [];
+    let projects: OverviewItem[] = Array.isArray(payload.projects) ? payload.projects : [];
+    let tickets: OverviewItem[] = Array.isArray(payload.tickets) ? payload.tickets : [];
+    let employees: OverviewItem[] = Array.isArray(payload.employees) ? payload.employees : [];
 
     // Date Filtering
-    const filterByDate = (items: any[], dateField: string = 'created_at') => {
+    const filterByDate = (items: OverviewItem[], dateField: keyof OverviewItem = 'created_at') => {
       if (dateRange === 'all') return items;
       const now = new Date();
       return items.filter((item) => {
