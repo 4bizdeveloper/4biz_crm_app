@@ -1,49 +1,86 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { createSessionToken } from '@/lib/auth-session';
+import { hashPassword, verifyPassword } from '@/lib/password';
+
+const db = supabaseAdmin ?? supabase;
 
 export async function POST(request: Request) {
-  const { email, password } = await request.json();
+  try {
+    const { email, password } = await request.json();
+    const normalizedEmail = String(email ?? '').trim().toLowerCase();
+    const plainPassword = String(password ?? '');
 
-  const adminEmail = process.env.ADMIN_EMAIL;
-  const adminPassword = process.env.ADMIN_PASSWORD;
+    if (!normalizedEmail || !plainPassword) {
+      return NextResponse.json({ error: 'Email and password are required.' }, { status: 400 });
+    }
 
-  // 1. Admin Authentication Check
-  if (email === adminEmail && password === adminPassword) {
-    const response = NextResponse.json({ success: true, role: 'admin' }, { status: 200 });
-    response.cookies.set('crm_session', 'admin', {
+    const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+    const adminPassword = process.env.ADMIN_PASSWORD;
+
+    if (adminEmail && adminPassword && normalizedEmail === adminEmail && plainPassword === adminPassword) {
+      const token = await createSessionToken({ sub: 'super-admin', role: 'SuperAdmin', department: null });
+      const response = NextResponse.json({ success: true, role: 'SuperAdmin' });
+      response.cookies.set('crm_session', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 12,
+        path: '/',
+      });
+      response.cookies.set('user_role', 'SuperAdmin', { httpOnly: false, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 60 * 60 * 12, path: '/' });
+      response.cookies.delete('employee_id');
+      return response;
+    }
+
+    const { data: employee, error } = await db
+      .from('employees')
+      .select('id,first_name,last_name,email,password,password_hash,password_salt,status,user_role,department_type')
+      .eq('email', normalizedEmail)
+      .maybeSingle();
+
+    if (error) return NextResponse.json({ error: 'Unable to authenticate right now.' }, { status: 500 });
+    if (!employee || employee.status !== 'Active') {
+      return NextResponse.json({ error: 'Invalid credentials or inactive account.' }, { status: 401 });
+    }
+
+    let valid = false;
+    if (employee.password_hash && employee.password_salt) {
+      valid = await verifyPassword(plainPassword, employee.password_hash, employee.password_salt);
+    } else if (employee.password) {
+      valid = employee.password === plainPassword;
+      if (valid) {
+        const { hash, salt } = await hashPassword(plainPassword);
+        await db.from('employees').update({ password_hash: hash, password_salt: salt, password: null }).eq('id', employee.id);
+      }
+    }
+
+    if (!valid) return NextResponse.json({ error: 'Invalid credentials or inactive account.' }, { status: 401 });
+
+    const role = String(employee.user_role || 'Employee');
+    const department = employee.department_type ? String(employee.department_type) : null;
+    const token = await createSessionToken({ sub: employee.id, role, department });
+
+    const response = NextResponse.json({
+      success: true,
+      role,
+      employeeId: employee.id,
+      department,
+      name: [employee.first_name, employee.last_name].filter(Boolean).join(' '),
+    });
+    response.cookies.set('crm_session', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 24,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 12,
       path: '/',
     });
-    response.cookies.set('user_role', 'admin', { path: '/' });
+    response.cookies.set('user_role', role, { httpOnly: false, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 60 * 60 * 12, path: '/' });
+    response.cookies.set('employee_id', employee.id, { httpOnly: false, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 60 * 60 * 12, path: '/' });
     return response;
+  } catch (error) {
+    console.error('CRM login error', error);
+    return NextResponse.json({ error: 'Unable to authenticate right now.' }, { status: 500 });
   }
-
-  // 2. Employee Authentication Check against Supabase DB
-  const { data: employee, error } = await supabase
-    .from('employees')
-    .select('*')
-    .eq('email', email)
-    .single();
-
-  if (employee && employee.password === password && employee.status === 'Active') {
-    const response = NextResponse.json(
-      { success: true, role: 'employee', employeeId: employee.id },
-      { status: 200 }
-    );
-
-    response.cookies.set('crm_session', employee.id, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 24,
-      path: '/',
-    });
-    response.cookies.set('user_role', 'employee', { path: '/' });
-    response.cookies.set('employee_id', employee.id, { path: '/' });
-
-    return response;
-  }
-
-  return NextResponse.json({ error: 'Invalid credentials or inactive account' }, { status: 401 });
 }
