@@ -272,7 +272,8 @@ export default function LeadsModule() {
     filteredLeads.forEach((lead) => {
       const createdAt = new Date(lead.created_at);
       if (createdAt.toDateString() === todayStr) newToday++;
-      const isAssigned = Boolean(lead.assigned_to || lead.assigned_employee_id || lead.assigned_dept_head_id || lead.assigned_marketing_id || lead.assigned_sales_id);\n      if (!isAssigned) unassigned++;
+      const isAssigned = Boolean(lead.assigned_to || lead.assigned_employee_id || lead.assigned_dept_head_id || lead.assigned_marketing_id || lead.assigned_sales_id);
+      if (!isAssigned) unassigned++;
 
       const temp = lead.lead_temperature || 'Warm';
       if (temp === 'Hot') hot++;
