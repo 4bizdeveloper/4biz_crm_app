@@ -1,19 +1,17 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { verifySessionToken } from '@/lib/auth-session';
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-
-  // Retrieve auth session cookies
-  const session = request.cookies.get('crm_session')?.value;
   const isLoginPage = pathname === '/login';
+  const token = request.cookies.get('crm_session')?.value;
+  const session = await verifySessionToken(token);
 
-  // Redirect unauthenticated users attempting to access dashboard routes
   if (!session && pathname.startsWith('/dashboard')) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // Redirect authenticated users away from the login page to the primary overview
   if (session && isLoginPage) {
     return NextResponse.redirect(new URL('/dashboard/overview', request.url));
   }
@@ -21,9 +19,4 @@ export function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
-export const config = {
-  matcher: [
-    '/dashboard/:path*',
-    '/login',
-  ],
-};
+export const config = { matcher: ['/dashboard/:path*', '/login'] };
