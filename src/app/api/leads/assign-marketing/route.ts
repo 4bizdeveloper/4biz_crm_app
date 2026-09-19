@@ -6,7 +6,7 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 const db = supabaseAdmin ?? supabase;
 
 function canAssignMarketingLeads(ctx: Awaited<ReturnType<typeof getAuthContext>>) {
-  return ctx.isAdmin || (ctx.department === 'Marketing' && ctx.userRole === 'Admin');
+  return ctx.isAdmin || (ctx.department === 'Marketing' && ['Admin', 'DeptHead'].includes(ctx.userRole));
 }
 
 export async function PATCH(request: Request) {
