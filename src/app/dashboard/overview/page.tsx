@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
 import {
   MoreHorizontal,
   TrendingUp,
@@ -263,17 +262,14 @@ export default function OverviewPage() {
   const fetchOverviewData = useCallback(async () => {
     setLoading(true);
 
-    const [leadsRes, projectsRes, ticketsRes, employeesRes] = await Promise.all([
-      supabase.from('leads').select('id, name, status, created_at'),
-      supabase.from('projects').select('id, project_name, status, created_at'),
-      supabase.from('tickets').select('id, title, priority, status, created_at'),
-      supabase.from('employees').select('id, full_name, department, status, joined_date'),
-    ]);
+    const response = await fetch('/api/overview', { cache: 'no-store' });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || 'Unable to load overview.');
 
-    let leads = leadsRes.data || [];
-    let projects = projectsRes.data || [];
-    let tickets = ticketsRes.data || [];
-    let employees = employeesRes.data || [];
+    let leads = payload.leads || [];
+    let projects = payload.projects || [];
+    let tickets = payload.tickets || [];
+    let employees = payload.employees || [];
 
     // Date Filtering
     const filterByDate = (items: any[], dateField: string = 'created_at') => {
