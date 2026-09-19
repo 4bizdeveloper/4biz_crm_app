@@ -1,5 +1,7 @@
 import { cookies } from 'next/headers';
 import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { verifySessionToken } from '@/lib/auth-session';
 
 export type Department = 'Marketing' | 'Sales' | 'Operations' | 'HR' | 'Finance';
 
@@ -10,23 +12,21 @@ export interface AuthContext {
   department: Department | null;
 }
 
+const db = supabaseAdmin ?? supabase;
+
 export async function getAuthContext(): Promise<AuthContext> {
   const cookieStore = await cookies();
-  const role = cookieStore.get('user_role')?.value?.toLowerCase();
-  const employeeId = cookieStore.get('employee_id')?.value ?? null;
+  const session = await verifySessionToken(cookieStore.get('crm_session')?.value);
 
-  if (role === 'admin') {
+  if (!session) return { employeeId: null, isAdmin: false, userRole: '', department: null };
+  if (session.sub === 'super-admin' && session.role === 'SuperAdmin') {
     return { employeeId: null, isAdmin: true, userRole: 'SuperAdmin', department: null };
   }
 
-  if (!employeeId) {
-    return { employeeId: null, isAdmin: false, userRole: '', department: null };
-  }
-
-  const { data } = await supabase
+  const { data } = await db
     .from('employees')
     .select('id,user_role,department_type,status')
-    .eq('id', employeeId)
+    .eq('id', session.sub)
     .maybeSingle();
 
   if (!data || data.status !== 'Active') {
