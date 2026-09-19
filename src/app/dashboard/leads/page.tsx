@@ -1201,6 +1201,7 @@ export default function LeadsModule() {
                     </tr>
                   ))}
                 </tbody>
+              </table>
             </div>
           )}
         </div>
