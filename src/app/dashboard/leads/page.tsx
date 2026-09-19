@@ -19,6 +19,8 @@ interface Lead {
   requirements?: string;
   status: string;
   assigned_to?: string | null;
+  assigned_marketing_id?: string | null;
+  assigned_department?: string | null;
   notes?: string;
   created_at: string;
 
@@ -100,6 +102,9 @@ export default function LeadsModule() {
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [canAssignMarketing, setCanAssignMarketing] = useState(false);
+  const [marketingEmployees, setMarketingEmployees] = useState<Array<{ id: string; first_name?: string; last_name?: string; email?: string }>>([]);
+  const [assigningLeadId, setAssigningLeadId] = useState<string | null>(null);
 
   // Extended CRM Multi-Parametric Filter State
   const [filters, setFilters] = useState({
@@ -171,6 +176,28 @@ export default function LeadsModule() {
 
   useEffect(() => {
     fetchData();
+  }, []);
+
+  useEffect(() => {
+    const loadAssignmentAccess = async () => {
+      try {
+        const sessionResponse = await fetch('/api/session', { cache: 'no-store' });
+        if (!sessionResponse.ok) return;
+        const session = await sessionResponse.json();
+        const allowed = Boolean(session.isAdmin || (session.department === 'Marketing' && session.userRole === 'Admin'));
+        setCanAssignMarketing(allowed);
+
+        if (allowed) {
+          const employeesResponse = await fetch('/api/department/employees?department=Marketing', { cache: 'no-store' });
+          const payload = await employeesResponse.json();
+          if (employeesResponse.ok) setMarketingEmployees(payload.data || []);
+        }
+      } catch (err) {
+        console.error('Unable to load marketing assignment permissions:', err);
+      }
+    };
+
+    loadAssignmentAccess();
   }, []);
 
   const filteredLeads = useMemo(() => {
@@ -426,6 +453,32 @@ export default function LeadsModule() {
       setLeads(leads.map((l) => (l.id === id ? result.data : l)));
     } catch (err) {
       console.error('Error updating status:', err);
+    }
+  };
+
+  const assignLeadToMarketing = async (leadId: string, marketingEmployeeId: string) => {
+    if (!marketingEmployeeId) return;
+
+    setAssigningLeadId(leadId);
+    try {
+      const response = await fetch('/api/leads/assign-marketing', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leadId, marketingEmployeeId }),
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        alert(result.error || 'Lead assignment failed.');
+        return;
+      }
+
+      setLeads((current) => current.map((lead) => lead.id === leadId ? result.data : lead));
+    } catch (err) {
+      console.error('Error assigning lead:', err);
+      alert('Unable to assign this lead right now.');
+    } finally {
+      setAssigningLeadId(null);
     }
   };
 
@@ -993,6 +1046,7 @@ export default function LeadsModule() {
                     <th className="py-4 px-5">Company & Industry</th>
                     <th className="py-4 px-5">Temperature & Score</th>
                     <th className="py-4 px-5">Pipeline Status</th>
+                    {canAssignMarketing && <th className="py-4 px-5">Marketing Owner</th>}
                     <th className="py-4 px-5 text-right">Actions</th>
                   </tr>
                 </thead>
