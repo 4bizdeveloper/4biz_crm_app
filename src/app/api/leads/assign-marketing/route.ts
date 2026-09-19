@@ -50,9 +50,9 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'Marketing employee not found.' }, { status: 404 });
   }
 
-  if (employee.department_type !== 'Marketing' || employee.status !== 'Active') {
+  if (employee.department_type !== 'Marketing' || employee.status !== 'Active' || employee.user_role !== 'Employee') {
     return NextResponse.json(
-      { error: 'The selected employee must be an active Marketing employee.' },
+      { error: 'The selected assignee must be an active Marketing employee, not a Marketing admin or department head.' },
       { status: 400 }
     );
   }
