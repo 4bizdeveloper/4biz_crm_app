@@ -6,7 +6,7 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 const db = supabaseAdmin ?? supabase;
 
 function isMarketingAdmin(ctx: Awaited<ReturnType<typeof getAuthContext>>) {
-  return ctx.department === 'Marketing' && ctx.userRole === 'Admin';
+  return ctx.department === 'Marketing' && ['Admin', 'DeptHead'].includes(ctx.userRole);
 }
 
 function canManage(ctx: Awaited<ReturnType<typeof getAuthContext>>, lead: any) {
