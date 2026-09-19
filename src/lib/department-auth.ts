@@ -46,7 +46,7 @@ export function isDepartmentHead(ctx: AuthContext) {
 }
 
 export function canAccessDepartment(ctx: AuthContext, department: Department) {
-  return ctx.isAdmin || ctx.department === department || isDepartmentHead(ctx);
+  return ctx.isAdmin || ctx.department === department;
 }
 
 export function canEditAssignedRecord(ctx: AuthContext, assignedId?: string | null) {
