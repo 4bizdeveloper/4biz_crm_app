@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Edit, Plus, Search, ShieldCheck, UserCheck, Users, X } from 'lucide-react';
+import { Edit, Plus, Search, ShieldCheck, UserCheck, Users, X, Trash2 } from 'lucide-react';
 
 type User = {
   id: string;
@@ -99,7 +99,7 @@ export default function UserManagementPage() {
 
   const toggleStatus = async (u: User) => {
     setError('');
-    const next = u.status === 'Active' ? 'Inactive' : 'Active';
+    const next = u.status === 'Active' ? 'Terminated' : 'Active';
     const res = await fetch('/api/users', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -109,6 +109,19 @@ export default function UserManagementPage() {
     if (!res.ok) setError(json.error || 'Unable to update account.');
     else load();
   };
+  const deleteUser = async (u: User) => {
+    if (!currentUser?.isAdmin) return;
+    if (!confirm(`Terminate ${u.first_name} ${u.last_name} and revoke the account credentials?`)) return;
+    const res = await fetch('/api/users', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: u.id }),
+    });
+    const json = await res.json();
+    if (!res.ok) setError(json.error || 'Unable to terminate user.');
+    else load();
+  };
+
 
   return (
     <main className="min-h-screen bg-slate-50 p-4 sm:p-6 lg:p-8">
@@ -145,7 +158,7 @@ export default function UserManagementPage() {
                 <td className="px-5 py-4"><span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold">{u.department_type}</span></td>
                 <td className="px-5 py-4"><span className="rounded-lg bg-teal-50 px-2.5 py-1 text-xs font-bold text-teal-700">{u.user_role}</span></td>
                 <td className="px-5 py-4"><span className={`rounded-full px-2.5 py-1 text-xs font-bold ${u.status === 'Active' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>{u.status}</span></td>
-                <td className="px-5 py-4 text-right"><div className="inline-flex gap-2"><button onClick={() => openEdit(u)} className="rounded-lg border p-2 text-slate-600 hover:bg-slate-50"><Edit className="h-4 w-4" /></button><button onClick={() => toggleStatus(u)} className="rounded-lg border px-3 py-2 text-xs font-bold">{u.status === 'Active' ? 'Deactivate' : 'Activate'}</button></div></td>
+                <td className="px-5 py-4 text-right"><div className="inline-flex gap-2"><button onClick={() => openEdit(u)} className="rounded-lg border p-2 text-slate-600 hover:bg-slate-50"><Edit className="h-4 w-4" /></button><button onClick={() => toggleStatus(u)} className="rounded-lg border px-3 py-2 text-xs font-bold">{u.status === 'Active' ? 'Terminate' : 'Activate'}</button>{currentUser?.isAdmin && <button onClick={() => deleteUser(u)} className="rounded-lg border border-rose-200 p-2 text-rose-600 hover:bg-rose-50" title="Terminate and revoke"><Trash2 className="h-4 w-4" /></button>}</div></td>
               </tr>)}</tbody>
             </table>
           </div>
@@ -162,7 +175,7 @@ export default function UserManagementPage() {
             <label className="text-xs font-bold text-slate-600">Department<select value={form.department_type} disabled={!currentUser?.isAdmin} onChange={e => setForm({...form,department_type:e.target.value})} className="mt-1.5 w-full rounded-xl border px-3 py-2.5 text-sm font-normal disabled:bg-slate-100">{departments.map(d => <option key={d}>{d}</option>)}</select></label>
             <label className="text-xs font-bold text-slate-600">Job role<select value={form.role} onChange={e => setForm({...form,role:e.target.value})} className="mt-1.5 w-full rounded-xl border px-3 py-2.5 text-sm font-normal">{jobRoles.map(d => <option key={d}>{d}</option>)}</select></label>
             <label className="text-xs font-bold text-slate-600">System access<select value={form.user_role} disabled={!currentUser?.isAdmin} onChange={e => setForm({...form,user_role:e.target.value})} className="mt-1.5 w-full rounded-xl border px-3 py-2.5 text-sm font-normal disabled:bg-slate-100"><option>Employee</option><option>DeptHead</option><option>SuperAdmin</option></select></label>
-            <label className="text-xs font-bold text-slate-600">Account status<select value={form.status} onChange={e => setForm({...form,status:e.target.value})} className="mt-1.5 w-full rounded-xl border px-3 py-2.5 text-sm font-normal"><option>Active</option><option>Inactive</option></select></label>
+            <label className="text-xs font-bold text-slate-600">Account status<select value={form.status} onChange={e => setForm({...form,status:e.target.value})} className="mt-1.5 w-full rounded-xl border px-3 py-2.5 text-sm font-normal"><option>Active</option><option>OnLeave</option><option>Terminated</option></select></label>
             <label className="text-xs font-bold text-slate-600 sm:col-span-2">Password {editing && <span className="font-normal text-slate-400">(leave blank to keep current)</span>}<input type="password" required={!editing} value={form.password} onChange={e => setForm({...form,password:e.target.value})} className="mt-1.5 w-full rounded-xl border px-3 py-2.5 text-sm font-normal outline-none focus:border-teal-500" /></label>
             <label className="text-xs font-bold text-slate-600 sm:col-span-2">Notes<textarea value={form.notes} onChange={e => setForm({...form,notes:e.target.value})} className="mt-1.5 min-h-24 w-full rounded-xl border px-3 py-2.5 text-sm font-normal outline-none focus:border-teal-500" /></label>
             <div className="flex justify-end gap-2 sm:col-span-2"><button type="button" onClick={() => setShowModal(false)} className="rounded-xl border px-4 py-2.5 text-sm font-bold">Cancel</button><button disabled={saving} className="rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-bold text-white disabled:opacity-60">{saving ? 'Saving...' : 'Save employee'}</button></div>
