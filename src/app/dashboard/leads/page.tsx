@@ -184,7 +184,7 @@ export default function LeadsModule() {
         const sessionResponse = await fetch('/api/session', { cache: 'no-store' });
         if (!sessionResponse.ok) return;
         const session = await sessionResponse.json();
-        const allowed = Boolean(session.isAdmin || (session.department === 'Marketing' && ['Admin', 'DeptHead', 'Manager'].includes(session.userRole)));
+        const allowed = Boolean(session.isAdmin || (session.department === 'Marketing' && ['Admin', 'DeptHead'].includes(session.userRole)));
         setCanAssignMarketing(allowed);
 
         if (allowed) {
