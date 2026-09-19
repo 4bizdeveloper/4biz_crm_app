@@ -949,6 +949,25 @@ export default function LeadsModule() {
                           <span className="text-[11px] font-extrabold text-slate-600">Score: {lead.lead_score || 0}</span>
                         </div>
 
+                        {canAssignMarketing && (
+                          <div className="pt-3 border-t border-slate-200">
+                            <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-500">Marketing Owner</label>
+                            <select
+                              value={lead.assigned_marketing_id || ''}
+                              onChange={(e) => assignLeadToMarketing(lead.id, e.target.value)}
+                              disabled={assigningLeadId === lead.id || marketingEmployees.length === 0}
+                              className="w-full text-[11px] p-1.5 border border-slate-200 rounded-lg bg-white text-slate-800 font-bold cursor-pointer focus:ring-2 focus:ring-teal-600 disabled:opacity-60"
+                            >
+                              <option value="">{marketingEmployees.length ? 'Unassigned' : 'No Marketing employees'}</option>
+                              {marketingEmployees.map((employee) => (
+                                <option key={employee.id} value={employee.id}>
+                                  {[employee.first_name, employee.last_name].filter(Boolean).join(' ') || employee.email || 'Marketing employee'}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+
                         <div className="pt-3 border-t border-slate-200 flex items-center justify-between gap-2">
                           <button
                             onClick={() => setSelectedLead(lead)}
