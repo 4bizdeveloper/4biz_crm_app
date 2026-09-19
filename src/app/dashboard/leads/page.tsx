@@ -103,7 +103,7 @@ export default function LeadsModule() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [canAssignMarketing, setCanAssignMarketing] = useState(false);
-  const [marketingEmployees, setMarketingEmployees] = useState<Array<{ id: string; first_name?: string; last_name?: string; email?: string }>>([]);
+  const [marketingEmployees, setMarketingEmployees] = useState<Array<{ id: string; first_name?: string; last_name?: string; email?: string; user_role?: string }>>([]);
   const [assigningLeadId, setAssigningLeadId] = useState<string | null>(null);
 
   // Extended CRM Multi-Parametric Filter State
@@ -184,11 +184,11 @@ export default function LeadsModule() {
         const sessionResponse = await fetch('/api/session', { cache: 'no-store' });
         if (!sessionResponse.ok) return;
         const session = await sessionResponse.json();
-        const allowed = Boolean(session.isAdmin || (session.department === 'Marketing' && ['Admin', 'DeptHead'].includes(session.userRole)));
+        const allowed = Boolean(session.isAdmin || (session.department === 'Marketing' && ['Admin', 'DeptHead', 'Manager'].includes(session.userRole)));
         setCanAssignMarketing(allowed);
 
         if (allowed) {
-          const employeesResponse = await fetch('/api/department/employees?department=Marketing', { cache: 'no-store' });
+          const employeesResponse = await fetch('/api/department/employees?department=Marketing&role=employee', { cache: 'no-store' });
           const payload = await employeesResponse.json();
           if (employeesResponse.ok) setMarketingEmployees(payload.data || []);
         }
@@ -272,7 +272,7 @@ export default function LeadsModule() {
     filteredLeads.forEach((lead) => {
       const createdAt = new Date(lead.created_at);
       if (createdAt.toDateString() === todayStr) newToday++;
-      if (!lead.assigned_to) unassigned++;
+      const isAssigned = Boolean(lead.assigned_to || lead.assigned_employee_id || lead.assigned_dept_head_id || lead.assigned_marketing_id || lead.assigned_sales_id);\n      if (!isAssigned) unassigned++;
 
       const temp = lead.lead_temperature || 'Warm';
       if (temp === 'Hot') hot++;
@@ -1061,54 +1061,65 @@ export default function LeadsModule() {
               <table className="w-full text-left border-collapse">
                 <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-extrabold uppercase text-[10px] tracking-wider">
                   <tr>
-                    <th className="py-4 px-5">Lead Name & Job Title</th>
-                    <th className="py-4 px-5">Company & Industry</th>
+                    <th className="py-4 px-5">Lead</th>
+                    <th className="py-4 px-5">Contact</th>
+                    <th className="py-4 px-5">Company</th>
+                    <th className="py-4 px-5">Source</th>
+                    <th className="py-4 px-5">Requirements</th>
                     <th className="py-4 px-5">Temperature & Score</th>
                     <th className="py-4 px-5">Pipeline Status</th>
-                    <th className="py-4 px-5">Marketing Owner</th>
                     <th className="py-4 px-5 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-sm font-medium">
                   {filteredLeads.map((lead) => (
-                    <tr key={lead.id} className="hover:bg-slate-50/80 transition-colors">                      <td className="py-4 px-5">
-                        <select
-                          aria-label={`Assign ${lead.name} to Marketing employee`}
-                          value={lead.assigned_marketing_id || ''}
-                          onChange={(e) => assignLeadToMarketing(lead.id, e.target.value)}
-                          disabled={!canAssignMarketing || assigningLeadId === lead.id || marketingEmployees.length === 0}
-                          title={!canAssignMarketing ? 'Only Super Admin or Marketing Admin can assign leads' : undefined}
-                          className="w-full min-w-[180px] text-xs p-2 border border-slate-200 rounded-lg bg-white text-slate-800 font-bold cursor-pointer focus:ring-2 focus:ring-teal-600 disabled:opacity-60"
-                        >
-                          <option value="">{marketingEmployees.length ? 'Unassigned' : 'No Marketing employees'}</option>
-                          {marketingEmployees.map((employee) => (
-                            <option key={employee.id} value={employee.id}>
-                              {[employee.first_name, employee.last_name].filter(Boolean).join(' ') || employee.email || 'Marketing employee'}
-                            </option>
-                          ))}
-                        </select>
-                        {!canAssignMarketing && <div className="mt-1 text-[9px] font-semibold text-slate-400">Super Admin / Marketing Admin only</div>}
-                      </td>
-
-                      <td className="py-4 px-5">
+                    <tr key={lead.id} className="hover:bg-slate-50/80 transition-colors align-top">
+                      <td className="py-4 px-5 min-w-[190px]">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-700 shrink-0 font-extrabold text-xs">
-                            {lead.name.charAt(0).toUpperCase()}
+                            {(lead.name || 'L').charAt(0).toUpperCase()}
                           </div>
-                          <div className="space-y-0.5">
-                            <div className="font-bold text-slate-800 text-sm leading-snug">{lead.name}</div>
-                            <div className="text-xs text-slate-500 font-medium leading-relaxed">{lead.job_title || 'Lead Contact'}</div>
+                          <div className="space-y-0.5 min-w-0">
+                            <div className="font-bold text-slate-800 text-sm leading-snug truncate max-w-[180px]">{lead.name || 'Unnamed Lead'}</div>
+                            <div className="text-xs text-slate-500 font-medium leading-relaxed truncate max-w-[180px]">{lead.job_title || 'Lead Contact'}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="py-4 px-5">
+
+                      <td className="py-4 px-5 min-w-[210px]">
+                        <div className="space-y-1 text-xs">
+                          <div className="font-semibold text-slate-800 break-all">{lead.email || '—'}</div>
+                          <div className="text-slate-500 font-medium">{lead.phone || lead.mobile_number || '—'}</div>
+                        </div>
+                      </td>
+
+                      <td className="py-4 px-5 min-w-[170px]">
                         <div className="space-y-0.5">
                           <div className="font-bold text-slate-800 leading-snug">{lead.company || '—'}</div>
-                          <div className="text-[11px] font-semibold text-slate-500 leading-relaxed">{lead.interested_service || lead.industry || 'Client'}</div>
+                          <div className="text-[11px] font-semibold text-slate-500 leading-relaxed">{lead.industry || lead.interested_service || '—'}</div>
                         </div>
                       </td>
-                      <td className="py-4 px-5">
-                        <div className="flex items-center gap-2">
+
+                      <td className="py-4 px-5 min-w-[150px]">
+                        <div className="space-y-0.5">
+                          <div className="font-bold text-slate-800 leading-snug">{lead.source || 'Website'}</div>
+                          <div className="text-[11px] font-semibold text-slate-500 leading-relaxed">{lead.campaign_name || 'No campaign'}</div>
+                        </div>
+                      </td>
+
+                      <td className="py-4 px-5 min-w-[220px] max-w-[300px]">
+                        <div className="space-y-1">
+                          <div className="text-xs font-semibold text-slate-700 line-clamp-2">{lead.requirements || lead.requirement_description || 'No requirements provided'}</div>
+                          {lead.interested_service && (
+                            <div className="text-[10px] font-bold text-teal-700 bg-teal-50 border border-teal-100 rounded-md px-2 py-0.5 inline-block">
+                              {lead.interested_service}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+
+                      <td className="py-4 px-5 min-w-[150px]">
+                        <div className="flex flex-col items-start gap-1.5">
                           <span
                             className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
                               lead.lead_temperature === 'Hot'
@@ -1123,8 +1134,10 @@ export default function LeadsModule() {
                           <span className="font-extrabold text-slate-600 text-xs">Score: {lead.lead_score || 0}</span>
                         </div>
                       </td>
-                      <td className="py-4 px-5">
+
+                      <td className="py-4 px-5 min-w-[145px]">
                         <select
+                          aria-label={`Update status for ${lead.name}`}
                           value={lead.status}
                           onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
                           className="bg-white border border-slate-200 rounded-xl text-xs font-bold px-3 py-2 text-slate-800 cursor-pointer focus:ring-2 focus:ring-teal-600"
@@ -1134,8 +1147,27 @@ export default function LeadsModule() {
                           ))}
                         </select>
                       </td>
-                      <td className="py-4 px-5 text-right">
-                        <div className="flex items-center justify-end gap-2">
+
+                      <td className="py-4 px-5 min-w-[390px]">
+                        <div className="flex items-center justify-end gap-2 flex-wrap">
+                          <select
+                            aria-label={`Assign ${lead.name} to a Marketing employee`}
+                            value={lead.assigned_marketing_id || ''}
+                            onChange={(e) => assignLeadToMarketing(lead.id, e.target.value)}
+                            disabled={!canAssignMarketing || assigningLeadId === lead.id || marketingEmployees.length === 0}
+                            title={!canAssignMarketing ? 'Only authorized CRM managers can assign leads to Marketing employees' : 'Assign to a specific active Marketing employee'}
+                            className="w-[190px] text-[11px] p-2 border border-slate-200 rounded-lg bg-white text-slate-800 font-bold cursor-pointer focus:ring-2 focus:ring-teal-600 disabled:opacity-60"
+                          >
+                            <option value="">
+                              {marketingEmployees.length ? 'Assign Marketing employee' : 'No Marketing employees'}
+                            </option>
+                            {marketingEmployees.map((employee) => (
+                              <option key={employee.id} value={employee.id}>
+                                {[employee.first_name, employee.last_name].filter(Boolean).join(' ') || employee.email || 'Marketing employee'}
+                              </option>
+                            ))}
+                          </select>
+
                           <button
                             onClick={() => setSelectedLead(lead)}
                             className="bg-slate-50 hover:bg-teal-600 hover:text-white text-teal-700 px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all border border-slate-200 cursor-pointer flex items-center gap-1.5"
@@ -1143,6 +1175,7 @@ export default function LeadsModule() {
                             <Eye className="w-3.5 h-3.5 shrink-0" />
                             <span>View</span>
                           </button>
+
                           <button
                             onClick={() => openEditModal(lead)}
                             className="text-slate-400 hover:text-slate-800 p-2 rounded-xl hover:bg-slate-100 cursor-pointer transition-colors"
@@ -1150,19 +1183,24 @@ export default function LeadsModule() {
                           >
                             <Edit className="w-4 h-4" />
                           </button>
+
                           <button
                             onClick={() => deleteLead(lead.id)}
                             className="text-rose-500 hover:text-rose-700 p-2 rounded-xl hover:bg-rose-50 cursor-pointer transition-colors"
-                            title="Delete Lead"
+                            title="Archive Lead"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
+                        {!canAssignMarketing && (
+                          <div className="mt-1 text-[9px] font-semibold text-slate-400 text-right">
+                            Assignment is restricted to authorized CRM managers
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))}
                 </tbody>
-              </table>
             </div>
           )}
         </div>
