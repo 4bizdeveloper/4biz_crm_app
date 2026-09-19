@@ -33,10 +33,11 @@ export async function getAuthContext(): Promise<AuthContext> {
     return { employeeId: null, isAdmin: false, userRole: '', department: null };
   }
 
+  const userRole = String(data.user_role ?? 'Employee');
   return {
     employeeId: data.id,
-    isAdmin: false,
-    userRole: String(data.user_role ?? 'Employee'),
+    isAdmin: userRole === 'SuperAdmin',
+    userRole,
     department: (data.department_type as Department | null) ?? null,
   };
 }
