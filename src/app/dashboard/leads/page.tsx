@@ -963,11 +963,15 @@ export default function LeadsModule() {
                               className="w-full text-[11px] p-1.5 border border-slate-200 rounded-lg bg-white text-slate-800 font-bold cursor-pointer focus:ring-2 focus:ring-teal-600 disabled:opacity-60"
                             >
                               <option value="">{marketingEmployees.length ? 'Unassigned' : 'No Marketing employees'}</option>
-                              {marketingEmployees.map((employee) => (
-                                <option key={employee.id} value={employee.id}>
-                                  {[employee.first_name, employee.last_name].filter(Boolean).join(' ') || employee.email || 'Marketing employee'}
-                                </option>
-                              ))}
+                              {marketingEmployees.map((employee) => {
+                                const isSelected = lead.assigned_marketing_id === employee.id;
+                                const name = [employee.first_name, employee.last_name].filter(Boolean).join(' ') || employee.email || 'Marketing employee';
+                                return (
+                                  <option key={employee.id} value={employee.id}>
+                                    {name} {isSelected ? '(Assigned)' : ''}
+                                  </option>
+                                );
+                              })}
                             </select>
                           </div>
                         )}
@@ -1072,6 +1076,7 @@ export default function LeadsModule() {
                     <th className="py-4 px-5">Requirements</th>
                     <th className="py-4 px-5">Temperature & Score</th>
                     <th className="py-4 px-5">Pipeline Status</th>
+                    <th className="py-4 px-5">Assigned Employee</th>
                     <th className="py-4 px-5 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -1152,26 +1157,37 @@ export default function LeadsModule() {
                         </select>
                       </td>
 
-                      <td className="py-4 px-5 min-w-[390px]">
-                        <div className="flex items-center justify-end gap-2 flex-wrap">
-                          <select
-                            aria-label={`Assign ${lead.name} to a Marketing employee`}
-                            value={lead.assigned_marketing_id || ''}
-                            onChange={(e) => assignLeadToMarketing(lead.id, e.target.value)}
-                            disabled={!canAssignMarketing || assigningLeadId === lead.id || marketingEmployees.length === 0}
-                            title={!canAssignMarketing ? 'Only authorized CRM managers can assign leads to Marketing employees' : 'Assign to a specific active Marketing employee'}
-                            className="w-[190px] text-[11px] p-2 border border-slate-200 rounded-lg bg-white text-slate-800 font-bold cursor-pointer focus:ring-2 focus:ring-teal-600 disabled:opacity-60"
-                          >
-                            <option value="">
-                              {marketingEmployees.length ? 'Assign Marketing employee' : 'No Marketing employees'}
-                            </option>
-                            {marketingEmployees.map((employee) => (
+                      <td className="py-4 px-5 min-w-[210px]">
+                        <select
+                          aria-label={`Assign ${lead.name} to a Marketing employee`}
+                          value={lead.assigned_marketing_id || ''}
+                          onChange={(e) => assignLeadToMarketing(lead.id, e.target.value)}
+                          disabled={!canAssignMarketing || assigningLeadId === lead.id || marketingEmployees.length === 0}
+                          title={!canAssignMarketing ? 'Only authorized CRM managers can assign leads to Marketing employees' : 'Assign to a specific active Marketing employee'}
+                          className="w-full text-[11px] p-2 border border-slate-200 rounded-lg bg-white text-slate-800 font-bold cursor-pointer focus:ring-2 focus:ring-teal-600 disabled:opacity-60"
+                        >
+                          <option value="">
+                            {marketingEmployees.length ? 'Assign Marketing employee' : 'No Marketing employees'}
+                          </option>
+                          {marketingEmployees.map((employee) => {
+                            const isSelected = lead.assigned_marketing_id === employee.id;
+                            const name = [employee.first_name, employee.last_name].filter(Boolean).join(' ') || employee.email || 'Marketing employee';
+                            return (
                               <option key={employee.id} value={employee.id}>
-                                {[employee.first_name, employee.last_name].filter(Boolean).join(' ') || employee.email || 'Marketing employee'}
+                                {name} {isSelected ? '(Assigned)' : ''}
                               </option>
-                            ))}
-                          </select>
+                            );
+                          })}
+                        </select>
+                        {!canAssignMarketing && (
+                          <div className="mt-1 text-[9px] font-semibold text-slate-400">
+                            Restricted to authorized managers
+                          </div>
+                        )}
+                      </td>
 
+                      <td className="py-4 px-5 min-w-[180px]">
+                        <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => setSelectedLead(lead)}
                             className="bg-slate-50 hover:bg-teal-600 hover:text-white text-teal-700 px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all border border-slate-200 cursor-pointer flex items-center gap-1.5"
@@ -1196,11 +1212,6 @@ export default function LeadsModule() {
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
-                        {!canAssignMarketing && (
-                          <div className="mt-1 text-[9px] font-semibold text-slate-400 text-right">
-                            Assignment is restricted to authorized CRM managers
-                          </div>
-                        )}
                       </td>
                     </tr>
                   ))}
