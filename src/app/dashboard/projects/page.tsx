@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
 import { Plus, Trash2, FolderKanban, Edit, Calendar } from 'lucide-react';
 
 interface Project {
@@ -32,13 +31,14 @@ export default function ProjectsPage() {
   });
 
   const fetchData = async () => {
-    const { data: projData, error } = await supabase
-      .from('projects')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (!error && projData) setProjects(projData);
-    setLoading(false);
+    try {
+      const response = await fetch('/api/projects', { cache: 'no-store' });
+      const payload = await response.json();
+      if (response.ok) setProjects(payload.data || []);
+      else console.error(payload.error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -76,54 +76,42 @@ export default function ProjectsPage() {
   const saveProject = async (e: React.FormEvent) => {
     e.preventDefault();
     const payload = {
-      project_name: formData.project_name,
-      client_name: formData.client_name,
+      projectName: formData.project_name,
+      clientName: formData.client_name,
       budget: formData.budget || 0,
       status: formData.status,
-      start_date: formData.start_date || null,
-      due_date: formData.due_date || null,
+      startDate: formData.start_date || null,
+      dueDate: formData.due_date || null,
       description: formData.description || null,
     };
-
-    if (editingProject) {
-      const { data, error } = await supabase
-        .from('projects')
-        .update(payload)
-        .eq('id', editingProject.id)
-        .select();
-
-      if (error) {
-        alert('Failed to update project: ' + error.message);
-        return;
-      }
-
-      if (data) {
-        setProjects(projects.map((p) => (p.id === editingProject.id ? data[0] : p)));
-        setShowModal(false);
-      }
-    } else {
-      const { data, error } = await supabase.from('projects').insert([payload]).select();
-
-      if (error) {
-        alert('Failed to create project: ' + error.message);
-        return;
-      }
-
-      if (data) {
-        setProjects([data[0], ...projects]);
-        setShowModal(false);
-      }
+    const response = await fetch('/api/projects', {
+      method: editingProject ? 'PATCH' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(editingProject ? { ...payload, projectId: editingProject.id } : payload),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      alert(result.error || 'Unable to save project.');
+      return;
     }
+    if (editingProject) setProjects(projects.map((p) => (p.id === editingProject.id ? result.data : p)));
+    else setProjects([result.data, ...projects]);
+    setShowModal(false);
   };
 
   const deleteProject = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this project?')) return;
-    const { error } = await supabase.from('projects').delete().eq('id', id);
-    if (error) {
-      alert('Failed to delete project: ' + error.message);
+    if (!confirm('Archive this project?')) return;
+    const response = await fetch('/api/projects', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectId: id, status: 'On Hold' }),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      alert(result.error || 'Unable to update project.');
       return;
     }
-    setProjects(projects.filter((p) => p.id !== id));
+    setProjects(projects.map((p) => (p.id === id ? result.data : p)));
   };
 
   const getStatusBadgeStyle = (status: string) => {
