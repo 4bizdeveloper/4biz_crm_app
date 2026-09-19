@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
 import { Plus } from 'lucide-react';
 
 interface Ticket {
@@ -18,8 +17,9 @@ export default function TicketsPage() {
   const [formData, setFormData] = useState({ title: '', client_name: '', priority: 'Medium', status: 'Open' });
 
   const fetchTickets = async () => {
-    const { data } = await supabase.from('tickets').select('*').order('created_at', { ascending: false });
-    if (data) setTickets(data);
+    const response = await fetch('/api/tickets', { cache: 'no-store' });
+    const payload = await response.json();
+    if (response.ok) setTickets(payload.data || []);
   };
 
   useEffect(() => {
@@ -28,9 +28,14 @@ export default function TicketsPage() {
 
   const createTicket = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { data, error } = await supabase.from('tickets').insert([formData]).select();
-    if (!error && data) {
-      setTickets([data[0], ...tickets]);
+    const response = await fetch('/api/tickets', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData),
+    });
+    const result = await response.json();
+    if (response.ok && result.data) {
+      setTickets([result.data, ...tickets]);
       setShowModal(false);
       setFormData({ title: '', client_name: '', priority: 'Medium', status: 'Open' });
     }
