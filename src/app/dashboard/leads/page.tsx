@@ -1065,13 +1065,31 @@ export default function LeadsModule() {
                     <th className="py-4 px-5">Company & Industry</th>
                     <th className="py-4 px-5">Temperature & Score</th>
                     <th className="py-4 px-5">Pipeline Status</th>
-                    {canAssignMarketing && <th className="py-4 px-5">Marketing Owner</th>}
+                    <th className="py-4 px-5">Marketing Owner</th>
                     <th className="py-4 px-5 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-sm font-medium">
                   {filteredLeads.map((lead) => (
-                    <tr key={lead.id} className="hover:bg-slate-50/80 transition-colors">
+                    <tr key={lead.id} className="hover:bg-slate-50/80 transition-colors">                      <td className="py-4 px-5">
+                        <select
+                          aria-label={`Assign ${lead.name} to Marketing employee`}
+                          value={lead.assigned_marketing_id || ''}
+                          onChange={(e) => assignLeadToMarketing(lead.id, e.target.value)}
+                          disabled={!canAssignMarketing || assigningLeadId === lead.id || marketingEmployees.length === 0}
+                          title={!canAssignMarketing ? 'Only Super Admin or Marketing Admin can assign leads' : undefined}
+                          className="w-full min-w-[180px] text-xs p-2 border border-slate-200 rounded-lg bg-white text-slate-800 font-bold cursor-pointer focus:ring-2 focus:ring-teal-600 disabled:opacity-60"
+                        >
+                          <option value="">{marketingEmployees.length ? 'Unassigned' : 'No Marketing employees'}</option>
+                          {marketingEmployees.map((employee) => (
+                            <option key={employee.id} value={employee.id}>
+                              {[employee.first_name, employee.last_name].filter(Boolean).join(' ') || employee.email || 'Marketing employee'}
+                            </option>
+                          ))}
+                        </select>
+                        {!canAssignMarketing && <div className="mt-1 text-[9px] font-semibold text-slate-400">Super Admin / Marketing Admin only</div>}
+                      </td>
+
                       <td className="py-4 px-5">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-700 shrink-0 font-extrabold text-xs">
