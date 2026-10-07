@@ -43,3 +43,6 @@ next-env.d.ts
 repomix-output.xml
 
 *.zip
+
+deploy_key
+deploy_key.pub

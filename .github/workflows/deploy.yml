@@ -1,0 +1,27 @@
+name: Deploy Next.js App to VPS
+
+on:
+  push:
+    branches:
+      - main  # Runs automatically whenever you push code to the main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd domains/crm.4bizglobal.com/public_html
+            git pull origin main
+            npm install
+            npm run build
+            pm2 restart all || echo "Deployment finished"
