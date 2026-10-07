@@ -165,7 +165,7 @@ export default function LoginPage() {
               <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#22726a]/20 rounded-full blur-3xl pointer-events-none" />
 
               <div className="mb-6">
-                <h2 className="text-2xl font-extrabold text-white tracking-tight">Admin Sign In Here</h2>
+                <h2 className="text-2xl font-extrabold text-white tracking-tight">Admin Sign In</h2>
                 <p className="text-xs text-slate-400 mt-1.5">
                   Enter your credentials to access the administrative workstation.
                 </p>
