@@ -1,0 +1,19 @@
+{
+  "output": {
+    "filePath": "repomix-output.txt",
+    "style": "xml"
+  },
+  "ignore": {
+    "useGitignore": false,
+    "useDefaultPatterns": false,
+    "customPatterns": [
+      "**/node_modules/**",
+      "**/.next/**",
+      "**/dist/**",
+      "**/build/**",
+      "**/*.lock",
+      "**/package-lock.json",
+      "**/pnpm-lock.yaml"
+    ]
+  }
+}
