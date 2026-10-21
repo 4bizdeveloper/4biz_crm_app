@@ -67,10 +67,16 @@ The content is organized as follows:
           main
     HEAD
   objects/
+    08/
+      25677444d2feea8bda4d2a41d84814323264d6
+    16/
+      81270d70db748d502cee560c12aa213c78c273
     3c/
       e41b8bd453818448396b2098f8716a416a8dd5
     42/
       2cc3e27158b47f4d47553923fc5d2ca064bcd3
+    44/
+      d188966de29b91a5be741819fc0fc2dfe0d4e1
     4a/
       7697993bb2cec7ca66e718cda213cceae376cf
     4c/
@@ -85,6 +91,8 @@ The content is organized as follows:
       a44dc0e6c6020de312b76da77c3cea9a9e4397
     6d/
       a3507d4c043cd8990fc214e3c89fbc8619c2f2
+    77/
+      9387e1f00340ff02222739e9f3ebce4130d644
     7d/
       294de021bd61958223378345d7357e91698bb8
     8d/
@@ -95,6 +103,8 @@ The content is organized as follows:
       90bc25ba7995e99cad7653ef6f45fb8e197ab7
     a8/
       3c0acfc72566e8b125cf7601a973ead67c288c
+    a9/
+      1e9b7d0092089f069a4e4f113f636d2dcecb50
     b6/
       54cf0d1b9c23ec71dfcbb9180db71b135b2f43
     bd/
@@ -1206,6 +1216,7 @@ a9f8e4b8aa212893aaee7e9c520ee5606acd7701 4a7697993bb2cec7ca66e718cda213cceae376c
 6da3507d4c043cd8990fc214e3c89fbc8619c2f2 8d65e8c60c4cab0ca19f66bc68430ccdc8418f23 4bizdeveloper <4bizdeveloper@gmail.com> 1791367766 +0530	commit: today
 8d65e8c60c4cab0ca19f66bc68430ccdc8418f23 422cc3e27158b47f4d47553923fc5d2ca064bcd3 4bizdeveloper <4bizdeveloper@gmail.com> 1791368547 +0530	commit: today
 422cc3e27158b47f4d47553923fc5d2ca064bcd3 a10958c853e1994788fda8ff4a696087d835c0d0 4bizdeveloper <4bizdeveloper@gmail.com> 1791368777 +0530	commit: today
+a10958c853e1994788fda8ff4a696087d835c0d0 44d188966de29b91a5be741819fc0fc2dfe0d4e1 4bizdeveloper <4bizdeveloper@gmail.com> 1792490291 +0530	commit: today
 </file>
 
 <file path=".git/logs/refs/remotes/origin/HEAD">
@@ -1218,6 +1229,7 @@ a9f8e4b8aa212893aaee7e9c520ee5606acd7701 4a7697993bb2cec7ca66e718cda213cceae376c
 6da3507d4c043cd8990fc214e3c89fbc8619c2f2 8d65e8c60c4cab0ca19f66bc68430ccdc8418f23 4bizdeveloper <4bizdeveloper@gmail.com> 1791367863 +0530	update by push
 8d65e8c60c4cab0ca19f66bc68430ccdc8418f23 422cc3e27158b47f4d47553923fc5d2ca064bcd3 4bizdeveloper <4bizdeveloper@gmail.com> 1791368556 +0530	update by push
 422cc3e27158b47f4d47553923fc5d2ca064bcd3 a10958c853e1994788fda8ff4a696087d835c0d0 4bizdeveloper <4bizdeveloper@gmail.com> 1791368785 +0530	update by push
+a10958c853e1994788fda8ff4a696087d835c0d0 44d188966de29b91a5be741819fc0fc2dfe0d4e1 4bizdeveloper <4bizdeveloper@gmail.com> 1792490306 +0530	update by push
 </file>
 
 <file path=".git/logs/HEAD">
@@ -1227,6 +1239,7 @@ a9f8e4b8aa212893aaee7e9c520ee5606acd7701 4a7697993bb2cec7ca66e718cda213cceae376c
 6da3507d4c043cd8990fc214e3c89fbc8619c2f2 8d65e8c60c4cab0ca19f66bc68430ccdc8418f23 4bizdeveloper <4bizdeveloper@gmail.com> 1791367766 +0530	commit: today
 8d65e8c60c4cab0ca19f66bc68430ccdc8418f23 422cc3e27158b47f4d47553923fc5d2ca064bcd3 4bizdeveloper <4bizdeveloper@gmail.com> 1791368547 +0530	commit: today
 422cc3e27158b47f4d47553923fc5d2ca064bcd3 a10958c853e1994788fda8ff4a696087d835c0d0 4bizdeveloper <4bizdeveloper@gmail.com> 1791368777 +0530	commit: today
+a10958c853e1994788fda8ff4a696087d835c0d0 44d188966de29b91a5be741819fc0fc2dfe0d4e1 4bizdeveloper <4bizdeveloper@gmail.com> 1792490291 +0530	commit: today
 </file>
 
 <file path=".git/objects/info/commit-graphs/commit-graph-chain">
@@ -1234,7 +1247,7 @@ efff703b3f9a5b33baf8b71a625b589b82a7664a
 </file>
 
 <file path=".git/refs/heads/main">
-a10958c853e1994788fda8ff4a696087d835c0d0
+44d188966de29b91a5be741819fc0fc2dfe0d4e1
 </file>
 
 <file path=".git/refs/remotes/origin/HEAD">
@@ -1242,7 +1255,7 @@ ref: refs/remotes/origin/main
 </file>
 
 <file path=".git/refs/remotes/origin/main">
-a10958c853e1994788fda8ff4a696087d835c0d0
+44d188966de29b91a5be741819fc0fc2dfe0d4e1
 </file>
 
 <file path=".git/COMMIT_EDITMSG">
@@ -1297,28 +1310,6 @@ import "./.next/dev/types/root-params.d.ts";
 
 // NOTE: This file should not be edited
 // see https://nextjs.org/docs/app/api-reference/config/typescript for more information.
-</file>
-
-<file path="repomix.config.json">
-{
-  "output": {
-    "filePath": "repomix-output.txt",
-    "style": "xml"
-  },
-  "ignore": {
-    "useGitignore": false,
-    "useDefaultPatterns": false,
-    "customPatterns": [
-      "**/node_modules/**",
-      "**/.next/**",
-      "**/dist/**",
-      "**/build/**",
-      "**/*.lock",
-      "**/package-lock.json",
-      "**/pnpm-lock.yaml"
-    ]
-  }
-}
 </file>
 
 <file path=".github/workflows/deploy.yml">
@@ -1936,20 +1927,6 @@ const eslintConfig = defineConfig([
 export default eslintConfig;
 </file>
 
-<file path="next.config.ts">
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  experimental: {
-    turbopack: {
-      root: "C:\\Users\\PC\\Desktop\\4biz_crm_app",
-    },
-  },
-};
-
-export default nextConfig;
-</file>
-
 <file path="postcss.config.mjs">
 const config = {
   plugins: {
@@ -1997,6 +1974,28 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+</file>
+
+<file path="repomix.config.json">
+{
+  "output": {
+    "filePath": "repomix-output.txt",
+    "style": "xml"
+  },
+  "ignore": {
+    "useGitignore": false,
+    "useDefaultPatterns": false,
+    "customPatterns": [
+      "**/node_modules/**",
+      "**/.next/**",
+      "**/dist/**",
+      "**/build/**",
+      "**/*.lock",
+      "**/package-lock.json",
+      "**/pnpm-lock.yaml"
+    ]
+  }
+}
 </file>
 
 <file path="tsconfig.json">
@@ -3239,6 +3238,20 @@ export async function verifySessionToken(token: string | undefined) {
     return null;
   }
 }
+</file>
+
+<file path="next.config.ts">
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  experimental: {
+    turbopack: {
+      root: "C:\\Users\\PC\\Desktop\\4biz_crm_app",
+    },
+  },
+};
+
+export default nextConfig;
 </file>
 
 <file path="package.json">

@@ -1,0 +1,422 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["partialIndexes"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model crm_tasks {
+  id                                         String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  lead_id                                    String?        @db.Uuid
+  department                                 DepartmentType
+  assigned_to                                String?        @db.Uuid
+  created_by                                 String?        @db.Uuid
+  title                                      String
+  description                                String?
+  task_type                                  String         @default("Follow-up")
+  priority                                   String         @default("Medium")
+  scheduled_at                               DateTime?      @db.Timestamptz(6)
+  completed_at                               DateTime?      @db.Timestamptz(6)
+  status                                     String         @default("Open")
+  created_at                                 DateTime       @default(now()) @db.Timestamptz(6)
+  employees_crm_tasks_assigned_toToemployees employees?     @relation("crm_tasks_assigned_toToemployees", fields: [assigned_to], references: [id], onUpdate: NoAction)
+  employees_crm_tasks_created_byToemployees  employees?     @relation("crm_tasks_created_byToemployees", fields: [created_by], references: [id], onUpdate: NoAction)
+  leads                                      leads?         @relation(fields: [lead_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([assigned_to, scheduled_at], map: "idx_crm_tasks_assigned_schedule")
+  @@index([assigned_to], map: "idx_crm_tasks_assigned_to")
+  @@index([created_by], map: "idx_crm_tasks_created_by")
+  @@index([department, scheduled_at], map: "idx_crm_tasks_department_schedule")
+  @@index([lead_id], map: "idx_crm_tasks_lead_id")
+}
+
+model department_modules {
+  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  department_id String      @db.Uuid
+  module_key    String
+  module_name   String
+  description   String?
+  is_enabled    Boolean     @default(true)
+  created_at    DateTime    @default(now()) @db.Timestamptz(6)
+  departments   departments @relation(fields: [department_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([department_id, module_key])
+}
+
+model department_tasks {
+  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title        String
+  description  String?
+  department   DepartmentType
+  assigned_to  String?        @db.Uuid
+  lead_id      String?        @db.Uuid
+  scheduled_at DateTime       @db.Timestamptz(6)
+  is_completed Boolean        @default(false)
+  created_at   DateTime       @default(now()) @db.Timestamptz(6)
+  employees    employees?     @relation(fields: [assigned_to], references: [id], onUpdate: NoAction)
+  leads        leads?         @relation(fields: [lead_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([assigned_to], map: "idx_department_tasks_assigned_to")
+  @@index([department], map: "idx_department_tasks_department")
+  @@index([lead_id], map: "idx_department_tasks_lead_id")
+  @@index([scheduled_at], map: "idx_department_tasks_scheduled_at")
+}
+
+model departments {
+  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code               String               @unique
+  name               String               @unique
+  description        String?
+  is_active          Boolean              @default(true)
+  created_at         DateTime             @default(now()) @db.Timestamptz(6)
+  department_modules department_modules[]
+}
+
+model employees {
+  id                                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  first_name                                   String
+  last_name                                    String
+  email                                        String                  @unique
+  phone                                        String?
+  department                                   String?
+  job_title                                    String?
+  role                                         EmployeeRole            @default(Sales)
+  status                                       EmployeeStatus          @default(Active)
+  hire_date                                    DateTime                @default(now()) @db.Date
+  created_at                                   DateTime                @default(now()) @db.Timestamptz(6)
+  user_role                                    UserRole                @default(Employee)
+  department_type                              DepartmentType          @default(Sales)
+  avatar_url                                   String?
+  password                                     String                  @default("changeMe123")
+  reports_to_id                                String?                 @db.Uuid
+  employee_code                                String?
+  work_location                                String?
+  joined_at                                    DateTime?               @db.Date
+  notes                                        String?
+  password_hash                                String?
+  password_salt                                String?
+  crm_tasks_crm_tasks_assigned_toToemployees   crm_tasks[]             @relation("crm_tasks_assigned_toToemployees")
+  crm_tasks_crm_tasks_created_byToemployees    crm_tasks[]             @relation("crm_tasks_created_byToemployees")
+  department_tasks                             department_tasks[]
+  employees                                    employees?              @relation("employeesToemployees", fields: [reports_to_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  other_employees                              employees[]             @relation("employeesToemployees")
+  invoices                                     invoices[]
+  lead_activities                              lead_activities[]
+  lead_pipeline_history                        lead_pipeline_history[]
+  leads_leads_assigned_dept_head_idToemployees leads[]                 @relation("leads_assigned_dept_head_idToemployees")
+  leads_leads_assigned_employee_idToemployees  leads[]                 @relation("leads_assigned_employee_idToemployees")
+  leads_leads_assigned_marketing_idToemployees leads[]                 @relation("leads_assigned_marketing_idToemployees")
+  leads_leads_assigned_sales_idToemployees     leads[]                 @relation("leads_assigned_sales_idToemployees")
+
+  @@index([reports_to_id], map: "idx_employees_reports_to")
+}
+
+model invoices {
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  lead_id     String?       @db.Uuid
+  project_id  String?       @db.Uuid
+  client_name String
+  amount      Decimal       @default(0) @db.Decimal
+  tax_amount  Decimal       @default(0) @db.Decimal
+  status      InvoiceStatus @default(Draft)
+  due_date    DateTime      @db.Date
+  created_at  DateTime      @default(now()) @db.Timestamptz(6)
+  created_by  String?       @db.Uuid
+  employees   employees?    @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  leads       leads?        @relation(fields: [lead_id], references: [id], onUpdate: NoAction)
+  projects    projects?     @relation(fields: [project_id], references: [id], onUpdate: NoAction)
+
+  @@index([created_by], map: "idx_invoices_created_by")
+  @@index([lead_id], map: "idx_invoices_lead_id")
+  @@index([project_id], map: "idx_invoices_project_id")
+}
+
+model lead_activities {
+  id            String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  lead_id       String          @db.Uuid
+  employee_id   String?         @db.Uuid
+  department    DepartmentType?
+  activity_type String
+  subject       String?
+  details       String?
+  activity_at   DateTime        @default(now()) @db.Timestamptz(6)
+  created_at    DateTime        @default(now()) @db.Timestamptz(6)
+  employees     employees?      @relation(fields: [employee_id], references: [id], onUpdate: NoAction)
+  leads         leads           @relation(fields: [lead_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([employee_id], map: "idx_lead_activities_employee")
+  @@index([lead_id, activity_at(sort: Desc)], map: "idx_lead_activities_lead_at")
+}
+
+model lead_pipeline_history {
+  id                     String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  lead_id                String     @db.Uuid
+  changed_by             String?    @db.Uuid
+  from_status            String?
+  to_status              String?
+  from_marketing_stage   String?
+  to_marketing_stage     String?
+  from_sales_stage       String?
+  to_sales_stage         String?
+  from_department        String?
+  to_department          String?
+  from_assigned_employee String?    @db.Uuid
+  to_assigned_employee   String?    @db.Uuid
+  note                   String?
+  changed_at             DateTime   @default(now()) @db.Timestamptz(6)
+  employees              employees? @relation(fields: [changed_by], references: [id], onUpdate: NoAction)
+  leads                  leads      @relation(fields: [lead_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([changed_by], map: "idx_lead_pipeline_history_changed_by")
+  @@index([lead_id, changed_at(sort: Desc)], map: "idx_lead_pipeline_history_lead_changed_at")
+}
+
+model leads {
+  id                                               String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                                             String
+  email                                            String
+  company                                          String?
+  value                                            Decimal                 @default(0) @db.Decimal
+  created_at                                       DateTime                @default(now()) @db.Timestamptz(6)
+  phone                                            String?
+  source                                           String                  @default("Website")
+  notes                                            String?
+  assigned_to                                      String?
+  requirements                                     String?
+  campaign_name                                    String?
+  interactions                                     Json                    @default("[]")
+  tasks                                            Json                    @default("[]")
+  documents                                        Json                    @default("[]")
+  quotation_details                                Json                    @default("{}")
+  discount_pct                                     Decimal                 @default(0) @db.Decimal
+  handover_notes                                   String?
+  contact_info                                     String?
+  first_name                                       String?
+  last_name                                        String?
+  display_name                                     String?
+  job_title                                        String?
+  department                                       String?
+  secondary_email                                  String?
+  mobile_number                                    String?
+  alternative_number                               String?
+  whatsapp_number                                  String?
+  preferred_contact_method                         String                  @default("Email")
+  preferred_language                               String                  @default("English")
+  contact_time_preference                          String?
+  country                                          String?
+  emirate_state                                    String?
+  city                                             String?
+  address                                          String?
+  time_zone                                        String                  @default("UTC")
+  company_website                                  String?
+  industry                                         String?
+  company_size                                     String?
+  number_of_employees                              Int                     @default(0)
+  annual_revenue_range                             String?
+  business_type                                    String?
+  company_location                                 String?
+  vat_trn_number                                   String?
+  customer_type                                    String                  @default("New Prospect")
+  parent_company                                   String?
+  linkedin_company_url                             String?
+  interested_service                               String?
+  sub_service                                      String?
+  product_category                                 String?
+  requirement_description                          String?
+  main_pain_point                                  String?
+  expected_solution                                String?
+  estimated_budget                                 Decimal                 @default(0) @db.Decimal
+  expected_purchase_date                           DateTime?               @db.Date
+  project_timeline                                 String?
+  urgency                                          String                  @default("Medium")
+  quantity                                         Int                     @default(1)
+  project_location                                 String?
+  existing_vendor                                  String?
+  competitors_considered                           String?
+  additional_requirements                          String?
+  sub_source                                       String?
+  campaign_id                                      String?
+  ad_set                                           String?
+  ad_name                                          String?
+  keyword                                          String?
+  landing_page                                     String?
+  referral_url                                     String?
+  utm_source                                       String?
+  utm_medium                                       String?
+  utm_campaign                                     String?
+  utm_content                                      String?
+  utm_term                                         String?
+  first_touch_source                               String?
+  latest_touch_source                              String?
+  lead_score                                       Int                     @default(0)
+  branch                                           String                  @default("Main Branch")
+  team                                             String                  @default("Sales Team")
+  last_activity_at                                 DateTime                @default(now()) @db.Timestamptz(6)
+  follow_up_date                                   DateTime?               @db.Timestamptz(6)
+  first_response_time_minutes                      Int                     @default(0)
+  status                                           LeadStatus              @default(New)
+  approval_status                                  ApprovalStatus          @default(None)
+  payment_status                                   PaymentStatus           @default(Unpaid)
+  lead_temperature                                 LeadTemperature         @default(Warm)
+  assigned_department                              DepartmentType?         @default(Sales)
+  assigned_dept_head_id                            String?                 @db.Uuid
+  assigned_employee_id                             String?                 @db.Uuid
+  is_high_conversion_probable                      Boolean                 @default(false)
+  marketing_notes                                  String?
+  sales_notes                                      String?
+  call_scheduled_at                                DateTime?               @db.Timestamptz(6)
+  assigned_marketing_id                            String?                 @db.Uuid
+  assigned_sales_id                                String?                 @db.Uuid
+  conversion_probability                           Decimal                 @default(0) @db.Decimal(5, 2)
+  marketing_pipeline_stage                         String                  @default("New")
+  sales_pipeline_stage                             String                  @default("Qualification")
+  next_action                                      String?
+  next_action_at                                   DateTime?               @db.Timestamptz(6)
+  last_contacted_at                                DateTime?               @db.Timestamptz(6)
+  qualified_at                                     DateTime?               @db.Timestamptz(6)
+  converted_at                                     DateTime?               @db.Timestamptz(6)
+  updated_at                                       DateTime                @default(now()) @db.Timestamptz(6)
+  crm_tasks                                        crm_tasks[]
+  department_tasks                                 department_tasks[]
+  invoices                                         invoices[]
+  lead_activities                                  lead_activities[]
+  lead_pipeline_history                            lead_pipeline_history[]
+  employees_leads_assigned_dept_head_idToemployees employees?              @relation("leads_assigned_dept_head_idToemployees", fields: [assigned_dept_head_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  employees_leads_assigned_employee_idToemployees  employees?              @relation("leads_assigned_employee_idToemployees", fields: [assigned_employee_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  employees_leads_assigned_marketing_idToemployees employees?              @relation("leads_assigned_marketing_idToemployees", fields: [assigned_marketing_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  employees_leads_assigned_sales_idToemployees     employees?              @relation("leads_assigned_sales_idToemployees", fields: [assigned_sales_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  projects                                         projects[]
+
+  @@index([assigned_department], map: "idx_leads_assigned_department")
+  @@index([assigned_dept_head_id], map: "idx_leads_assigned_dept_head")
+  @@index([assigned_employee_id], map: "idx_leads_assigned_employee")
+  @@index([assigned_marketing_id], map: "idx_leads_assigned_marketing")
+  @@index([assigned_sales_id], map: "idx_leads_assigned_sales")
+  @@index([call_scheduled_at], map: "idx_leads_call_scheduled_at")
+  @@index([conversion_probability(sort: Desc)], map: "idx_leads_conversion_probability")
+  @@index([follow_up_date], map: "idx_leads_follow_up_date")
+  @@index([is_high_conversion_probable], map: "idx_leads_high_conversion", where: raw("(is_high_conversion_probable = true)"))
+  @@index([assigned_marketing_id], map: "idx_leads_marketing_assignment")
+  @@index([marketing_pipeline_stage], map: "idx_leads_marketing_stage")
+  @@index([next_action_at], map: "idx_leads_next_action_at")
+  @@index([assigned_sales_id], map: "idx_leads_sales_assignment")
+  @@index([sales_pipeline_stage], map: "idx_leads_sales_stage")
+  @@index([updated_at(sort: Desc)], map: "idx_leads_updated_at")
+}
+
+model projects {
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  client_name  String
+  project_name String
+  budget       Decimal       @default(0) @db.Decimal
+  assigned_to  String?
+  created_at   DateTime      @default(now()) @db.Timestamptz(6)
+  start_date   DateTime      @default(now()) @db.Date
+  due_date     DateTime?     @db.Date
+  description  String?
+  status       ProjectStatus @default(Planning)
+  lead_id      String?       @db.Uuid
+  invoices     invoices[]
+  leads        leads?        @relation(fields: [lead_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([lead_id], map: "idx_projects_lead_id")
+}
+
+model tickets {
+  id          String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title       String
+  client_name String
+  assigned_to String?
+  created_at  DateTime       @default(now()) @db.Timestamptz(6)
+  priority    TicketPriority @default(Medium)
+  status      TicketStatus   @default(Open)
+}
+
+enum ApprovalStatus {
+  None
+  Pending
+  Approved
+  Rejected
+}
+
+enum DepartmentType {
+  HR
+  Finance
+  Marketing
+  Sales
+  Operations
+}
+
+enum EmployeeRole {
+  Admin
+  Manager
+  Sales
+  Support
+  Developer
+}
+
+enum EmployeeStatus {
+  Active
+  OnLeave
+  Terminated
+}
+
+enum InvoiceStatus {
+  Draft
+  Sent
+  Paid
+  Overdue
+  Cancelled
+}
+
+enum LeadStatus {
+  New
+  Assigned
+  Contacted
+  Follow_up    @map("Follow-up")
+  Qualified
+  Converted
+  Disqualified
+}
+
+enum LeadTemperature {
+  Hot
+  Warm
+  Cold
+}
+
+enum PaymentStatus {
+  Unpaid
+  Partial
+  Paid
+}
+
+enum ProjectStatus {
+  Planning
+  In_Progress @map("In Progress")
+  Testing
+  Completed
+  On_Hold     @map("On Hold")
+}
+
+enum TicketPriority {
+  Low
+  Medium
+  High
+  Urgent
+}
+
+enum TicketStatus {
+  Open
+  In_Progress @map("In Progress")
+  Resolved
+  Closed
+}
+
+enum UserRole {
+  SuperAdmin
+  DeptHead
+  Employee
+}
