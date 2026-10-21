@@ -17,6 +17,7 @@ export async function GET() {
         },
       }),
       prisma.leads.findMany({
+        where: ctx.isAdmin || !ctx.branch ? {} : { branch: ctx.branch },
         select: { id: true, name: true, company: true, value: true, payment_status: true, status: true },
         orderBy: { value: 'desc' },
       }),
