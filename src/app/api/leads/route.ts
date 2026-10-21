@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthContext, isDepartmentHead } from '@/lib/department-auth';
-import { serializeLead, toApiLeadStatus, toPrismaLeadStatus } from '@/lib/lead-status';
+import { canTransitionLeadStatus, serializeLead, toApiLeadStatus, toPrismaLeadStatus } from '@/lib/lead-status';
 
 type AuthContext = Awaited<ReturnType<typeof getAuthContext>>;
 type LeadRecord = {
@@ -71,15 +71,7 @@ const PRIVILEGED_FIELDS = new Set([
   'marketing_pipeline_stage', 'sales_pipeline_stage', 'converted_at', 'qualified_at',
 ]);
 
-const ALLOWED_TRANSITIONS: Record<string, string[]> = {
-  New: ['Assigned', 'Contacted', 'Follow_up', 'Qualified', 'Disqualified'],
-  Assigned: ['Contacted', 'Follow_up', 'Qualified', 'Disqualified'],
-  Contacted: ['Follow_up', 'Qualified', 'Disqualified'],
-  'Follow-up': ['Contacted', 'Qualified', 'Disqualified'],
-  Qualified: ['Follow_up', 'Converted', 'Disqualified'],
-  Converted: [],
-  Disqualified: [],
-};
+
 
 const DATE_FIELDS = new Set([
   'expected_purchase_date', 'follow_up_date', 'call_scheduled_at', 'next_action_at',
@@ -364,8 +356,7 @@ export async function PATCH(request: Request) {
       const currentStatus = toApiLeadStatus(lead.status);
       const requestedStatus = toApiLeadStatus(normalizedStatus);
       if (requestedStatus !== currentStatus) {
-        const allowed = ALLOWED_TRANSITIONS[currentStatus] ?? [];
-        if (!ctx.isAdmin && !allowed.includes(requestedStatus)) {
+        if (!canTransitionLeadStatus(currentStatus, requestedStatus, ctx.isAdmin)) {
           return NextResponse.json({ error: `Invalid lead status transition from ${currentStatus} to ${requestedStatus}.` }, { status: 400 });
         }
       }
