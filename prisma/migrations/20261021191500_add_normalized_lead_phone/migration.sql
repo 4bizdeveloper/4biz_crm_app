@@ -10,7 +10,7 @@ SET "normalized_phone" = NULLIF(
       NULLIF("whatsapp_number", ''),
       ''
     ),
-    '\\D',
+    '\D',
     '',
     'g'
   ),
