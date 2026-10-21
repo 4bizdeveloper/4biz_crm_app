@@ -17,6 +17,20 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: crm
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d crm"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
     env:
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/crm?schema=public
       CRM_SESSION_SECRET: test-only-secret-with-at-least-32-characters
@@ -55,6 +69,8 @@ jobs:
         run: npx prisma validate
       - name: Generate Prisma client
         run: npx prisma generate
+      - name: Apply migrations to a clean PostgreSQL database
+        run: npx prisma migrate deploy
       - name: Run ESLint on migrated server code
         run: npx eslint src/app/api src/lib src/proxy.ts prisma.config.ts
       - name: Run unit tests
