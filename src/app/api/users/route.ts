@@ -32,7 +32,7 @@ export async function GET() {
     });
     return NextResponse.json({
       data,
-      currentUser: { id: ctx.employeeId, role: ctx.userRole, department: ctx.department, isAdmin: ctx.isAdmin },
+      currentUser: { id: ctx.employeeId, role: ctx.userRole, department: ctx.department, branch: ctx.branch, isAdmin: ctx.isAdmin },
     });
   } catch (error) {
     console.error('Unable to load users:', error);
