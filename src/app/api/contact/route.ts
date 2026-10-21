@@ -37,7 +37,8 @@ export async function POST(request: Request) {
     const email = String(body.email || '').trim().toLowerCase();
     const phone = String(body.phone || body.mobile_number || '').trim();
     const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    if (!name || ((!validEmail || !email) && normalizePhone(phone).length < 7)) {
+    const phoneDigits = normalizePhone(phone);
+    if (!name || (!email && phoneDigits.length < 7) || (email && !validEmail) || (phone && phoneDigits.length < 7)) {
       return NextResponse.json({ error: 'Name and a valid email address or phone number are required.' }, { status: 400, headers: corsHeaders(origin) });
     }
 
