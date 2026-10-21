@@ -41,6 +41,28 @@ export async function POST(request: Request) {
     const [firstName, ...rest] = name.split(/\s+/);
     const lastName = rest.join(' ');
     const requirements = String(body.requirements || body.message || body.requirement_description || '').trim();
+    const duplicateChecks: Record<string, unknown>[] = [];
+    if (validEmail) duplicateChecks.push({ email: { equals: email, mode: 'insensitive' } });
+    const normalizedPhone = normalizePhone(phone);
+    if (normalizedPhone.length >= 7) duplicateChecks.push({ normalized_phone: normalizedPhone });
+    if (body.company && name) {
+      duplicateChecks.push({
+        company: { equals: String(body.company).trim(), mode: 'insensitive' },
+        name: { equals: name, mode: 'insensitive' },
+      });
+    }
+    if (duplicateChecks.length) {
+      const duplicate = await prisma.leads.findFirst({
+        where: { OR: duplicateChecks, archived_at: null } as never,
+        select: { id: true },
+      });
+      if (duplicate) {
+        return NextResponse.json({
+          error: 'We already have a request with these contact details. Please contact us if you need to update it.',
+        }, { status: 409, headers: corsHeaders(origin) });
+      }
+    }
+
     const payload = {
       name, display_name: name, first_name: firstName || null, last_name: lastName || null,
       email: validEmail ? email : '', phone: phone || null, mobile_number: phone || null, normalized_phone: normalizePhone(phone) || null,
