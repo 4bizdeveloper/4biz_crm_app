@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthContext, isDepartmentHead } from '@/lib/department-auth';
+import { serializeLead, toApiLeadStatus, toPrismaLeadStatus } from '@/lib/lead-status';
 
 type AuthContext = Awaited<ReturnType<typeof getAuthContext>>;
 type LeadRecord = {
@@ -74,7 +75,7 @@ const ALLOWED_TRANSITIONS: Record<string, string[]> = {
   New: ['Assigned', 'Contacted', 'Follow_up', 'Qualified', 'Disqualified'],
   Assigned: ['Contacted', 'Follow_up', 'Qualified', 'Disqualified'],
   Contacted: ['Follow_up', 'Qualified', 'Disqualified'],
-  Follow_up: ['Contacted', 'Qualified', 'Disqualified'],
+  'Follow-up': ['Contacted', 'Qualified', 'Disqualified'],
   Qualified: ['Follow_up', 'Converted', 'Disqualified'],
   Converted: [],
   Disqualified: [],
@@ -159,7 +160,7 @@ export async function GET(request: Request) {
       where: where as never,
       orderBy: { created_at: 'desc' },
     });
-    return NextResponse.json({ data });
+    return NextResponse.json({ data: data.map(serializeLead) });
   } catch (error) {
     console.error('Unable to load leads:', error);
     return NextResponse.json({ error: 'Unable to load leads.' }, { status: 500 });
@@ -192,6 +193,11 @@ export async function POST(request: Request) {
     }
 
     const data = filterLeadFields({ ...body, name, email, phone, last_activity_at: new Date() });
+    if (data.status !== undefined) {
+      const normalizedStatus = toPrismaLeadStatus(data.status);
+      if (!normalizedStatus) return NextResponse.json({ error: 'Invalid lead status.' }, { status: 400 });
+      data.status = normalizedStatus;
+    }
     delete data.id;
     delete data.archived_at;
     const created = await prisma.leads.create({ data: data as never });
@@ -205,7 +211,7 @@ export async function POST(request: Request) {
         details: 'Lead record created through CRM API.',
       },
     });
-    return NextResponse.json({ data: created }, { status: 201 });
+    return NextResponse.json({ data: serializeLead(created) }, { status: 201 });
   } catch (error) {
     console.error('Unable to create lead:', error);
     return NextResponse.json({ error: 'Unable to create lead. Check the supplied lead fields.' }, { status: 400 });
@@ -241,7 +247,7 @@ export async function PATCH(request: Request) {
           details: 'Lead archived without changing its sales status.',
         },
       });
-      return NextResponse.json({ data: archived });
+      return NextResponse.json({ data: serializeLead(archived) });
     }
 
     if (action === 'restore') {
@@ -258,7 +264,7 @@ export async function PATCH(request: Request) {
           subject: 'Lead restored',
         },
       });
-      return NextResponse.json({ data: restored });
+      return NextResponse.json({ data: serializeLead(restored) });
     }
 
     if (action === 'merge') {
@@ -317,7 +323,7 @@ export async function PATCH(request: Request) {
         });
         return tx.leads.findUnique({ where: { id } });
       });
-      return NextResponse.json({ data: result, mergedIds: duplicateIds });
+      return NextResponse.json({ data: result ? serializeLead(result) : null, mergedIds: duplicateIds });
     }
 
     const changesInput = { ...body };
@@ -350,11 +356,18 @@ export async function PATCH(request: Request) {
       }
     }
 
-    if (typeof changesInput.status === 'string' && changesInput.status !== String(lead.status)) {
-      const allowed = ALLOWED_TRANSITIONS[String(lead.status)] ?? [];
-      if (!ctx.isAdmin && !allowed.includes(changesInput.status)) {
-        return NextResponse.json({ error: `Invalid lead status transition from ${lead.status} to ${changesInput.status}.` }, { status: 400 });
+    if (typeof changesInput.status === 'string') {
+      const normalizedStatus = toPrismaLeadStatus(changesInput.status);
+      if (!normalizedStatus) return NextResponse.json({ error: 'Invalid lead status.' }, { status: 400 });
+      const currentStatus = toApiLeadStatus(lead.status);
+      const requestedStatus = toApiLeadStatus(normalizedStatus);
+      if (requestedStatus !== currentStatus) {
+        const allowed = ALLOWED_TRANSITIONS[currentStatus] ?? [];
+        if (!ctx.isAdmin && !allowed.includes(requestedStatus)) {
+          return NextResponse.json({ error: `Invalid lead status transition from ${currentStatus} to ${requestedStatus}.` }, { status: 400 });
+        }
       }
+      changesInput.status = normalizedStatus;
     }
 
     const changes = filterLeadFields(changesInput);
@@ -371,7 +384,7 @@ export async function PATCH(request: Request) {
         details: `Updated fields: ${Object.keys(changesInput).join(', ')}`,
       },
     });
-    return NextResponse.json({ data: updated });
+    return NextResponse.json({ data: serializeLead(updated) });
   } catch (error) {
     console.error('Unable to update lead:', error);
     return NextResponse.json({ error: 'Unable to update lead. Check the supplied fields and selected records.' }, { status: 400 });
