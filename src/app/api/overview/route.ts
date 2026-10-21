@@ -15,10 +15,10 @@ export async function GET() {
         })).map((employee) => employee.id)
       : [];
 
-    let leadWhere: Record<string, unknown> = { archived_at: null };
-    let projectWhere: Record<string, unknown> = {};
-    let ticketWhere: Record<string, unknown> = {};
-    let employeeWhere: Record<string, unknown> = {};
+    const leadWhere: Record<string, unknown> = { archived_at: null };
+    const projectWhere: Record<string, unknown> = {};
+    const ticketWhere: Record<string, unknown> = {};
+    const employeeWhere: Record<string, unknown> = {};
 
     if (!ctx.isAdmin) {
       if (isDepartmentHead(ctx)) {
