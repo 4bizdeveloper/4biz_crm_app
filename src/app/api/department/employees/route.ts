@@ -23,6 +23,7 @@ export async function GET(request: Request) {
       where: {
         department_type: department as never,
         status: 'Active',
+        ...(ctx.branch ? { branch: ctx.branch } : {}),
         ...(roleFilter === 'employee' ? { user_role: 'Employee' } : {}),
       },
       select: publicSelect,
