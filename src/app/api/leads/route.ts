@@ -395,6 +395,11 @@ export async function PATCH(request: Request) {
     }
     changes.updated_at = new Date();
     changes.last_activity_at = new Date();
+    const auditDetails = Object.keys(changesInput).map((field) => {
+      if (['interactions', 'tasks', 'documents', 'notes', 'requirements', 'contact_info'].includes(field)) return `${field}: updated`;
+      const previousValue = (lead as unknown as Record<string, unknown>)[field];
+      return `${field}: ${auditValue(previousValue)} -> ${auditValue(changesInput[field])}`;
+    }).join('; ');
     const updated = await prisma.$transaction(async (tx) => {
       const leadResult = await tx.leads.update({ where: { id }, data: changes as never });
       await tx.lead_activities.create({
@@ -404,7 +409,7 @@ export async function PATCH(request: Request) {
           department: ctx.department as never,
           activity_type: 'updated',
           subject: 'Lead updated',
-          details: `Updated fields: ${Object.keys(changesInput).join(', ')}`,
+          details: auditDetails,
         },
       });
       return leadResult;
