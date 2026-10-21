@@ -5,14 +5,10 @@ import { useRouter } from 'next/navigation';
 import { 
   ShieldCheck, 
   Server, 
-  Ticket, 
   ArrowRight, 
   Lock, 
   Mail, 
   CheckCircle2, 
-  TrendingUp, 
-  Users, 
-  Activity, 
   BarChart3, 
   Zap,
   Globe
@@ -69,10 +65,6 @@ export default function LoginPage() {
         </div>
 
         <div className="hidden md:flex items-center gap-6 text-xs font-semibold text-slate-300">
-          <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#0c2323]/80 border border-[#1b4341]">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            System Status: 99.98%
-          </span>
           <span className="flex items-center gap-1.5 text-slate-400">
             <Globe className="w-4 h-4 text-[#42b8a6]" /> Global Cloud Network
           </span>
@@ -83,7 +75,7 @@ export default function LoginPage() {
       <main className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 my-auto">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           
-          {/* Left Column: Landing Page Content & Visual CRM Showcase */}
+          {/* Left Column: Landing Page Content */}
           <div className="lg:col-span-7 space-y-8 text-left">
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#0f2d2c]/80 border border-[#1f5653] text-[#52d6c1] text-xs font-semibold mb-4 backdrop-blur-md">
@@ -97,61 +89,25 @@ export default function LoginPage() {
               </p>
             </div>
 
-            {/* Simulated Live Analytics Cards Showcase */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-              <div className="bg-gradient-to-b from-[#0e2726]/90 to-[#081818]/90 backdrop-blur-xl p-4 rounded-xl border border-[#1d4a47]/60 shadow-xl relative overflow-hidden group hover:border-[#2a6d68] transition-all">
-                <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-                  <TrendingUp className="w-12 h-12 text-[#52d6c1]" />
-                </div>
-                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Revenue Pipeline</p>
-                <h3 className="text-lg sm:text-xl font-bold text-white mt-1">₹ 42.5 L</h3>
-                <span className="inline-flex items-center text-[10px] text-emerald-400 font-medium mt-1">
-                  +18.4% this month
-                </span>
-              </div>
-
-              <div className="bg-gradient-to-b from-[#0e2726]/90 to-[#081818]/90 backdrop-blur-xl p-4 rounded-xl border border-[#1d4a47]/60 shadow-xl relative overflow-hidden group hover:border-[#2a6d68] transition-all">
-                <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-                  <Users className="w-12 h-12 text-[#52d6c1]" />
-                </div>
-                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Active Clients</p>
-                <h3 className="text-lg sm:text-xl font-bold text-white mt-1">1,280+</h3>
-                <span className="inline-flex items-center text-[10px] text-emerald-400 font-medium mt-1">
-                  Active SLA contracts
-                </span>
-              </div>
-
-              <div className="col-span-2 sm:col-span-1 bg-gradient-to-b from-[#0e2726]/90 to-[#081818]/90 backdrop-blur-xl p-4 rounded-xl border border-[#1d4a47]/60 shadow-xl relative overflow-hidden group hover:border-[#2a6d68] transition-all">
-                <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-                  <Activity className="w-12 h-12 text-[#52d6c1]" />
-                </div>
-                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Service Desk</p>
-                <h3 className="text-lg sm:text-xl font-bold text-white mt-1">98.2%</h3>
-                <span className="inline-flex items-center text-[10px] text-[#52d6c1] font-medium mt-1">
-                  Resolution rate
-                </span>
-              </div>
-            </div>
-
             {/* Feature Highlights Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="flex items-start gap-3 p-3.5 rounded-xl bg-[#0a1f1e]/60 border border-[#163e3b]/50">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+              <div className="flex items-start gap-3 p-4 rounded-xl bg-[#0a1f1e]/60 border border-[#163e3b]/50 hover:border-[#2a6d68] transition-all">
                 <div className="p-2 rounded-lg bg-[#143d3a] text-[#52d6c1] shrink-0">
-                  <Server className="w-4 h-4" />
+                  <Server className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-slate-100">Infrastructure Tickets</h4>
-                  <p className="text-[11px] text-slate-400 mt-0.5">Automated queue routing and live server monitoring.</p>
+                  <h4 className="text-sm font-bold text-slate-100">Infrastructure Tickets</h4>
+                  <p className="text-xs text-slate-400 mt-1 leading-relaxed">Automated queue routing and live server monitoring.</p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 p-3.5 rounded-xl bg-[#0a1f1e]/60 border border-[#163e3b]/50">
+              <div className="flex items-start gap-3 p-4 rounded-xl bg-[#0a1f1e]/60 border border-[#163e3b]/50 hover:border-[#2a6d68] transition-all">
                 <div className="p-2 rounded-lg bg-[#143d3a] text-[#52d6c1] shrink-0">
-                  <BarChart3 className="w-4 h-4" />
+                  <BarChart3 className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-slate-100">Real-Time Analytics</h4>
-                  <p className="text-[11px] text-slate-400 mt-0.5">In-depth insights into team output and sales conversion.</p>
+                  <h4 className="text-sm font-bold text-slate-100">Real-Time Analytics</h4>
+                  <p className="text-xs text-slate-400 mt-1 leading-relaxed">In-depth insights into team output and sales conversion.</p>
                 </div>
               </div>
             </div>
