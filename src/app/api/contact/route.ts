@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { isValidEmail, isValidPhone, normalizePhone } from '@/lib/lead-validation';
 
 function corsHeaders(origin: string | null) {
   const allowed = (process.env.CONTACT_ALLOWED_ORIGINS || '').split(',').map((value) => value.trim()).filter(Boolean);
@@ -12,10 +13,6 @@ function corsHeaders(origin: string | null) {
     'Access-Control-Allow-Headers': 'Content-Type, X-CRM-API-Key',
     'Access-Control-Max-Age': '86400',
   };
-}
-
-function normalizePhone(value: unknown) {
-  return String(value ?? '').replace(/\D/g, '');
 }
 
 export async function OPTIONS(request: Request) {
@@ -36,9 +33,9 @@ export async function POST(request: Request) {
     const name = String(body.name || body.display_name || '').trim();
     const email = String(body.email || '').trim().toLowerCase();
     const phone = String(body.phone || body.mobile_number || '').trim();
-    const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    const validEmail = isValidEmail(email);
     const phoneDigits = normalizePhone(phone);
-    if (!name || (!email && phoneDigits.length < 7) || (email && !validEmail) || (phone && phoneDigits.length < 7)) {
+    if (!name || (!email && !isValidPhone(phone)) || (email && !validEmail) || (phone && !isValidPhone(phone))) {
       return NextResponse.json({ error: 'Name and a valid email address or phone number are required.' }, { status: 400, headers: corsHeaders(origin) });
     }
 
