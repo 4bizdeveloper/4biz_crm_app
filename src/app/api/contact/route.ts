@@ -34,7 +34,6 @@ export async function POST(request: Request) {
     const email = String(body.email || '').trim().toLowerCase();
     const phone = String(body.phone || body.mobile_number || '').trim();
     const validEmail = isValidEmail(email);
-    const phoneDigits = normalizePhone(phone);
     if (!name || (!email && !isValidPhone(phone)) || (email && !validEmail) || (phone && !isValidPhone(phone))) {
       return NextResponse.json({ error: 'Name and a valid email address or phone number are required.' }, { status: 400, headers: corsHeaders(origin) });
     }
