@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { canAccessLeadBranch, getAuthContext, isDepartmentHead } from '@/lib/department-auth';
 import { canTransitionLeadStatus, serializeLead, toApiLeadStatus, toPrismaLeadStatus } from '@/lib/lead-status';
+import { isValidEmail, isValidPhone, normalizeEmail, normalizePhone } from '@/lib/lead-validation';
 
 type AuthContext = Awaited<ReturnType<typeof getAuthContext>>;
 type LeadRecord = {
@@ -26,22 +27,6 @@ function canManage(ctx: AuthContext, lead: LeadRecord) {
     || lead.assigned_employee_id === ctx.employeeId
     || lead.assigned_marketing_id === ctx.employeeId
     || lead.assigned_sales_id === ctx.employeeId;
-}
-
-function normalizeEmail(value: unknown) {
-  return String(value ?? '').trim().toLowerCase();
-}
-
-function normalizePhone(value: unknown) {
-  return String(value ?? '').replace(/\D/g, '');
-}
-
-function validEmail(value: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-}
-
-function validPhone(value: string) {
-  return normalizePhone(value).length >= 7;
 }
 
 function auditValue(value: unknown) {
@@ -103,7 +88,7 @@ async function findDuplicateCandidates(input: Record<string, unknown>, excludeId
   const phone = normalizePhone(input.phone ?? input.mobile_number ?? input.alternative_number ?? input.whatsapp_number);
   const company = String(input.company ?? '').trim();
   const OR: Record<string, unknown>[] = [];
-  if (email && validEmail(email)) OR.push({ email: { equals: email, mode: 'insensitive' } });
+  if (email && isValidEmail(email)) OR.push({ email: { equals: email, mode: 'insensitive' } });
   if (phone.length >= 7) OR.push({ normalized_phone: phone });
   if (company) OR.push({ company: { equals: company, mode: 'insensitive' } });
   if (!OR.length) return [];
@@ -119,7 +104,7 @@ async function findDuplicateCandidates(input: Record<string, unknown>, excludeId
   });
 
   return candidates.filter((candidate) => {
-    const emailMatch = !!email && validEmail(email) && normalizeEmail(candidate.email) === email;
+    const emailMatch = !!email && isValidEmail(email) && normalizeEmail(candidate.email) === email;
     const phoneMatch = phone.length >= 7 && [
       candidate.phone, candidate.mobile_number, candidate.alternative_number, candidate.whatsapp_number,
     ].some((value) => normalizePhone(value) === phone);
@@ -176,7 +161,7 @@ export async function POST(request: Request) {
     const body = await request.json() as Record<string, unknown>;
     const email = normalizeEmail(body.email);
     const phone = String(body.phone ?? body.mobile_number ?? body.alternative_number ?? body.whatsapp_number ?? '').trim();
-    if ((email && !validEmail(email)) || (phone && !validPhone(phone)) || (!email && !validPhone(phone))) {
+    if ((email && !isValidEmail(email)) || (phone && !isValidPhone(phone)) || (!email && !isValidPhone(phone))) {
       return NextResponse.json({ error: 'Enter a valid email address or phone number.' }, { status: 400 });
     }
     const name = String(body.name ?? body.display_name ?? [body.first_name, body.last_name].filter(Boolean).join(' ')).trim();
@@ -364,7 +349,7 @@ export async function PATCH(request: Request) {
     if ('email' in changesInput || 'phone' in changesInput || 'mobile_number' in changesInput) {
       const email = normalizeEmail(changesInput.email ?? lead.email);
       const phone = String(changesInput.phone ?? changesInput.mobile_number ?? changesInput.alternative_number ?? changesInput.whatsapp_number ?? lead.phone ?? lead.mobile_number ?? lead.alternative_number ?? lead.whatsapp_number ?? '').trim();
-      if ((email && !validEmail(email)) || (phone && !validPhone(phone)) || (!email && !validPhone(phone))) {
+      if ((email && !isValidEmail(email)) || (phone && !isValidPhone(phone)) || (!email && !isValidPhone(phone))) {
         return NextResponse.json({ error: 'Enter a valid email address or phone number.' }, { status: 400 });
       }
       const duplicates = await findDuplicateCandidates({ ...lead, ...changesInput, email, phone }, id);
