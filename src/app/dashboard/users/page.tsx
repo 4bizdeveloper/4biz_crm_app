@@ -16,6 +16,7 @@ type User = {
   user_role: string;
   employee_code?: string | null;
   work_location?: string | null;
+  branch?: string | null;
   notes?: string | null;
 };
 
@@ -33,7 +34,7 @@ export default function UserManagementPage() {
   const [form, setForm] = useState({
     first_name: '', last_name: '', email: '', phone: '', department_type: 'Sales',
     job_title: '', role: 'Sales', user_role: 'Employee', password: '',
-    employee_code: '', work_location: '', notes: '', status: 'Active',
+    employee_code: '', work_location: '', branch: '', notes: '', status: 'Active',
   });
 
   const load = async () => {
@@ -49,7 +50,7 @@ export default function UserManagementPage() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return users;
-    return users.filter(u => [u.first_name, u.last_name, u.email, u.department_type, u.job_title, u.user_role].some(v => String(v || '').toLowerCase().includes(q)));
+    return users.filter(u => [u.first_name, u.last_name, u.email, u.department_type, u.job_title, u.user_role, u.branch].some(v => String(v || '').toLowerCase().includes(q)));
   }, [users, search]);
 
   const openCreate = () => {
@@ -59,7 +60,7 @@ export default function UserManagementPage() {
       first_name: '', last_name: '', email: '', phone: '',
       department_type: currentUser?.department || 'Sales', job_title: '',
       role: 'Sales', user_role: currentUser?.isAdmin ? 'Employee' : 'Employee',
-      password: '', employee_code: '', work_location: '', notes: '', status: 'Active',
+      password: '', employee_code: '', work_location: '', branch: '', notes: '', status: 'Active',
     });
     setShowModal(true);
   };
@@ -71,7 +72,7 @@ export default function UserManagementPage() {
       first_name: u.first_name || '', last_name: u.last_name || '', email: u.email || '',
       phone: u.phone || '', department_type: u.department_type || 'Sales',
       job_title: u.job_title || '', role: u.role || 'Sales', user_role: u.user_role || 'Employee',
-      password: '', employee_code: u.employee_code || '', work_location: u.work_location || '',
+      password: '', employee_code: u.employee_code || '', work_location: u.work_location || '', branch: u.branch || '',
       notes: u.notes || '', status: u.status || 'Active',
     });
     setShowModal(true);
@@ -171,7 +172,7 @@ export default function UserManagementPage() {
         <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-5 sm:p-6 shadow-2xl">
           <div className="flex items-center justify-between border-b pb-4"><div><h2 className="text-lg font-black">{editing ? 'Edit employee' : 'Add employee'}</h2><p className="text-xs text-slate-500">Credentials are stored server-side using password hashing.</p></div><button onClick={() => setShowModal(false)}><X /></button></div>
           <form onSubmit={save} className="mt-5 grid gap-4 sm:grid-cols-2">
-            {([['first_name','First name'],['last_name','Last name'],['email','Email'],['phone','Phone'],['job_title','Job title'],['employee_code','Employee code'],['work_location','Work location']] as const).map(([key,label]) => <label key={key} className="text-xs font-bold text-slate-600">{label}<input required={key==='first_name'||key==='last_name'||key==='email'} value={form[key]} onChange={e => setForm({...form,[key]:e.target.value})} className="mt-1.5 w-full rounded-xl border px-3 py-2.5 text-sm font-normal outline-none focus:border-teal-500" /></label>)}
+            {([['first_name','First name'],['last_name','Last name'],['email','Email'],['phone','Phone'],['job_title','Job title'],['employee_code','Employee code'],['work_location','Work location'],['branch','Branch']] as const).map(([key,label]) => <label key={key} className="text-xs font-bold text-slate-600">{label}<input required={key==='first_name'||key==='last_name'||key==='email'} disabled={key==='branch'&&!currentUser?.isAdmin} value={form[key]} onChange={e => setForm({...form,[key]:e.target.value})} className="mt-1.5 w-full rounded-xl border px-3 py-2.5 text-sm font-normal outline-none focus:border-teal-500 disabled:bg-slate-100" /></label>)}
             <label className="text-xs font-bold text-slate-600">Department<select value={form.department_type} disabled={!currentUser?.isAdmin} onChange={e => setForm({...form,department_type:e.target.value})} className="mt-1.5 w-full rounded-xl border px-3 py-2.5 text-sm font-normal disabled:bg-slate-100">{departments.map(d => <option key={d}>{d}</option>)}</select></label>
             <label className="text-xs font-bold text-slate-600">Job role<select value={form.role} onChange={e => setForm({...form,role:e.target.value})} className="mt-1.5 w-full rounded-xl border px-3 py-2.5 text-sm font-normal">{jobRoles.map(d => <option key={d}>{d}</option>)}</select></label>
             <label className="text-xs font-bold text-slate-600">System access<select value={form.user_role} disabled={!currentUser?.isAdmin} onChange={e => setForm({...form,user_role:e.target.value})} className="mt-1.5 w-full rounded-xl border px-3 py-2.5 text-sm font-normal disabled:bg-slate-100"><option>Employee</option><option>DeptHead</option><option>SuperAdmin</option></select></label>
