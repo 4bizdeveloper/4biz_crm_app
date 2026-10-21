@@ -10,9 +10,11 @@ Copy `.env.example` to `.env.local` and set `DATABASE_URL`. Keep credentials out
 
 Prisma supports multiple database providers, but changing providers is not just changing a URL: the datasource provider, provider-specific schema types, migrations, and generated client must also be updated. The current schema uses PostgreSQL-specific UUIDs, enums, timestamptz, JSON, and Decimal fields. PostgreSQL is the supported target until a separate provider-portability effort is completed.
 
-## Data preservation
+## Migrations and data preservation
 
-Do not run schema-reset commands against a populated database. Before applying migrations, take a verified database backup, compare the live schema with `prisma/schema.prisma`, and rehearse against a restored copy. Existing Supabase PostgreSQL data can remain in place while queries are converted if schema compatibility is verified.
+CI generates `prisma/migrations/20261021170000_init/migration.sql` from the Prisma schema for fresh PostgreSQL databases. The later additive migrations add archive and normalized-phone fields idempotently.
+
+For a fresh database, run `npx prisma migrate deploy` after setting `DATABASE_URL` (and optional `DIRECT_URL`). For an existing Supabase PostgreSQL database, take and verify a backup, compare the live schema with the baseline migration, and rehearse against a restored copy. Only if the live schema is compatible with the baseline, mark that baseline as already applied with `npx prisma migrate resolve --applied 20261021170000_init`, then run `npx prisma migrate deploy` to apply the additive migrations. Do not mark the baseline applied if the live schema differs; reconcile the drift first. Never run `prisma migrate reset` or destructive schema operations against production data.
 
 ## Lead-module acceptance checklist
 
@@ -28,6 +30,6 @@ Do not run schema-reset commands against a populated database. Before applying m
 - Record actor, operation, timestamp, and meaningful before/after details for lead changes.
 - Test validation, duplicate detection, merge integrity, permissions, transitions, archive, and audit behavior.
 
-## Verification still required
+## Verification
 
-CI runs Prisma schema validation, client generation, ESLint for migrated server code, lead-status unit tests, and a production build. It does not connect to a live database or apply migrations. Rehearse the additive SQL migrations against a restored database before production rollout.
+CI runs Prisma schema validation, client generation, ESLint for migrated server code, lead-status unit tests, and a production build. It does not connect to a live database or apply migrations. Rehearse migrations against a restored database before production rollout.
