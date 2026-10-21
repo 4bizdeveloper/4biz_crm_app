@@ -225,10 +225,9 @@ export async function PATCH(request: Request) {
     if (!id) return NextResponse.json({ error: 'Lead id is required.' }, { status: 400 });
 
     const lead = await prisma.leads.findUnique({ where: { id } });
-    if (!lead || lead.archived_at) return NextResponse.json({ error: 'Lead not found.' }, { status: 404 });
-    if (!canManage(ctx, lead)) return NextResponse.json({ error: 'You are not allowed to modify this lead.' }, { status: 403 });
-
     const action = String(body.action ?? '');
+    if (!lead || (lead.archived_at && action !== 'restore')) return NextResponse.json({ error: 'Lead not found.' }, { status: 404 });
+    if (!canManage(ctx, lead)) return NextResponse.json({ error: 'You are not allowed to modify this lead.' }, { status: 403 });
     if (action === 'archive') {
       const archived = await prisma.$transaction(async (tx) => {
         const record = await tx.leads.update({
