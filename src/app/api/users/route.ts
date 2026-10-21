@@ -26,7 +26,7 @@ export async function GET() {
   if (!ctx.employeeId && !ctx.isAdmin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
     const data = await prisma.employees.findMany({
-      where: ctx.isAdmin ? {} : { department_type: ctx.department as never },
+      where: ctx.isAdmin ? {} : { department_type: ctx.department as never, ...(ctx.branch ? { branch: ctx.branch } : {}) },
       select: publicSelect,
       orderBy: { created_at: 'desc' },
     });
