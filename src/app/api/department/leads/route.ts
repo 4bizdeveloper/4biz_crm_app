@@ -23,25 +23,40 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  const conditions: Record<string, unknown>[] = [
-    { assigned_department: department },
-    ...(department === 'Sales' ? [{ is_high_conversion_probable: true }] : []),
-  ];
-  const employeeId = searchParams.get('employeeId');
-  if (employeeId) conditions.push({ [department === 'Marketing' ? 'assigned_marketing_id' : 'assigned_sales_id']: employeeId });
-  if (searchParams.get('highConversion') === 'true') conditions.push({ is_high_conversion_probable: true });
-  const where: Record<string, unknown> = { AND: conditions, archived_at: null };
-  if (!ctx.isAdmin && ctx.branch) where.branch = ctx.branch;
-  if (searchParams.get('today') === 'true') {
-    const start = new Date(); start.setHours(0, 0, 0, 0);
-    const end = new Date(start); end.setDate(end.getDate() + 1);
-    where.OR = [
-      { follow_up_date: { gte: start, lt: end } },
-      { call_scheduled_at: { gte: start, lt: end } },
-    ];
-  }
-
   try {
+    const conditions: Record<string, unknown>[] = [
+      { assigned_department: department },
+      ...(department === 'Sales' ? [{ is_high_conversion_probable: true }] : []),
+    ];
+    const requestedEmployeeId = searchParams.get('employeeId');
+    const assignmentField = department === 'Marketing' ? 'assigned_marketing_id' : 'assigned_sales_id';
+
+    if (!ctx.isAdmin && !isDepartmentHead(ctx)) {
+      conditions.push({ [assignmentField]: ctx.employeeId });
+    } else if (requestedEmployeeId) {
+      const employee = await prisma.employees.findUnique({
+        where: { id: requestedEmployeeId },
+        select: { id: true, department_type: true, branch: true, status: true },
+      });
+      if (!employee || employee.status !== 'Active' || employee.department_type !== department
+        || (!ctx.isAdmin && ctx.branch && employee.branch !== ctx.branch)) {
+        return NextResponse.json({ error: 'The requested employee is outside your authorized department or branch.' }, { status: 403 });
+      }
+      conditions.push({ [assignmentField]: requestedEmployeeId });
+    }
+
+    if (searchParams.get('highConversion') === 'true') conditions.push({ is_high_conversion_probable: true });
+    const where: Record<string, unknown> = { AND: conditions, archived_at: null };
+    if (!ctx.isAdmin && ctx.branch) where.branch = ctx.branch;
+    if (searchParams.get('today') === 'true') {
+      const start = new Date(); start.setHours(0, 0, 0, 0);
+      const end = new Date(start); end.setDate(end.getDate() + 1);
+      where.OR = [
+        { follow_up_date: { gte: start, lt: end } },
+        { call_scheduled_at: { gte: start, lt: end } },
+      ];
+    }
+
     const data = await prisma.leads.findMany({
       where: where as never,
       orderBy: { last_activity_at: 'desc' },
@@ -81,7 +96,7 @@ export async function PATCH(request: Request) {
       if (body.employeeId && lead.status === 'New') payload.status = 'Assigned';
       activityDetails = `Marketing assignment changed to ${body.employeeId ?? 'unassigned'}`;
     } else if (action === 'marketing_update') {
-      if (!canEditAssignedRecord(ctx, lead.assigned_marketing_id) || (!ctx.isAdmin && ctx.department !== 'Marketing')) {
+      if (lead.assigned_department !== 'Marketing' || !canEditAssignedRecord(ctx, lead.assigned_marketing_id) || (!ctx.isAdmin && ctx.department !== 'Marketing')) {
         return NextResponse.json({ error: 'Only the assigned marketing employee, Marketing lead or Super Admin can update this lead' }, { status: 403 });
       }
       if (body.status !== undefined) {
@@ -98,6 +113,7 @@ export async function PATCH(request: Request) {
       activityDetails = String(body.notes || body.pipelineStage || 'Marketing lead updated');
     } else if (action === 'transfer_to_sales') {
       if (!canManageDepartment(ctx, 'Marketing')) return NextResponse.json({ error: 'Only the Marketing lead or Super Admin can transfer leads to Sales' }, { status: 403 });
+      if (lead.assigned_department !== 'Marketing') return NextResponse.json({ error: 'Only Marketing-owned leads can be transferred to Sales.' }, { status: 400 });
       if (!lead.is_high_conversion_probable) return NextResponse.json({ error: 'Only high-conversion leads can be transferred' }, { status: 400 });
       if (!canTransitionLeadStatus(lead.status, 'Qualified', ctx.isAdmin)) return NextResponse.json({ error: 'Lead status cannot transition to Qualified from its current state.' }, { status: 400 });
       payload.assigned_department = 'Sales';
@@ -123,7 +139,7 @@ export async function PATCH(request: Request) {
       }
       activityDetails = `Sales assignment changed to ${body.employeeId ?? 'unassigned'}`;
     } else if (action === 'sales_update') {
-      if (!canEditAssignedRecord(ctx, lead.assigned_sales_id) || (!ctx.isAdmin && ctx.department !== 'Sales')) {
+      if (lead.assigned_department !== 'Sales' || !canEditAssignedRecord(ctx, lead.assigned_sales_id) || (!ctx.isAdmin && ctx.department !== 'Sales')) {
         return NextResponse.json({ error: 'Only the assigned sales employee, Sales lead or Super Admin can update this lead' }, { status: 403 });
       }
       if (body.status !== undefined) {
