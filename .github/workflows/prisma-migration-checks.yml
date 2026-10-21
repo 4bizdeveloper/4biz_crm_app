@@ -32,16 +32,24 @@ jobs:
           cache: npm
       - name: Install dependencies and reconcile lockfile
         run: npm install --no-audit --no-fund
-      - name: Commit reconciled npm lockfile
+      - name: Generate baseline migration for fresh databases
+        run: |
+          if [ ! -f prisma/migrations/20261021170000_init/migration.sql ]; then
+            mkdir -p prisma/migrations/20261021170000_init
+            npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > prisma/migrations/20261021170000_init/migration.sql
+          fi
+      - name: Commit generated migration and synchronized lockfile
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: 'chore: sync npm lockfile for Prisma adapter'
-          file_pattern: package-lock.json
+          commit_message: 'chore: sync Prisma baseline migration and npm lockfile'
+          file_pattern: 'package-lock.json, prisma/migrations/20261021170000_init/migration.sql'
       - name: Upload reconciled npm lockfile
         uses: actions/upload-artifact@v4
         with:
           name: prisma-migration-package-lock
-          path: package-lock.json
+          path: |
+            package-lock.json
+            prisma/migrations/20261021170000_init/migration.sql
           if-no-files-found: error
       - name: Validate Prisma schema
         run: npx prisma validate
