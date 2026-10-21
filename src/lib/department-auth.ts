@@ -1,5 +1,7 @@
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
+import { canAccessLeadBranch } from '@/lib/branch-access';
+export { canAccessLeadBranch } from '@/lib/branch-access';
 import { verifySessionToken } from '@/lib/auth-session';
 
 export type Department = 'Marketing' | 'Sales' | 'Operations' | 'HR' | 'Finance';
@@ -63,8 +65,3 @@ export function canEditAssignedRecord(ctx: AuthContext, assignedId?: string | nu
   return ctx.isAdmin || isDepartmentHead(ctx) || (!!ctx.employeeId && ctx.employeeId === assignedId);
 }
 
-export function canAccessLeadBranch(ctx: AuthContext, leadBranch?: string | null) {
-  // Existing employee records have no branch until an administrator assigns one.
-  // Preserve their current assignment-based access while enforcing explicit branch assignments.
-  return ctx.isAdmin || !ctx.branch || leadBranch === ctx.branch;
-}
