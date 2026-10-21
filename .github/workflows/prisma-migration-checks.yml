@@ -36,7 +36,7 @@ jobs:
         run: |
           if [ ! -f prisma/migrations/20261021170000_init/migration.sql ]; then
             mkdir -p prisma/migrations/20261021170000_init
-            npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > prisma/migrations/20261021170000_init/migration.sql
+            npx prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script > prisma/migrations/20261021170000_init/migration.sql
           fi
       - name: Commit generated migration and synchronized lockfile
         uses: stefanzweifel/git-auto-commit-action@v5
