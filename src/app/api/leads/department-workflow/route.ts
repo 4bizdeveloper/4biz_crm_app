@@ -26,12 +26,14 @@ export async function POST(request: Request) {
     switch (action) {
       case 'MARKETING_UPDATE':
         if (!ctx.isAdmin && ctx.department !== 'Marketing') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        if (lead.assigned_department !== 'Marketing') return NextResponse.json({ error: 'Only Marketing-owned leads can be updated here.' }, { status: 400 });
         if (!ctx.isAdmin && !marketingLead && lead.assigned_marketing_id !== ctx.employeeId) return NextResponse.json({ error: 'You can only update leads assigned to you.' }, { status: 403 });
         if (notes !== undefined) updateData.marketing_notes = notes;
         updateData.is_high_conversion_probable = isHighConversion ?? false;
         break;
       case 'MARKETING_TRANSFER_TO_SALES':
         if (!marketingLead) return NextResponse.json({ error: 'Only Marketing leads or Super Admin can transfer leads.' }, { status: 403 });
+        if (lead.assigned_department !== 'Marketing') return NextResponse.json({ error: 'Only Marketing-owned leads can be transferred to Sales.' }, { status: 400 });
         if (targetDeptHeadId) {
           const head = await prisma.employees.findUnique({ where: { id: String(targetDeptHeadId) }, select: { id: true, department_type: true, user_role: true, status: true } });
           if (!head || head.department_type !== 'Sales' || head.status !== 'Active' || !['Admin', 'DeptHead', 'Manager', 'SuperAdmin'].includes(head.user_role)) {
@@ -47,6 +49,7 @@ export async function POST(request: Request) {
         break;
       case 'SALES_ASSIGN':
         if (!salesLead) return NextResponse.json({ error: 'Only Sales leads or Super Admin can assign sales leads.' }, { status: 403 });
+        if (lead.assigned_department !== 'Sales') return NextResponse.json({ error: 'Only Sales-owned leads can be assigned to Sales employees.' }, { status: 400 });
         if (employeeId) {
           const employee = await prisma.employees.findUnique({ where: { id: String(employeeId) }, select: { id: true, department_type: true, user_role: true, status: true } });
           if (!employee || employee.department_type !== 'Sales' || employee.status !== 'Active' || employee.user_role !== 'Employee') {
@@ -62,6 +65,7 @@ export async function POST(request: Request) {
         break;
       case 'SALES_UPDATE_STAGE':
         if (!ctx.isAdmin && ctx.department !== 'Sales') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        if (lead.assigned_department !== 'Sales') return NextResponse.json({ error: 'Only Sales-owned leads can be updated here.' }, { status: 400 });
         if (!ctx.isAdmin && !salesLead && lead.assigned_sales_id !== ctx.employeeId) return NextResponse.json({ error: 'You can only update leads assigned to you.' }, { status: 403 });
         if (body.status !== undefined) {
           const status = toPrismaLeadStatus(body.status);
