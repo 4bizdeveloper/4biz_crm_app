@@ -91,12 +91,16 @@ The content is organized as follows:
           main
     HEAD
   objects/
+    04/
+      3170bab86340725ce517d8664c9f971e14a3e2
     08/
       25677444d2feea8bda4d2a41d84814323264d6
     15/
       4ffbb5c58e1339b5a9311d917109a89b538db1
     16/
       81270d70db748d502cee560c12aa213c78c273
+    1c/
+      ea2cc05b0c2bdec66803ca0c77cb958fc0f349
     2a/
       a5f5b7dcdf0346ec91780bc489746cc9e06d75
     33/
@@ -119,6 +123,8 @@ The content is organized as follows:
       b4e7c825b0da3609e7c0e1957255d94c3ff664
     4d/
       98dc0e638ba2951bfa947c796289a5f04e2d43
+    50/
+      4aa70c854e66ea72ff2b771e64ed04c484457d
     51/
       c35e187134c832083244720a0ef5f62d1a6e0d
     52/
@@ -126,7 +132,10 @@ The content is organized as follows:
     59/
       ebcefebfcc8e7854c89ca17b6aa3110a82616d
     5a/
+      8a4bba686aa243e12626104cbd8cb78266a72d
       a44dc0e6c6020de312b76da77c3cea9a9e4397
+    61/
+      391adb4247a7bef211a0f288a68dd98163b4a6
     6d/
       6382d4098f97f469ebafbd39650216fc0c473b
       a3507d4c043cd8990fc214e3c89fbc8619c2f2
@@ -146,6 +155,8 @@ The content is organized as follows:
       04f17b2de5fc2e292eea297827470045ca42f5
     99/
       b65e30e5d635570c53b116f82fd1796c6a1a76
+    9e/
+      da72850b5896788160897438fefdcfa2ee8d03
     a1/
       0958c853e1994788fda8ff4a696087d835c0d0
     a5/
@@ -160,8 +171,12 @@ The content is organized as follows:
       54cf0d1b9c23ec71dfcbb9180db71b135b2f43
     bd/
       6976fae1a31fa78f5ea5da590d07030f152dd6
+    cc/
+      d54cdebc40606b45033e1652a081b4ef646d74
     cd/
       4ac339150bb3a57f5ac031b8b1e168886fc8a2
+    d0/
+      4437816393e7e2f2f81a31496fd9d16918f26a
     d1/
       537a945e1412e7b5d2df9d6f6bf818649c1d5c
     e3/
@@ -188,6 +203,7 @@ The content is organized as follows:
   COMMIT_EDITMSG
   config
   description
+  FETCH_HEAD
   HEAD
   index
   packed-refs
@@ -284,7 +300,7 @@ src/
     supabaseAdmin.ts
   types/
     crm.ts
-  middleware.ts
+  proxy.ts
 supabase/
   migrations/
     20260917_centralized_department_crm_features.sql
@@ -1283,6 +1299,8 @@ a9f8e4b8aa212893aaee7e9c520ee5606acd7701 4a7697993bb2cec7ca66e718cda213cceae376c
 a10958c853e1994788fda8ff4a696087d835c0d0 44d188966de29b91a5be741819fc0fc2dfe0d4e1 4bizdeveloper <4bizdeveloper@gmail.com> 1792490291 +0530	commit: today
 44d188966de29b91a5be741819fc0fc2dfe0d4e1 154ffbb5c58e1339b5a9311d917109a89b538db1 4bizdeveloper <4bizdeveloper@gmail.com> 1792563697 +0530	commit: today
 154ffbb5c58e1339b5a9311d917109a89b538db1 3c0370363b185a7ffe16924abf12df4f74b7b474 4bizdeveloper <4bizdeveloper@gmail.com> 1792564334 +0530	commit: today
+3c0370363b185a7ffe16924abf12df4f74b7b474 ccd54cdebc40606b45033e1652a081b4ef646d74 4bizdeveloper <4bizdeveloper@gmail.com> 1792570631 +0530	commit: today
+ccd54cdebc40606b45033e1652a081b4ef646d74 1cea2cc05b0c2bdec66803ca0c77cb958fc0f349 4bizdeveloper <4bizdeveloper@gmail.com> 1792570751 +0530	commit: today
 </file>
 
 <file path=".git/logs/refs/remotes/origin/HEAD">
@@ -1298,6 +1316,8 @@ a9f8e4b8aa212893aaee7e9c520ee5606acd7701 4a7697993bb2cec7ca66e718cda213cceae376c
 a10958c853e1994788fda8ff4a696087d835c0d0 44d188966de29b91a5be741819fc0fc2dfe0d4e1 4bizdeveloper <4bizdeveloper@gmail.com> 1792490306 +0530	update by push
 44d188966de29b91a5be741819fc0fc2dfe0d4e1 154ffbb5c58e1339b5a9311d917109a89b538db1 4bizdeveloper <4bizdeveloper@gmail.com> 1792563760 +0530	update by push
 154ffbb5c58e1339b5a9311d917109a89b538db1 3c0370363b185a7ffe16924abf12df4f74b7b474 4bizdeveloper <4bizdeveloper@gmail.com> 1792564342 +0530	update by push
+3c0370363b185a7ffe16924abf12df4f74b7b474 ccd54cdebc40606b45033e1652a081b4ef646d74 4bizdeveloper <4bizdeveloper@gmail.com> 1792570640 +0530	update by push
+ccd54cdebc40606b45033e1652a081b4ef646d74 1cea2cc05b0c2bdec66803ca0c77cb958fc0f349 4bizdeveloper <4bizdeveloper@gmail.com> 1792570761 +0530	update by push
 </file>
 
 <file path=".git/logs/HEAD">
@@ -1310,6 +1330,8 @@ a9f8e4b8aa212893aaee7e9c520ee5606acd7701 4a7697993bb2cec7ca66e718cda213cceae376c
 a10958c853e1994788fda8ff4a696087d835c0d0 44d188966de29b91a5be741819fc0fc2dfe0d4e1 4bizdeveloper <4bizdeveloper@gmail.com> 1792490291 +0530	commit: today
 44d188966de29b91a5be741819fc0fc2dfe0d4e1 154ffbb5c58e1339b5a9311d917109a89b538db1 4bizdeveloper <4bizdeveloper@gmail.com> 1792563697 +0530	commit: today
 154ffbb5c58e1339b5a9311d917109a89b538db1 3c0370363b185a7ffe16924abf12df4f74b7b474 4bizdeveloper <4bizdeveloper@gmail.com> 1792564334 +0530	commit: today
+3c0370363b185a7ffe16924abf12df4f74b7b474 ccd54cdebc40606b45033e1652a081b4ef646d74 4bizdeveloper <4bizdeveloper@gmail.com> 1792570631 +0530	commit: today
+ccd54cdebc40606b45033e1652a081b4ef646d74 1cea2cc05b0c2bdec66803ca0c77cb958fc0f349 4bizdeveloper <4bizdeveloper@gmail.com> 1792570751 +0530	commit: today
 </file>
 
 <file path=".git/objects/info/commit-graphs/commit-graph-chain">
@@ -1317,7 +1339,7 @@ efff703b3f9a5b33baf8b71a625b589b82a7664a
 </file>
 
 <file path=".git/refs/heads/main">
-3c0370363b185a7ffe16924abf12df4f74b7b474
+1cea2cc05b0c2bdec66803ca0c77cb958fc0f349
 </file>
 
 <file path=".git/refs/remotes/origin/HEAD">
@@ -1325,7 +1347,7 @@ ref: refs/remotes/origin/main
 </file>
 
 <file path=".git/refs/remotes/origin/main">
-3c0370363b185a7ffe16924abf12df4f74b7b474
+1cea2cc05b0c2bdec66803ca0c77cb958fc0f349
 </file>
 
 <file path=".git/COMMIT_EDITMSG">
@@ -1351,6 +1373,16 @@ today
 
 <file path=".git/description">
 Unnamed repository; edit this file 'description' to name the repository.
+</file>
+
+<file path=".git/FETCH_HEAD">
+1cea2cc05b0c2bdec66803ca0c77cb958fc0f349		branch 'main' of https://github.com/4bizdeveloper/4biz_crm_app
+8985f03d4572ab5b1b04dec00fc8385b2708ba20	not-for-merge	branch 'backup/2026-09-19-pre-crm-hardening' of https://github.com/4bizdeveloper/4biz_crm_app
+f94ccaf6831ca17f22e610446114a5b521dcf4a9	not-for-merge	branch 'backup/2026-09-19-pre-crm-pipeline-users' of https://github.com/4bizdeveloper/4biz_crm_app
+ae55a7595ec3ca161bcc1939c4b15c9f9160a729	not-for-merge	branch 'backup/main-before-crm-migration-2026-09-18' of https://github.com/4bizdeveloper/4biz_crm_app
+312212615f00b54d4dffa5885ef8ac1c68b3675e	not-for-merge	branch 'crm-production-hardening' of https://github.com/4bizdeveloper/4biz_crm_app
+4dbda4a68317807c7724b66722deb680539ecd6b	not-for-merge	branch 'feature/multi-department-crm-workflows' of https://github.com/4bizdeveloper/4biz_crm_app
+659b72fddf85b0f5ac4e7116e58acbe3def540f2	not-for-merge	branch 'fix/leads-table-assignment' of https://github.com/4bizdeveloper/4biz_crm_app
 </file>
 
 <file path=".git/HEAD">
@@ -3921,6 +3953,29 @@ export const supabaseAdmin = serviceKey
   : null;
 </file>
 
+<file path="src/proxy.ts">
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+
+export function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const session = request.cookies.get('crm_session')?.value;
+  const isLoginPage = pathname === '/login';
+
+  if (!session && pathname.startsWith('/dashboard')) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  if (session && isLoginPage) {
+    return NextResponse.redirect(new URL('/dashboard/overview', request.url));
+  }
+
+  return NextResponse.next();
+}
+
+export const config = { matcher: ['/dashboard/:path*', '/login'] };
+</file>
+
 <file path="supabase/migrations/20260917_centralized_department_crm_features.sql">
 -- Centralized multi-department CRM expansion. RLS remains disabled by explicit application requirement.
 
@@ -4110,19 +4165,6 @@ const config = {
 };
 
 export default config;
-</file>
-
-<file path="prisma.config.ts">
-import 'dotenv/config'
-import { defineConfig } from 'prisma/config'
-
-export default defineConfig({
-  schema: 'prisma/schema.prisma',
-  datasource: {
-    // Use DIRECT_URL for the Prisma CLI to bypass PgBouncer during introspection and migrations
-    url: process.env.DIRECT_URL!, 
-  },
-})
 </file>
 
 <file path="README.md">
@@ -5438,6 +5480,14 @@ const nextConfig: NextConfig = {
     },
   },
 };
+
+export default nextConfig;
+</file>
+
+<file path="prisma.config.ts">
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {};
 
 export default nextConfig;
 </file>
@@ -9257,29 +9307,6 @@ export function canAccessDepartment(ctx: AuthContext, department: Department) {
 export function canEditAssignedRecord(ctx: AuthContext, assignedId?: string | null) {
   return ctx.isAdmin || isDepartmentHead(ctx) || (!!ctx.employeeId && ctx.employeeId === assignedId);
 }
-</file>
-
-<file path="src/middleware.ts">
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const session = request.cookies.get('crm_session')?.value;
-  const isLoginPage = pathname === '/login';
-
-  if (!session && pathname.startsWith('/dashboard')) {
-    return NextResponse.redirect(new URL('/login', request.url));
-  }
-
-  if (session && isLoginPage) {
-    return NextResponse.redirect(new URL('/dashboard/overview', request.url));
-  }
-
-  return NextResponse.next();
-}
-
-export const config = { matcher: ['/dashboard/:path*', '/login'] };
 </file>
 
 <file path="src/app/api/department/employees/route.ts">

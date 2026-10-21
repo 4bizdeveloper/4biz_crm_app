@@ -1,11 +1,5 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
-  experimental: {
-    turbopack: {
-      root: "C:\\Users\\PC\\Desktop\\4biz_crm_app",
-    },
-  },
-};
+const nextConfig: NextConfig = {};
 
 export default nextConfig;
