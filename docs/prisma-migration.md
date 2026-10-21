@@ -2,7 +2,7 @@
 
 ## Current state
 
-The repository already contains a Prisma schema for PostgreSQL, but API routes still call Supabase's query builder. Adding Prisma configuration alone does not migrate those routes. Do not deploy this branch as a completed Supabase removal until all API and server-side data access paths are converted and tested.
+The application API routes and server-side authentication now use Prisma. The Prisma schema remains PostgreSQL-specific. The legacy `supabase/migrations/` directory is retained as historical SQL only; runtime Supabase clients and dependencies have been removed.
 
 ## Environment
 
@@ -20,7 +20,8 @@ Do not run schema-reset commands against a populated database. Before applying m
 - Normalize email and phone consistently before duplicate checks; normalize company names for candidate detection.
 - Detect candidates without automatically deleting or overwriting records.
 - Merge in a transaction, retain the survivor's history and activities, re-point dependent records, and preserve a merge audit trail.
-- Enforce role, department, and branch scope server-side; never trust client-provided authorization fields.
+- Enforce role and department scope server-side, and enforce branch scope for employees with an explicitly assigned branch; never trust client-provided authorization fields.
+- Employee branch is nullable to avoid inventing values for legacy users. Assign each employee's authoritative branch in User Management before relying on strict branch separation; legacy employees with no branch retain their existing assignment-based access until that data is populated.
 - Allowlist mutable fields and validate explicit status transitions.
 - Model archive separately from disqualification.
 - Keep currency/time-zone defaults grounded in existing application rules; never fabricate unknown lead data.
@@ -29,4 +30,4 @@ Do not run schema-reset commands against a populated database. Before applying m
 
 ## Verification still required
 
-Run Prisma client generation, schema validation, TypeScript checks, lint, unit/integration tests, and a production build in the project environment. GitHub edits do not execute the repository's install/build/test commands.
+CI runs Prisma schema validation, client generation, ESLint for migrated server code, lead-status unit tests, and a production build. It does not connect to a live database or apply migrations. Rehearse the additive SQL migrations against a restored database before production rollout.
