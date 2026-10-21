@@ -9,6 +9,7 @@ export interface AuthContext {
   isAdmin: boolean;
   userRole: string;
   department: Department | null;
+  branch: string | null;
 }
 
 export async function getAuthContext(): Promise<AuthContext> {
@@ -17,6 +18,7 @@ export async function getAuthContext(): Promise<AuthContext> {
     isAdmin: false,
     userRole: '',
     department: null,
+    branch: null,
   };
 
   const cookieStore = await cookies();
@@ -24,13 +26,13 @@ export async function getAuthContext(): Promise<AuthContext> {
 
   if (!session) return unauthenticated;
   if (session.sub === 'super-admin' && session.role === 'SuperAdmin') {
-    return { employeeId: null, isAdmin: true, userRole: 'SuperAdmin', department: null };
+    return { employeeId: null, isAdmin: true, userRole: 'SuperAdmin', department: null, branch: null };
   }
 
   try {
     const employee = await prisma.employees.findUnique({
       where: { id: session.sub },
-      select: { id: true, user_role: true, department_type: true, status: true },
+      select: { id: true, user_role: true, department_type: true, status: true, branch: true },
     });
 
     if (!employee || employee.status !== 'Active') return unauthenticated;
@@ -41,6 +43,7 @@ export async function getAuthContext(): Promise<AuthContext> {
       isAdmin: userRole === 'SuperAdmin',
       userRole,
       department: (employee.department_type as Department | null) ?? null,
+      branch: employee.branch,
     };
   } catch (error) {
     console.error('Unable to resolve CRM session:', error);
@@ -58,4 +61,10 @@ export function canAccessDepartment(ctx: AuthContext, department: Department) {
 
 export function canEditAssignedRecord(ctx: AuthContext, assignedId?: string | null) {
   return ctx.isAdmin || isDepartmentHead(ctx) || (!!ctx.employeeId && ctx.employeeId === assignedId);
+}
+
+export function canAccessLeadBranch(ctx: AuthContext, leadBranch?: string | null) {
+  // Existing employee records have no branch until an administrator assigns one.
+  // Preserve their current assignment-based access while enforcing explicit branch assignments.
+  return ctx.isAdmin || !ctx.branch || leadBranch === ctx.branch;
 }
