@@ -11,6 +11,9 @@ on:
       - 'package-lock.json'
       - '.github/workflows/prisma-migration-checks.yml'
 
+permissions:
+  contents: write
+
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -29,6 +32,11 @@ jobs:
           cache: npm
       - name: Install dependencies and reconcile lockfile
         run: npm install --no-audit --no-fund
+      - name: Commit reconciled npm lockfile
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'chore: sync npm lockfile for Prisma adapter'
+          file_pattern: package-lock.json
       - name: Upload reconciled npm lockfile
         uses: actions/upload-artifact@v4
         with:
