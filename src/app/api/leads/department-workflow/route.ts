@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getAuthContext, isDepartmentHead } from '@/lib/department-auth';
+import { canAccessLeadBranch, getAuthContext, isDepartmentHead } from '@/lib/department-auth';
 import { canTransitionLeadStatus, serializeLead, toPrismaLeadStatus } from '@/lib/lead-status';
 
 function asDate(value: unknown) {
@@ -17,6 +17,7 @@ export async function POST(request: Request) {
     if (!leadId || typeof action !== 'string') return NextResponse.json({ error: 'action and leadId are required.' }, { status: 400 });
     const lead = await prisma.leads.findUnique({ where: { id: String(leadId) } });
     if (!lead || lead.archived_at) return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
+    if (!canAccessLeadBranch(ctx, lead.branch)) return NextResponse.json({ error: 'You cannot update leads outside your assigned branch.' }, { status: 403 });
 
     const marketingLead = ctx.isAdmin || (ctx.department === 'Marketing' && isDepartmentHead(ctx));
     const salesLead = ctx.isAdmin || (ctx.department === 'Sales' && isDepartmentHead(ctx));
