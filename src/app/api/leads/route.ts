@@ -174,7 +174,7 @@ export async function POST(request: Request) {
     const body = await request.json() as Record<string, unknown>;
     const email = normalizeEmail(body.email);
     const phone = String(body.phone ?? body.mobile_number ?? body.alternative_number ?? body.whatsapp_number ?? '').trim();
-    if ((!email || !validEmail(email)) && !validPhone(phone)) {
+    if ((email && !validEmail(email)) || (phone && !validPhone(phone)) || (!email && !validPhone(phone))) {
       return NextResponse.json({ error: 'Enter a valid email address or phone number.' }, { status: 400 });
     }
     const name = String(body.name ?? body.display_name ?? [body.first_name, body.last_name].filter(Boolean).join(' ')).trim();
@@ -197,16 +197,19 @@ export async function POST(request: Request) {
     }
     delete data.id;
     delete data.archived_at;
-    const created = await prisma.leads.create({ data: data as never });
-    await prisma.lead_activities.create({
-      data: {
-        lead_id: created.id,
-        employee_id: ctx.employeeId,
-        department: ctx.department as never,
-        activity_type: 'created',
-        subject: 'Lead created',
-        details: 'Lead record created through CRM API.',
-      },
+    const created = await prisma.$transaction(async (tx) => {
+      const lead = await tx.leads.create({ data: data as never });
+      await tx.lead_activities.create({
+        data: {
+          lead_id: lead.id,
+          employee_id: ctx.employeeId,
+          department: ctx.department as never,
+          activity_type: 'created',
+          subject: 'Lead created',
+          details: 'Lead record created through CRM API.',
+        },
+      });
+      return lead;
     });
     return NextResponse.json({ data: serializeLead(created) }, { status: 201 });
   } catch (error) {
@@ -298,6 +301,8 @@ export async function PATCH(request: Request) {
           }
         }
 
+        const mergedPhone = fillChanges.phone ?? fillChanges.mobile_number ?? fillChanges.alternative_number ?? fillChanges.whatsapp_number ?? lead.phone ?? lead.mobile_number ?? lead.alternative_number ?? lead.whatsapp_number;
+        fillChanges.normalized_phone = normalizePhone(mergedPhone) || null;
         await tx.leads.update({ where: { id }, data: fillChanges as never });
         for (const duplicateId of duplicateIds) {
           await tx.crm_tasks.updateMany({ where: { lead_id: duplicateId }, data: { lead_id: id } });
@@ -340,8 +345,8 @@ export async function PATCH(request: Request) {
 
     if ('email' in changesInput || 'phone' in changesInput || 'mobile_number' in changesInput) {
       const email = normalizeEmail(changesInput.email ?? lead.email);
-      const phone = String(changesInput.phone ?? changesInput.mobile_number ?? lead.phone ?? lead.mobile_number ?? '').trim();
-      if ((!email || !validEmail(email)) && !validPhone(phone)) {
+      const phone = String(changesInput.phone ?? changesInput.mobile_number ?? changesInput.alternative_number ?? changesInput.whatsapp_number ?? lead.phone ?? lead.mobile_number ?? lead.alternative_number ?? lead.whatsapp_number ?? '').trim();
+      if ((email && !validEmail(email)) || (phone && !validPhone(phone)) || (!email && !validPhone(phone))) {
         return NextResponse.json({ error: 'Enter a valid email address or phone number.' }, { status: 400 });
       }
       const duplicates = await findDuplicateCandidates({ ...lead, ...changesInput, email, phone }, id);
@@ -373,16 +378,19 @@ export async function PATCH(request: Request) {
     }
     changes.updated_at = new Date();
     changes.last_activity_at = new Date();
-    const updated = await prisma.leads.update({ where: { id }, data: changes as never });
-    await prisma.lead_activities.create({
-      data: {
-        lead_id: id,
-        employee_id: ctx.employeeId,
-        department: ctx.department as never,
-        activity_type: 'updated',
-        subject: 'Lead updated',
-        details: `Updated fields: ${Object.keys(changesInput).join(', ')}`,
-      },
+    const updated = await prisma.$transaction(async (tx) => {
+      const leadResult = await tx.leads.update({ where: { id }, data: changes as never });
+      await tx.lead_activities.create({
+        data: {
+          lead_id: id,
+          employee_id: ctx.employeeId,
+          department: ctx.department as never,
+          activity_type: 'updated',
+          subject: 'Lead updated',
+          details: `Updated fields: ${Object.keys(changesInput).join(', ')}`,
+        },
+      });
+      return leadResult;
     });
     return NextResponse.json({ data: serializeLead(updated) });
   } catch (error) {
