@@ -1,5 +1,8 @@
-import type { NextConfig } from "next";
+import "dotenv/config";
+import { defineConfig, env } from "prisma/config";
 
-const nextConfig: NextConfig = {};
-
-export default nextConfig;
+export default defineConfig({
+  schema: "prisma/schema.prisma",
+  migrations: { path: "prisma/migrations" },
+  datasource: { url: env("DATABASE_URL") },
+});
