@@ -307,6 +307,7 @@ model leads {
   @@index([assigned_sales_id], map: "idx_leads_sales_assignment")
   @@index([sales_pipeline_stage], map: "idx_leads_sales_stage")
   @@index([updated_at(sort: Desc)], map: "idx_leads_updated_at")
+  @@index([normalized_phone], map: "idx_leads_normalized_phone")
 }
 
 model projects {
