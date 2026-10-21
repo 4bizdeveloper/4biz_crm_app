@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     const requirements = String(body.requirements || body.message || body.requirement_description || '').trim();
     const payload = {
       name, display_name: name, first_name: firstName || null, last_name: lastName || null,
-      email: validEmail ? email : '', phone: phone || null, mobile_number: phone || null,
+      email: validEmail ? email : '', phone: phone || null, mobile_number: phone || null, normalized_phone: normalizePhone(phone) || null,
       contact_info: [email, phone].filter(Boolean).join('\n'),
       company: body.company ? String(body.company) : null,
       company_website: body.company_website ? String(body.company_website) : null,
