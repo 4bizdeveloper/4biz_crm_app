@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getAuthContext, isDepartmentHead } from '@/lib/department-auth';
+import { canAccessLeadBranch, getAuthContext, isDepartmentHead } from '@/lib/department-auth';
 import { canTransitionLeadStatus, serializeLead } from '@/lib/lead-status';
 
 const validDepartments = ['HR', 'Finance', 'Marketing', 'Sales', 'Operations'];
@@ -18,6 +18,7 @@ export async function POST(request: Request) {
 
     const lead = await prisma.leads.findUnique({ where: { id: leadId } });
     if (!lead || lead.archived_at) return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
+    if (!canAccessLeadBranch(ctx, lead.branch)) return NextResponse.json({ error: 'You cannot assign leads outside your assigned branch.' }, { status: 403 });
     const canSupervise = ctx.isAdmin || isDepartmentHead(ctx);
     const dept = String(assignedDepartment || lead.assigned_department || 'Sales');
     if (!validDepartments.includes(dept)) return NextResponse.json({ error: 'Invalid department.' }, { status: 400 });
