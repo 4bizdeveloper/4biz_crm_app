@@ -126,10 +126,11 @@ export async function PATCH(request: Request) {
     if (body.status !== undefined) updates.status = toEmployeeStatus(body.status);
     if (body.user_role !== undefined) updates.user_role = nextRole;
     if (body.role !== undefined) updates.role = body.role;
-    if (ctx.isAdmin && body.department_type !== undefined) {
-      if (!validDepartments.includes(String(body.department_type))) return NextResponse.json({ error: 'Invalid department.' }, { status: 400 });
-      updates.department_type = body.department_type;
-      updates.department = body.department ?? body.department_type;
+    if (ctx.isAdmin && (body.department_type !== undefined || body.department !== undefined)) {
+      const targetDepartment = String(body.department_type ?? body.department);
+      if (!validDepartments.includes(targetDepartment)) return NextResponse.json({ error: 'Invalid department.' }, { status: 400 });
+      updates.department_type = targetDepartment;
+      updates.department = body.department ?? targetDepartment;
     }
     if (ctx.isAdmin && body.reports_to_id !== undefined) updates.reports_to_id = body.reports_to_id || null;
     if (body.password) {
