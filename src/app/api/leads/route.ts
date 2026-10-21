@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getAuthContext, isDepartmentHead } from '@/lib/department-auth';
+import { canAccessLeadBranch, getAuthContext, isDepartmentHead } from '@/lib/department-auth';
 import { canTransitionLeadStatus, serializeLead, toApiLeadStatus, toPrismaLeadStatus } from '@/lib/lead-status';
 
 type AuthContext = Awaited<ReturnType<typeof getAuthContext>>;
@@ -10,6 +10,7 @@ type LeadRecord = {
   assigned_employee_id: string | null;
   assigned_marketing_id: string | null;
   assigned_sales_id: string | null;
+  branch: string | null;
 };
 
 function isMarketingAdmin(ctx: AuthContext) {
@@ -18,6 +19,7 @@ function isMarketingAdmin(ctx: AuthContext) {
 
 function canManage(ctx: AuthContext, lead: LeadRecord) {
   if (ctx.isAdmin) return true;
+  if (!canAccessLeadBranch(ctx, lead.branch)) return false;
   if (isMarketingAdmin(ctx) && (!lead.assigned_department || lead.assigned_department === 'Marketing')) return true;
   if (!ctx.employeeId || !ctx.department || lead.assigned_department !== ctx.department) return false;
   return isDepartmentHead(ctx)
@@ -131,6 +133,7 @@ export async function GET(request: Request) {
   try {
     const where: Record<string, unknown> = { archived_at: includeArchived ? { not: null } : null };
     if (!ctx.isAdmin) {
+      if (ctx.branch) where.branch = ctx.branch;
       if (isMarketingAdmin(ctx)) {
         where.OR = [{ assigned_department: 'Marketing' }, { assigned_department: null }];
       } else if (isDepartmentHead(ctx)) {
