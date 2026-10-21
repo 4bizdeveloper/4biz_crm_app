@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { canAccessDepartment, canEditAssignedRecord, getAuthContext, isDepartmentHead } from '@/lib/department-auth';
+import { canAccessDepartment, canAccessLeadBranch, canEditAssignedRecord, getAuthContext, isDepartmentHead } from '@/lib/department-auth';
 import { canTransitionLeadStatus, serializeLead, toPrismaLeadStatus } from '@/lib/lead-status';
 
 const departments = ['Marketing', 'Sales'] as const;
@@ -31,6 +31,7 @@ export async function GET(request: Request) {
   if (employeeId) conditions.push({ [department === 'Marketing' ? 'assigned_marketing_id' : 'assigned_sales_id']: employeeId });
   if (searchParams.get('highConversion') === 'true') conditions.push({ is_high_conversion_probable: true });
   const where: Record<string, unknown> = { AND: conditions, archived_at: null };
+  if (!ctx.isAdmin && ctx.branch) where.branch = ctx.branch;
   if (searchParams.get('today') === 'true') {
     const start = new Date(); start.setHours(0, 0, 0, 0);
     const end = new Date(start); end.setDate(end.getDate() + 1);
@@ -62,6 +63,7 @@ export async function PATCH(request: Request) {
 
     const lead = await prisma.leads.findUnique({ where: { id: leadId } });
     if (!lead || lead.archived_at) return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
+    if (!canAccessLeadBranch(ctx, lead.branch)) return NextResponse.json({ error: 'You cannot access leads outside your assigned branch.' }, { status: 403 });
 
     const payload: Record<string, unknown> = { last_activity_at: new Date(), updated_at: new Date() };
     let activityDetails = '';
