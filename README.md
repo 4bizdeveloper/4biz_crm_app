@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 4Biz CRM
 
-## Getting Started
+Next.js App Router CRM built with TypeScript and Prisma ORM.
 
-First, run the development server:
+## Requirements
+
+- Node.js 22 or newer
+- A PostgreSQL database
+
+## Configure the database
+
+1. Copy `.env.example` to `.env.local`.
+2. Set `DATABASE_URL` to your PostgreSQL connection string.
+3. If your provider uses a connection pooler, set `DIRECT_URL` to the direct PostgreSQL connection string for Prisma migration commands. Runtime queries use `DATABASE_URL`.
+4. Set `CRM_SESSION_SECRET` to a strong random secret of at least 32 characters.
+5. Optionally set `ADMIN_EMAIL` and `ADMIN_PASSWORD` for the environment-configured Super Admin login.
+
+Do not commit real credentials. If credentials were previously shared in chat, logs, or source control, rotate them before deployment.
+
+## Install and run
 
 ```bash
+npm install
+npx prisma generate
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Prisma and data safety
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The application uses Prisma with PostgreSQL. The schema is in `prisma/schema.prisma`, Prisma CLI configuration is in `prisma.config.ts`, and additive migrations are in `prisma/migrations/`.
 
-## Learn More
+For an existing database, take and verify a backup before applying migrations. Do not run `prisma migrate reset` or destructive schema operations against production data. Rehearse migrations against a restored database first. The old `supabase/migrations/` SQL files are retained as historical records; do not apply them as part of the Prisma migration flow.
 
-To learn more about Next.js, take a look at the following resources:
+## Verification
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npx prisma validate
+npx prisma generate
+npx eslint src/app/api src/lib src/proxy.ts prisma.config.ts
+npm run build
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The current Prisma schema is PostgreSQL-specific. Supporting another database provider requires updating provider-specific schema types and migrations, not only changing `DATABASE_URL`.
