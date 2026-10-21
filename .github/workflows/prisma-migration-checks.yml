@@ -11,18 +11,12 @@ on:
       - 'package-lock.json'
       - '.github/workflows/prisma-migration-checks.yml'
 
-permissions:
-  contents: write
-
 jobs:
   validate:
     runs-on: ubuntu-latest
     env:
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/crm?schema=public
       CRM_SESSION_SECRET: test-only-secret-with-at-least-32-characters
-      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: test-anon-key
-      SUPABASE_SERVICE_ROLE_KEY: test-service-role-key
       ADMIN_EMAIL: admin@example.test
       ADMIN_PASSWORD: test-only-password
     steps:
@@ -35,15 +29,12 @@ jobs:
           cache: npm
       - name: Install dependencies and reconcile lockfile
         run: npm install --no-audit --no-fund
-      - name: Commit reconciled npm lockfile when needed
-        run: |
-          if ! git diff --quiet -- package-lock.json; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add package-lock.json
-            git commit -m "chore: sync npm lockfile for Prisma adapter"
-            git push origin HEAD:${GITHUB_HEAD_REF}
-          fi
+      - name: Upload reconciled npm lockfile
+        uses: actions/upload-artifact@v4
+        with:
+          name: prisma-migration-package-lock
+          path: package-lock.json
+          if-no-files-found: error
       - name: Validate Prisma schema
         run: npx prisma validate
       - name: Generate Prisma client
