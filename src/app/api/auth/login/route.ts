@@ -1,16 +1,23 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { prisma } from '@/lib/prisma';
 import { createSessionToken } from '@/lib/auth-session';
 import { hashPassword, verifyPassword } from '@/lib/password';
 
-const db = supabaseAdmin ?? supabase;
+function sessionCookieOptions() {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax' as const,
+    maxAge: 60 * 60 * 12,
+    path: '/',
+  };
+}
 
 export async function POST(request: Request) {
   try {
-    const { email, password } = await request.json();
-    const normalizedEmail = String(email ?? '').trim().toLowerCase();
-    const plainPassword = String(password ?? '');
+    const body = await request.json();
+    const normalizedEmail = String(body?.email ?? '').trim().toLowerCase();
+    const plainPassword = String(body?.password ?? '');
 
     if (!normalizedEmail || !plainPassword) {
       return NextResponse.json({ error: 'Email and password are required.' }, { status: 400 });
@@ -22,25 +29,34 @@ export async function POST(request: Request) {
     if (adminEmail && adminPassword && normalizedEmail === adminEmail && plainPassword === adminPassword) {
       const token = await createSessionToken({ sub: 'super-admin', role: 'SuperAdmin', department: null });
       const response = NextResponse.json({ success: true, role: 'SuperAdmin' });
-      response.cookies.set('crm_session', token, {
-        httpOnly: true,
+      response.cookies.set('crm_session', token, sessionCookieOptions());
+      response.cookies.set('user_role', 'SuperAdmin', {
+        httpOnly: false,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         maxAge: 60 * 60 * 12,
         path: '/',
       });
-      response.cookies.set('user_role', 'SuperAdmin', { httpOnly: false, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 60 * 60 * 12, path: '/' });
       response.cookies.delete('employee_id');
       return response;
     }
 
-    const { data: employee, error } = await db
-      .from('employees')
-      .select('id,first_name,last_name,email,password,password_hash,password_salt,status,user_role,department_type')
-      .eq('email', normalizedEmail)
-      .maybeSingle();
+    const employee = await prisma.employees.findUnique({
+      where: { email: normalizedEmail },
+      select: {
+        id: true,
+        first_name: true,
+        last_name: true,
+        email: true,
+        password: true,
+        password_hash: true,
+        password_salt: true,
+        status: true,
+        user_role: true,
+        department_type: true,
+      },
+    });
 
-    if (error) return NextResponse.json({ error: 'Unable to authenticate right now.' }, { status: 500 });
     if (!employee || employee.status !== 'Active') {
       return NextResponse.json({ error: 'Invalid credentials or inactive account.' }, { status: 401 });
     }
@@ -52,11 +68,16 @@ export async function POST(request: Request) {
       valid = employee.password === plainPassword;
       if (valid) {
         const { hash, salt } = await hashPassword(plainPassword);
-        await db.from('employees').update({ password_hash: hash, password_salt: salt, password: null }).eq('id', employee.id);
+        await prisma.employees.update({
+          where: { id: employee.id },
+          data: { password_hash: hash, password_salt: salt, password: '' },
+        });
       }
     }
 
-    if (!valid) return NextResponse.json({ error: 'Invalid credentials or inactive account.' }, { status: 401 });
+    if (!valid) {
+      return NextResponse.json({ error: 'Invalid credentials or inactive account.' }, { status: 401 });
+    }
 
     const role = String(employee.user_role || 'Employee');
     const department = employee.department_type ? String(employee.department_type) : null;
@@ -69,15 +90,21 @@ export async function POST(request: Request) {
       department,
       name: [employee.first_name, employee.last_name].filter(Boolean).join(' '),
     });
-    response.cookies.set('crm_session', token, {
-      httpOnly: true,
+    response.cookies.set('crm_session', token, sessionCookieOptions());
+    response.cookies.set('user_role', role, {
+      httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 60 * 60 * 12,
       path: '/',
     });
-    response.cookies.set('user_role', role, { httpOnly: false, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 60 * 60 * 12, path: '/' });
-    response.cookies.set('employee_id', employee.id, { httpOnly: false, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 60 * 60 * 12, path: '/' });
+    response.cookies.set('employee_id', employee.id, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 12,
+      path: '/',
+    });
     return response;
   } catch (error) {
     console.error('CRM login error', error);
