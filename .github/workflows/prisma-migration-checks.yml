@@ -11,9 +11,6 @@ on:
       - 'package-lock.json'
       - '.github/workflows/prisma-migration-checks.yml'
 
-permissions:
-  contents: write
-
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -44,27 +41,8 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - name: Install dependencies and reconcile lockfile
-        run: npm install --no-audit --no-fund
-      - name: Generate baseline migration for fresh databases
-        run: |
-          if [ ! -f prisma/migrations/20261021170000_init/migration.sql ]; then
-            mkdir -p prisma/migrations/20261021170000_init
-            npx prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script > prisma/migrations/20261021170000_init/migration.sql
-          fi
-      - name: Commit generated migration and synchronized lockfile
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: 'chore: sync Prisma baseline migration and npm lockfile'
-          file_pattern: package-lock.json prisma/migrations/20261021170000_init/migration.sql
-      - name: Upload reconciled npm lockfile
-        uses: actions/upload-artifact@v4
-        with:
-          name: prisma-migration-package-lock
-          path: |
-            package-lock.json
-            prisma/migrations/20261021170000_init/migration.sql
-          if-no-files-found: error
+      - name: Install dependencies from lockfile
+        run: npm ci --no-audit --no-fund
       - name: Validate Prisma schema
         run: npx prisma validate
       - name: Generate Prisma client
