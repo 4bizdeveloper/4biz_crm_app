@@ -7,7 +7,7 @@ const publicSelect = {
   id: true, first_name: true, last_name: true, email: true, phone: true, department: true,
   job_title: true, role: true, status: true, hire_date: true, user_role: true,
   department_type: true, avatar_url: true, reports_to_id: true, employee_code: true,
-  work_location: true, joined_at: true, notes: true, created_at: true,
+  work_location: true, branch: true, joined_at: true, notes: true, created_at: true,
 } as const;
 
 const validDepartments = ['HR', 'Finance', 'Marketing', 'Sales', 'Operations'];
@@ -81,6 +81,7 @@ export async function POST(request: Request) {
         reports_to_id: ctx.employeeId || body.reports_to_id || null,
         employee_code: body.employee_code ? String(body.employee_code) : null,
         work_location: body.work_location ? String(body.work_location) : null,
+        branch: ctx.isAdmin ? (body.branch ? String(body.branch) : null) : ctx.branch,
         notes: body.notes ? String(body.notes) : null,
       },
       select: publicSelect,
@@ -133,6 +134,10 @@ export async function PATCH(request: Request) {
       updates.department = body.department ?? targetDepartment;
     }
     if (ctx.isAdmin && body.reports_to_id !== undefined) updates.reports_to_id = body.reports_to_id || null;
+    if (body.branch !== undefined) {
+      if (!ctx.isAdmin) return NextResponse.json({ error: 'Only Super Admin can change an employee branch.' }, { status: 403 });
+      updates.branch = body.branch ? String(body.branch) : null;
+    }
     if (body.password) {
       const { hash, salt } = await hashPassword(String(body.password));
       updates.password = '';
