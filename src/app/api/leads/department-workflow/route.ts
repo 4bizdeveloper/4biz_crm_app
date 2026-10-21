@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthContext, isDepartmentHead } from '@/lib/department-auth';
-import { serializeLead, toPrismaLeadStatus } from '@/lib/lead-status';
+import { canTransitionLeadStatus, serializeLead, toPrismaLeadStatus } from '@/lib/lead-status';
 
 function asDate(value: unknown) {
   return value ? new Date(String(value)) : null;
@@ -37,6 +37,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Selected Sales department head is invalid.' }, { status: 400 });
           }
         }
+        if (!canTransitionLeadStatus(lead.status, 'Qualified', ctx.isAdmin)) return NextResponse.json({ error: 'Lead cannot be transferred from its current status.' }, { status: 400 });
         updateData.assigned_department = 'Sales';
         updateData.assigned_dept_head_id = targetDeptHeadId || null;
         updateData.assigned_sales_id = null;
@@ -53,14 +54,17 @@ export async function POST(request: Request) {
         }
         updateData.assigned_sales_id = employeeId || null;
         updateData.assigned_department = 'Sales';
-        if (employeeId) updateData.status = 'Assigned';
+        if (employeeId) {
+          if (!canTransitionLeadStatus(lead.status, 'Assigned', ctx.isAdmin)) return NextResponse.json({ error: 'Lead cannot be assigned from its current status.' }, { status: 400 });
+          updateData.status = 'Assigned';
+        }
         break;
       case 'SALES_UPDATE_STAGE':
         if (!ctx.isAdmin && ctx.department !== 'Sales') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         if (!ctx.isAdmin && !salesLead && lead.assigned_sales_id !== ctx.employeeId) return NextResponse.json({ error: 'You can only update leads assigned to you.' }, { status: 403 });
         if (body.status !== undefined) {
           const status = toPrismaLeadStatus(body.status);
-          if (!status) return NextResponse.json({ error: 'Invalid lead status.' }, { status: 400 });
+          if (!status || !canTransitionLeadStatus(lead.status, status, ctx.isAdmin)) return NextResponse.json({ error: 'Invalid lead status transition.' }, { status: 400 });
           updateData.status = status;
         }
         if (body.pipelineStage !== undefined) updateData.sales_pipeline_stage = String(body.pipelineStage);
