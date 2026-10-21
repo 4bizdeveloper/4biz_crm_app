@@ -23,10 +23,13 @@ export async function GET() {
     if (!ctx.isAdmin) {
       if (isDepartmentHead(ctx)) {
         leadWhere.assigned_department = ctx.department ?? undefined;
+        if (ctx.branch) leadWhere.branch = ctx.branch;
         if (ctx.department !== 'Operations') projectWhere.assigned_to = ctx.employeeId;
         ticketWhere.assigned_to = departmentEmployeeIds.length ? { in: departmentEmployeeIds } : ctx.employeeId;
         employeeWhere.department_type = ctx.department ?? undefined;
+        if (ctx.branch) employeeWhere.branch = ctx.branch;
       } else {
+        if (ctx.branch) leadWhere.branch = ctx.branch;
         leadWhere.OR = [
           { assigned_employee_id: ctx.employeeId },
           { assigned_marketing_id: ctx.employeeId },
@@ -35,6 +38,7 @@ export async function GET() {
         projectWhere.assigned_to = ctx.employeeId;
         ticketWhere.assigned_to = ctx.employeeId;
         employeeWhere.id = ctx.employeeId;
+        if (ctx.branch) employeeWhere.branch = ctx.branch;
       }
     }
 
