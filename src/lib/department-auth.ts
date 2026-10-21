@@ -1,6 +1,5 @@
 import { cookies } from 'next/headers';
-import { supabase } from '@/lib/supabase';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { prisma } from '@/lib/prisma';
 import { verifySessionToken } from '@/lib/auth-session';
 
 export type Department = 'Marketing' | 'Sales' | 'Operations' | 'HR' | 'Finance';
@@ -12,34 +11,41 @@ export interface AuthContext {
   department: Department | null;
 }
 
-const db = supabaseAdmin ?? supabase;
-
 export async function getAuthContext(): Promise<AuthContext> {
+  const unauthenticated: AuthContext = {
+    employeeId: null,
+    isAdmin: false,
+    userRole: '',
+    department: null,
+  };
+
   const cookieStore = await cookies();
   const session = await verifySessionToken(cookieStore.get('crm_session')?.value);
 
-  if (!session) return { employeeId: null, isAdmin: false, userRole: '', department: null };
+  if (!session) return unauthenticated;
   if (session.sub === 'super-admin' && session.role === 'SuperAdmin') {
     return { employeeId: null, isAdmin: true, userRole: 'SuperAdmin', department: null };
   }
 
-  const { data } = await db
-    .from('employees')
-    .select('id,user_role,department_type,status')
-    .eq('id', session.sub)
-    .maybeSingle();
+  try {
+    const employee = await prisma.employees.findUnique({
+      where: { id: session.sub },
+      select: { id: true, user_role: true, department_type: true, status: true },
+    });
 
-  if (!data || data.status !== 'Active') {
-    return { employeeId: null, isAdmin: false, userRole: '', department: null };
+    if (!employee || employee.status !== 'Active') return unauthenticated;
+
+    const userRole = String(employee.user_role ?? 'Employee');
+    return {
+      employeeId: employee.id,
+      isAdmin: userRole === 'SuperAdmin',
+      userRole,
+      department: (employee.department_type as Department | null) ?? null,
+    };
+  } catch (error) {
+    console.error('Unable to resolve CRM session:', error);
+    return unauthenticated;
   }
-
-  const userRole = String(data.user_role ?? 'Employee');
-  return {
-    employeeId: data.id,
-    isAdmin: userRole === 'SuperAdmin',
-    userRole,
-    department: (data.department_type as Department | null) ?? null,
-  };
 }
 
 export function isDepartmentHead(ctx: AuthContext) {
