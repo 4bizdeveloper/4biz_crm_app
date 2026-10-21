@@ -93,6 +93,7 @@ model employees {
   reports_to_id                                String?                 @db.Uuid
   employee_code                                String?
   work_location                                String?
+  branch                                       String?                 
   joined_at                                    DateTime?               @db.Date
   notes                                        String?
   password_hash                                String?
