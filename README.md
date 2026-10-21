@@ -31,7 +31,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 The application uses Prisma with PostgreSQL. The schema is in `prisma/schema.prisma`, Prisma CLI configuration is in `prisma.config.ts`, and additive migrations are in `prisma/migrations/`.
 
-For an existing database, take and verify a backup before applying migrations. Do not run `prisma migrate reset` or destructive schema operations against production data. Rehearse migrations against a restored database first. The old `supabase/migrations/` SQL files are retained as historical records; do not apply them as part of the Prisma migration flow.
+The initial Prisma baseline migration is generated in CI at `prisma/migrations/20261021170000_init/migration.sql`. For a fresh database, run `npx prisma migrate deploy`. For an existing database, take and verify a backup, compare the live schema to the baseline, rehearse against a restored copy, and only if compatible mark the baseline as applied with `npx prisma migrate resolve --applied 20261021170000_init` before running `npx prisma migrate deploy`. Do not run `prisma migrate reset` or destructive schema operations against production data. The old `supabase/migrations/` SQL files are retained as historical records; do not apply them as part of the Prisma migration flow.
 
 Branch assignments are optional so legacy employee records are not assigned an invented branch. Set each employee's real branch in **User Management** to enable branch-scoped lead access. Employees with no branch retain legacy assignment-based access until their branch data is populated.
 
