@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { canAccessDepartment, canEditAssignedRecord, getAuthContext, isDepartmentHead } from '@/lib/department-auth';
-import { serializeLead, toPrismaLeadStatus } from '@/lib/lead-status';
+import { canTransitionLeadStatus, serializeLead, toPrismaLeadStatus } from '@/lib/lead-status';
 
 const departments = ['Marketing', 'Sales'] as const;
 type Department = (typeof departments)[number];
@@ -84,7 +84,7 @@ export async function PATCH(request: Request) {
       }
       if (body.status !== undefined) {
         const status = toPrismaLeadStatus(body.status);
-        if (!status) return NextResponse.json({ error: 'Invalid lead status' }, { status: 400 });
+        if (!status || !canTransitionLeadStatus(lead.status, status, ctx.isAdmin)) return NextResponse.json({ error: 'Invalid lead status transition.' }, { status: 400 });
         payload.status = status;
       }
       if (body.notes !== undefined) payload.marketing_notes = body.notes;
@@ -97,6 +97,7 @@ export async function PATCH(request: Request) {
     } else if (action === 'transfer_to_sales') {
       if (!canManageDepartment(ctx, 'Marketing')) return NextResponse.json({ error: 'Only the Marketing lead or Super Admin can transfer leads to Sales' }, { status: 403 });
       if (!lead.is_high_conversion_probable) return NextResponse.json({ error: 'Only high-conversion leads can be transferred' }, { status: 400 });
+      if (!canTransitionLeadStatus(lead.status, 'Qualified', ctx.isAdmin)) return NextResponse.json({ error: 'Lead status cannot transition to Qualified from its current state.' }, { status: 400 });
       payload.assigned_department = 'Sales';
       payload.assigned_dept_head_id = body.salesLeadId ?? null;
       payload.assigned_sales_id = null;
@@ -114,7 +115,10 @@ export async function PATCH(request: Request) {
         }
       }
       payload.assigned_sales_id = body.employeeId ?? null;
-      if (body.employeeId) payload.status = 'Assigned';
+      if (body.employeeId) {
+        if (!canTransitionLeadStatus(lead.status, 'Assigned', ctx.isAdmin)) return NextResponse.json({ error: 'Lead cannot be assigned from its current status.' }, { status: 400 });
+        payload.status = 'Assigned';
+      }
       activityDetails = `Sales assignment changed to ${body.employeeId ?? 'unassigned'}`;
     } else if (action === 'sales_update') {
       if (!canEditAssignedRecord(ctx, lead.assigned_sales_id) || (!ctx.isAdmin && ctx.department !== 'Sales')) {
@@ -122,7 +126,7 @@ export async function PATCH(request: Request) {
       }
       if (body.status !== undefined) {
         const status = toPrismaLeadStatus(body.status);
-        if (!status) return NextResponse.json({ error: 'Invalid lead status' }, { status: 400 });
+        if (!status || !canTransitionLeadStatus(lead.status, status, ctx.isAdmin)) return NextResponse.json({ error: 'Invalid lead status transition.' }, { status: 400 });
         payload.status = status;
       }
       if (body.notes !== undefined) payload.sales_notes = body.notes;
