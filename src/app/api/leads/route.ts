@@ -103,11 +103,7 @@ async function findDuplicateCandidates(input: Record<string, unknown>, excludeId
   const company = String(input.company ?? '').trim();
   const OR: Record<string, unknown>[] = [];
   if (email && validEmail(email)) OR.push({ email: { equals: email, mode: 'insensitive' } });
-  if (phone.length >= 7) {
-    for (const field of ['phone', 'mobile_number', 'alternative_number', 'whatsapp_number']) {
-      OR.push({ [field]: { not: null } });
-    }
-  }
+  if (phone.length >= 7) OR.push({ normalized_phone: phone });
   if (company) OR.push({ company: { equals: company, mode: 'insensitive' } });
   if (!OR.length) return [];
 
@@ -193,6 +189,7 @@ export async function POST(request: Request) {
     }
 
     const data = filterLeadFields({ ...body, name, email, phone, last_activity_at: new Date() });
+    data.normalized_phone = normalizePhone(phone) || null;
     if (data.status !== undefined) {
       const normalizedStatus = toPrismaLeadStatus(data.status);
       if (!normalizedStatus) return NextResponse.json({ error: 'Invalid lead status.' }, { status: 400 });
@@ -371,6 +368,9 @@ export async function PATCH(request: Request) {
     }
 
     const changes = filterLeadFields(changesInput);
+    if (['phone', 'mobile_number', 'alternative_number', 'whatsapp_number'].some((field) => field in changesInput)) {
+      changes.normalized_phone = normalizePhone(changesInput.phone ?? changesInput.mobile_number ?? changesInput.alternative_number ?? changesInput.whatsapp_number ?? lead.phone ?? lead.mobile_number ?? lead.alternative_number ?? lead.whatsapp_number) || null;
+    }
     changes.updated_at = new Date();
     changes.last_activity_at = new Date();
     const updated = await prisma.leads.update({ where: { id }, data: changes as never });
