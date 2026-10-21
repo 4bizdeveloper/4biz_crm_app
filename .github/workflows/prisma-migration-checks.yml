@@ -42,7 +42,7 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: 'chore: sync Prisma baseline migration and npm lockfile'
-          file_pattern: 'package-lock.json, prisma/migrations/20261021170000_init/migration.sql'
+          file_pattern: package-lock.json prisma/migrations/20261021170000_init/migration.sql
       - name: Upload reconciled npm lockfile
         uses: actions/upload-artifact@v4
         with:
