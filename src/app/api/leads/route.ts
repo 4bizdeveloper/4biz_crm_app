@@ -60,7 +60,7 @@ const MUTABLE_FIELDS = new Set([
   'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'first_touch_source',
   'latest_touch_source', 'lead_score', 'branch', 'team', 'follow_up_date',
   'first_response_time_minutes', 'status', 'approval_status', 'payment_status', 'lead_temperature',
-  'assigned_department', 'assigned_dept_head_id', 'assigned_employee_id', 'branch', 'is_high_conversion_probable',
+  'assigned_department', 'assigned_dept_head_id', 'assigned_employee_id', 'is_high_conversion_probable',
   'marketing_notes', 'sales_notes', 'call_scheduled_at', 'assigned_marketing_id', 'assigned_sales_id',
   'conversion_probability', 'marketing_pipeline_stage', 'sales_pipeline_stage', 'next_action',
   'next_action_at', 'last_contacted_at', 'qualified_at', 'converted_at',
@@ -68,7 +68,7 @@ const MUTABLE_FIELDS = new Set([
 
 const PRIVILEGED_FIELDS = new Set([
   'assigned_to', 'branch', 'team', 'status', 'approval_status', 'payment_status',
-  'assigned_department', 'assigned_dept_head_id', 'assigned_employee_id', 'assigned_marketing_id', 'branch',
+  'assigned_department', 'assigned_dept_head_id', 'assigned_employee_id', 'assigned_marketing_id',
   'assigned_sales_id', 'lead_score', 'conversion_probability', 'is_high_conversion_probable',
   'marketing_pipeline_stage', 'sales_pipeline_stage', 'converted_at', 'qualified_at',
 ]);
