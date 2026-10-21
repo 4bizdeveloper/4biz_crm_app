@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthContext } from '@/lib/department-auth';
+import { canTransitionLeadStatus } from '@/lib/lead-status';
 
 function canAssignMarketingLeads(ctx: Awaited<ReturnType<typeof getAuthContext>>) {
   return ctx.isAdmin || (ctx.department === 'Marketing' && ['Admin', 'DeptHead'].includes(ctx.userRole));
@@ -30,6 +31,7 @@ export async function PATCH(request: Request) {
     ]);
     if (!lead || lead.archived_at) return NextResponse.json({ error: 'Lead not found.' }, { status: 404 });
     if (!employee) return NextResponse.json({ error: 'Marketing employee not found.' }, { status: 404 });
+    if (lead.status === 'New' && !canTransitionLeadStatus(lead.status, 'Assigned', ctx.isAdmin)) return NextResponse.json({ error: 'Lead cannot be assigned from its current status.' }, { status: 400 });
     if (employee.department_type !== 'Marketing' || employee.status !== 'Active' || employee.user_role !== 'Employee') {
       return NextResponse.json({ error: 'The selected assignee must be an active Marketing employee, not an admin or department head.' }, { status: 400 });
     }
