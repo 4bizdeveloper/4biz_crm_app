@@ -111,7 +111,7 @@ async function findDuplicateCandidates(input: Record<string, unknown>, excludeId
   if (!OR.length) return [];
 
   const candidates = await prisma.leads.findMany({
-    where: { OR, ...(excludeId ? { id: { not: excludeId } } : {}) },
+    where: { OR, ...(excludeId ? { id: { not: excludeId } } : {}) } as never,
     select: {
       id: true, name: true, email: true, phone: true, mobile_number: true,
       alternative_number: true, whatsapp_number: true, company: true, status: true,
