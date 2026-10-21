@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthContext, isDepartmentHead } from '@/lib/department-auth';
-import { serializeLead } from '@/lib/lead-status';
+import { canTransitionLeadStatus, serializeLead } from '@/lib/lead-status';
 
 const validDepartments = ['HR', 'Finance', 'Marketing', 'Sales', 'Operations'];
 
@@ -27,6 +27,7 @@ export async function POST(request: Request) {
     }
 
     if (assignedEmployeeId) {
+      if (!canTransitionLeadStatus(lead.status, 'Assigned', ctx.isAdmin)) return NextResponse.json({ error: 'Lead cannot be assigned from its current status.' }, { status: 400 });
       const employee = await prisma.employees.findUnique({
         where: { id: assignedEmployeeId },
         select: { id: true, department_type: true, status: true },
