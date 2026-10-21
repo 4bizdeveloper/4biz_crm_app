@@ -11,7 +11,7 @@ export async function GET() {
 
   try {
     const rows = await prisma.leads.findMany({
-      where: ctx.isAdmin ? {} : { assigned_department: ctx.department ?? undefined },
+      where: ctx.isAdmin ? {} : { assigned_department: ctx.department ?? undefined, ...(ctx.branch ? { branch: ctx.branch } : {}) },
       select: {
         id: true,
         status: true,
