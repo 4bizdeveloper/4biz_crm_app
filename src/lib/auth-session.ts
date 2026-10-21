@@ -6,8 +6,8 @@ export type CrmSession = {
 };
 
 function secret() {
-  const value = process.env.CRM_SESSION_SECRET || process.env.ADMIN_PASSWORD;
-  if (!value) throw new Error('CRM_SESSION_SECRET or ADMIN_PASSWORD must be configured');
+  const value = process.env.CRM_SESSION_SECRET;
+  if (!value || value.length < 32) throw new Error('CRM_SESSION_SECRET must be configured with at least 32 characters');
   return value;
 }
 
