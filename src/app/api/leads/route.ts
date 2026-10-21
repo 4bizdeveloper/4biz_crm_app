@@ -44,6 +44,13 @@ function validPhone(value: string) {
   return normalizePhone(value).length >= 7;
 }
 
+function auditValue(value: unknown) {
+  if (value instanceof Date) return value.toISOString();
+  if (value === null || value === undefined || value === '') return '(empty)';
+  if (typeof value === 'object') return JSON.stringify(value).slice(0, 160);
+  return String(value).slice(0, 160);
+}
+
 const MUTABLE_FIELDS = new Set([
   'name', 'email', 'company', 'value', 'phone', 'source', 'notes', 'assigned_to',
   'requirements', 'campaign_name', 'interactions', 'tasks', 'documents', 'quotation_details',
@@ -238,36 +245,42 @@ export async function PATCH(request: Request) {
 
     const action = String(body.action ?? '');
     if (action === 'archive') {
-      const archived = await prisma.leads.update({
-        where: { id },
-        data: { archived_at: new Date(), updated_at: new Date(), last_activity_at: new Date() },
-      });
-      await prisma.lead_activities.create({
-        data: {
-          lead_id: id,
-          employee_id: ctx.employeeId,
-          department: ctx.department as never,
-          activity_type: 'archived',
-          subject: 'Lead archived',
-          details: 'Lead archived without changing its sales status.',
-        },
+      const archived = await prisma.$transaction(async (tx) => {
+        const record = await tx.leads.update({
+          where: { id },
+          data: { archived_at: new Date(), updated_at: new Date(), last_activity_at: new Date() },
+        });
+        await tx.lead_activities.create({
+          data: {
+            lead_id: id,
+            employee_id: ctx.employeeId,
+            department: ctx.department as never,
+            activity_type: 'archived',
+            subject: 'Lead archived',
+            details: 'Lead archived without changing its sales status.',
+          },
+        });
+        return record;
       });
       return NextResponse.json({ data: serializeLead(archived) });
     }
 
     if (action === 'restore') {
       if (!ctx.isAdmin) return NextResponse.json({ error: 'Only Super Admin can restore archived leads.' }, { status: 403 });
-      const restored = await prisma.leads.update({
-        where: { id },
-        data: { archived_at: null, updated_at: new Date(), last_activity_at: new Date() },
-      });
-      await prisma.lead_activities.create({
-        data: {
-          lead_id: id,
-          employee_id: ctx.employeeId,
-          activity_type: 'restored',
-          subject: 'Lead restored',
-        },
+      const restored = await prisma.$transaction(async (tx) => {
+        const record = await tx.leads.update({
+          where: { id },
+          data: { archived_at: null, updated_at: new Date(), last_activity_at: new Date() },
+        });
+        await tx.lead_activities.create({
+          data: {
+            lead_id: id,
+            employee_id: ctx.employeeId,
+            activity_type: 'restored',
+            subject: 'Lead restored',
+          },
+        });
+        return record;
       });
       return NextResponse.json({ data: serializeLead(restored) });
     }
