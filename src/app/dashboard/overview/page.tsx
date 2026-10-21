@@ -632,7 +632,7 @@ export default function OverviewPage() {
           </div>
 
           <div className="pt-3 border-t border-slate-200 text-center text-[11px] text-slate-400 font-medium">
-            Connected to Supabase Realtime DB
+            Connected to CRM database
           </div>
         </div>
 
