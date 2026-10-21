@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAuthContext } from '@/lib/department-auth';
 import { prisma } from '@/lib/prisma';
+import { toApiLeadStatus } from '@/lib/lead-status';
 
 export async function GET() {
   const ctx = await getAuthContext();
@@ -46,7 +47,7 @@ export async function GET() {
     ).length;
 
     const byStatus = Object.entries(rows.reduce<Record<string, number>>((acc, row) => {
-      const key = String(row.status || 'Unknown');
+      const key = toApiLeadStatus(row.status || 'Unknown');
       acc[key] = (acc[key] || 0) + 1;
       return acc;
     }, {})).map(([status, count]) => ({ status, count }));
