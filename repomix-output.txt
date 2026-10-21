@@ -105,6 +105,7 @@ The content is organized as follows:
       a5f5b7dcdf0346ec91780bc489746cc9e06d75
     33/
       018a983b048bd12f23d782f5e799ff75010efc
+      8baaa00248805bd57df56696861d1f6fc77e48
     38/
       ee34f3e3281d7ba3f99a61f7e8ee98bceca15b
     3c/
@@ -148,6 +149,7 @@ The content is organized as follows:
     7c/
       fc5da2faa2ffa71ed8ab6541d466593909a72e
     7d/
+      243100a25f01cd36af0d5ad1774a01484a7dc7
       294de021bd61958223378345d7357e91698bb8
     8d/
       65e8c60c4cab0ca19f66bc68430ccdc8418f23
@@ -169,6 +171,8 @@ The content is organized as follows:
       1e9b7d0092089f069a4e4f113f636d2dcecb50
     b6/
       54cf0d1b9c23ec71dfcbb9180db71b135b2f43
+    bb/
+      8801bea9b5f5580bfb0b6dd44068682c85f52d
     bd/
       6976fae1a31fa78f5ea5da590d07030f152dd6
     cc/
@@ -1301,6 +1305,7 @@ a10958c853e1994788fda8ff4a696087d835c0d0 44d188966de29b91a5be741819fc0fc2dfe0d4e
 154ffbb5c58e1339b5a9311d917109a89b538db1 3c0370363b185a7ffe16924abf12df4f74b7b474 4bizdeveloper <4bizdeveloper@gmail.com> 1792564334 +0530	commit: today
 3c0370363b185a7ffe16924abf12df4f74b7b474 ccd54cdebc40606b45033e1652a081b4ef646d74 4bizdeveloper <4bizdeveloper@gmail.com> 1792570631 +0530	commit: today
 ccd54cdebc40606b45033e1652a081b4ef646d74 1cea2cc05b0c2bdec66803ca0c77cb958fc0f349 4bizdeveloper <4bizdeveloper@gmail.com> 1792570751 +0530	commit: today
+1cea2cc05b0c2bdec66803ca0c77cb958fc0f349 7d243100a25f01cd36af0d5ad1774a01484a7dc7 4bizdeveloper <4bizdeveloper@gmail.com> 1792571056 +0530	commit: today
 </file>
 
 <file path=".git/logs/refs/remotes/origin/HEAD">
@@ -1318,6 +1323,7 @@ a10958c853e1994788fda8ff4a696087d835c0d0 44d188966de29b91a5be741819fc0fc2dfe0d4e
 154ffbb5c58e1339b5a9311d917109a89b538db1 3c0370363b185a7ffe16924abf12df4f74b7b474 4bizdeveloper <4bizdeveloper@gmail.com> 1792564342 +0530	update by push
 3c0370363b185a7ffe16924abf12df4f74b7b474 ccd54cdebc40606b45033e1652a081b4ef646d74 4bizdeveloper <4bizdeveloper@gmail.com> 1792570640 +0530	update by push
 ccd54cdebc40606b45033e1652a081b4ef646d74 1cea2cc05b0c2bdec66803ca0c77cb958fc0f349 4bizdeveloper <4bizdeveloper@gmail.com> 1792570761 +0530	update by push
+1cea2cc05b0c2bdec66803ca0c77cb958fc0f349 7d243100a25f01cd36af0d5ad1774a01484a7dc7 4bizdeveloper <4bizdeveloper@gmail.com> 1792571065 +0530	update by push
 </file>
 
 <file path=".git/logs/HEAD">
@@ -1332,6 +1338,7 @@ a10958c853e1994788fda8ff4a696087d835c0d0 44d188966de29b91a5be741819fc0fc2dfe0d4e
 154ffbb5c58e1339b5a9311d917109a89b538db1 3c0370363b185a7ffe16924abf12df4f74b7b474 4bizdeveloper <4bizdeveloper@gmail.com> 1792564334 +0530	commit: today
 3c0370363b185a7ffe16924abf12df4f74b7b474 ccd54cdebc40606b45033e1652a081b4ef646d74 4bizdeveloper <4bizdeveloper@gmail.com> 1792570631 +0530	commit: today
 ccd54cdebc40606b45033e1652a081b4ef646d74 1cea2cc05b0c2bdec66803ca0c77cb958fc0f349 4bizdeveloper <4bizdeveloper@gmail.com> 1792570751 +0530	commit: today
+1cea2cc05b0c2bdec66803ca0c77cb958fc0f349 7d243100a25f01cd36af0d5ad1774a01484a7dc7 4bizdeveloper <4bizdeveloper@gmail.com> 1792571056 +0530	commit: today
 </file>
 
 <file path=".git/objects/info/commit-graphs/commit-graph-chain">
@@ -1339,7 +1346,7 @@ efff703b3f9a5b33baf8b71a625b589b82a7664a
 </file>
 
 <file path=".git/refs/heads/main">
-1cea2cc05b0c2bdec66803ca0c77cb958fc0f349
+7d243100a25f01cd36af0d5ad1774a01484a7dc7
 </file>
 
 <file path=".git/refs/remotes/origin/HEAD">
@@ -1347,7 +1354,7 @@ ref: refs/remotes/origin/main
 </file>
 
 <file path=".git/refs/remotes/origin/main">
-1cea2cc05b0c2bdec66803ca0c77cb958fc0f349
+7d243100a25f01cd36af0d5ad1774a01484a7dc7
 </file>
 
 <file path=".git/COMMIT_EDITMSG">
@@ -5470,20 +5477,6 @@ export async function verifySessionToken(token: string | undefined) {
 }
 </file>
 
-<file path="next.config.ts">
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  experimental: {
-    turbopack: {
-      root: "C:\\Users\\PC\\Desktop\\4biz_crm_app",
-    },
-  },
-};
-
-export default nextConfig;
-</file>
-
 <file path="prisma.config.ts">
 import type { NextConfig } from "next";
 
@@ -8926,6 +8919,14 @@ repomix-output.xml
 
 deploy_key
 deploy_key.pub
+</file>
+
+<file path="next.config.ts">
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {};
+
+export default nextConfig;
 </file>
 
 <file path="package.json">
