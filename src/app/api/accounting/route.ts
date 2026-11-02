@@ -40,6 +40,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const auth = await authorize(); if ('error' in auth) return auth.error;
+  if (!db) return jsonError('Accounting server key is missing. Configure SUPABASE_SECRET_KEY in Vercel for Production, Preview and Development.', 503);
   let body: Record<string, unknown>;
   try { body = await request.json(); } catch { return jsonError('Invalid JSON body'); }
   const action = body.action;
@@ -93,6 +94,7 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   const auth = await authorize(); if ('error' in auth) return auth.error;
+  if (!db) return jsonError('Accounting server key is missing. Configure SUPABASE_SECRET_KEY in Vercel for Production, Preview and Development.', 503);
   let body: Record<string, unknown>; try { body = await request.json(); } catch { return jsonError('Invalid JSON body'); }
   if (typeof body.invoiceId !== 'string' || !['Draft','Sent','Overdue','Cancelled'].includes(String(body.status))) return jsonError('Invoice and supported status are required');
   const { data, error } = await db.from('invoices').update({ status: body.status }).eq('id',body.invoiceId).select('*').single();
