@@ -12,7 +12,8 @@ async function authorize() {
   if (!canAccessDepartment(ctx, 'Finance') || !isDepartmentHead(ctx)) return { error: jsonError('Forbidden: Finance department access required', 403) } as const;
   return { ctx } as const;
 }
-const validAmount = (v: unknown) => typeof v === 'number' && Number.isFinite(v) && v > 0;\nconst validNonNegative = (v: unknown) => typeof v === 'number' && Number.isFinite(v) && v >= 0;
+const validAmount = (v: unknown) => typeof v === 'number' && Number.isFinite(v) && v > 0;
+const validNonNegative = (v: unknown) => typeof v === 'number' && Number.isFinite(v) && v >= 0;
 const validDate = (v: unknown) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v));
 
 export async function GET() {
@@ -50,7 +51,8 @@ export async function POST(request: Request) {
   if (action === 'payment') {
     if (typeof body.invoiceId !== 'string' || !validAmount(body.amount) || !validDate(body.paymentDate)) return jsonError('Invoice, positive payment amount and valid payment date are required');
     const { data: invoice, error: invoiceError } = await db.from('invoices').select('id,amount,tax_amount,status').eq('id',body.invoiceId).single();
-    if (invoiceError || !invoice) return jsonError('Invoice not found',404);\n    if (invoice.status === 'Paid' || invoice.status === 'Cancelled') return jsonError('This invoice cannot accept additional payments');
+    if (invoiceError || !invoice) return jsonError('Invoice not found',404);
+    if (invoice.status === 'Paid' || invoice.status === 'Cancelled') return jsonError('This invoice cannot accept additional payments');
     const { data: prior, error: priorError } = await db.from('accounting_payments').select('amount').eq('invoice_id',body.invoiceId);
     if (priorError) return jsonError(priorError.message,500);
     const paid = (prior ?? []).reduce((s,p)=>s+Number(p.amount),0);
