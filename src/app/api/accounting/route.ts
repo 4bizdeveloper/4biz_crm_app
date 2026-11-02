@@ -12,7 +12,7 @@ async function authorize() {
   if (!canAccessDepartment(ctx, 'Finance') || !isDepartmentHead(ctx)) return { error: jsonError('Forbidden: Finance department access required', 403) } as const;
   return { ctx } as const;
 }
-const validAmount = (v: unknown) => typeof v === 'number' && Number.isFinite(v) && v > 0;
+const validAmount = (v: unknown) => typeof v === 'number' && Number.isFinite(v) && v > 0;\nconst validNonNegative = (v: unknown) => typeof v === 'number' && Number.isFinite(v) && v >= 0;
 const validDate = (v: unknown) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v));
 
 export async function GET() {
@@ -43,14 +43,14 @@ export async function POST(request: Request) {
   try { body = await request.json(); } catch { return jsonError('Invalid JSON body'); }
   const action = body.action;
   if (action === 'expense') {
-    if (typeof body.description !== 'string' || !body.description.trim() || !validAmount(body.amount) || !validDate(body.expenseDate)) return jsonError('Description, positive amount and valid expense date are required');
-    const { data, error } = await db.from('accounting_expenses').insert({ expense_number: `EXP-${Date.now()}`, description: body.description.trim(), amount: body.amount, tax_amount: validAmount(body.taxAmount) ? body.taxAmount : 0, expense_date: body.expenseDate, due_date: validDate(body.dueDate) ? body.dueDate : null, vendor_id: body.vendorId || null, category_account_id: body.accountId || null, currency: typeof body.currency === 'string' ? body.currency : 'AED', status: 'Pending', notes: typeof body.notes === 'string' ? body.notes : null, created_by: auth.ctx.employeeId }).select('*').single();
+    if (typeof body.description !== 'string' || !body.description.trim() || !validAmount(body.amount) || !validDate(body.expenseDate) || (body.taxAmount !== undefined && !validNonNegative(body.taxAmount))) return jsonError('Description, positive amount, non-negative tax and valid expense date are required');
+    const { data, error } = await db.from('accounting_expenses').insert({ expense_number: `EXP-${Date.now()}`, description: body.description.trim(), amount: body.amount, tax_amount: validNonNegative(body.taxAmount) ? body.taxAmount : 0, expense_date: body.expenseDate, due_date: validDate(body.dueDate) ? body.dueDate : null, vendor_id: body.vendorId || null, category_account_id: body.accountId || null, currency: typeof body.currency === 'string' ? body.currency : 'AED', status: 'Pending', notes: typeof body.notes === 'string' ? body.notes : null, created_by: auth.ctx.employeeId }).select('*').single();
     if (error) return jsonError(error.message, 500); return NextResponse.json({ data }, { status: 201 });
   }
   if (action === 'payment') {
     if (typeof body.invoiceId !== 'string' || !validAmount(body.amount) || !validDate(body.paymentDate)) return jsonError('Invoice, positive payment amount and valid payment date are required');
     const { data: invoice, error: invoiceError } = await db.from('invoices').select('id,amount,tax_amount,status').eq('id',body.invoiceId).single();
-    if (invoiceError || !invoice) return jsonError('Invoice not found',404);
+    if (invoiceError || !invoice) return jsonError('Invoice not found',404);\n    if (invoice.status === 'Paid' || invoice.status === 'Cancelled') return jsonError('This invoice cannot accept additional payments');
     const { data: prior, error: priorError } = await db.from('accounting_payments').select('amount').eq('invoice_id',body.invoiceId);
     if (priorError) return jsonError(priorError.message,500);
     const paid = (prior ?? []).reduce((s,p)=>s+Number(p.amount),0);
@@ -63,7 +63,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ data },{status:201});
   }
   if (action === 'invoice') {
-    if (typeof body.clientName !== 'string' || !body.clientName.trim() || !validAmount(body.amount) || !validDate(body.dueDate)) return jsonError('Client, positive amount and due date are required');
+    if (typeof body.clientName !== 'string' || !body.clientName.trim() || !validAmount(body.amount) || !validDate(body.dueDate) || (body.taxAmount !== undefined && !validNonNegative(body.taxAmount))) return jsonError('Client, positive amount, non-negative tax and due date are required');
     const { data, error } = await db.from('invoices').insert({ client_name: body.clientName.trim(), amount: body.amount, tax_amount: validAmount(body.taxAmount) ? body.taxAmount : 0, due_date: body.dueDate, status: 'Draft', lead_id: typeof body.leadId === 'string' ? body.leadId : null, created_by: auth.ctx.employeeId }).select('*').single();
     if (error) return jsonError(error.message,500); return NextResponse.json({ data },{status:201});
   }
@@ -83,7 +83,7 @@ export async function POST(request: Request) {
     const { error: linesError } = await db.from('accounting_journal_lines').insert(lines.map(l=>({journal_entry_id:entry.id,account_id:l.accountId,description:l.description ?? null,debit:Number(l.debit),credit:Number(l.credit)})));
     if (linesError) { await db.from('accounting_journal_entries').delete().eq('id',entry.id); return jsonError(linesError.message,500); }
     const { data: posted, error: postError } = await db.rpc('post_accounting_journal',{p_entry_id:entry.id});
-    if (postError) return jsonError(postError.message,400);
+    if (postError) { await db.from('accounting_journal_entries').delete().eq('id',entry.id); return jsonError(postError.message,400); }
     return NextResponse.json({ data: posted },{status:201});
   }
   return jsonError('Unknown accounting action');
