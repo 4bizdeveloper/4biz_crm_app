@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { canAccessDepartment, getAuthContext, isDepartmentHead } from '@/lib/department-auth';
 
 export const dynamic = 'force-dynamic';
-const db = supabaseAdmin ?? supabase;
+const db = supabaseAdmin;
 const jsonError = (message: string, status = 400) => NextResponse.json({ error: message }, { status });
 async function authorize() {
   const ctx = await getAuthContext();
@@ -18,6 +17,7 @@ const validDate = (v: unknown) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/
 
 export async function GET() {
   const auth = await authorize(); if ('error' in auth) return auth.error;
+  if (!db) return jsonError('Accounting server key is missing. Configure SUPABASE_SECRET_KEY in Vercel for Production, Preview and Development.', 503);
   const [invoices, expenses, payments, accounts, journals, vendors] = await Promise.all([
     db.from('invoices').select('*,lead:leads(id,name,company)').order('due_date', { ascending: true }),
     db.from('accounting_expenses').select('*,vendor:accounting_vendors(id,name),category:accounting_accounts(id,code,name)').order('expense_date', { ascending: false }).limit(500),
