@@ -8,7 +8,11 @@ const jsonError = (message: string, status = 400) => NextResponse.json({ error: 
 async function authorize() {
   const ctx = await getAuthContext();
   if (!ctx.employeeId && !ctx.isAdmin) return { error: jsonError('Unauthorized', 401) } as const;
-  if (!canAccessDepartment(ctx, 'Finance') || !isDepartmentHead(ctx)) return { error: jsonError('Forbidden: Finance department access required', 403) } as const;
+  // Super Admin is the global workspace administrator and must bypass all
+  // department-level checks. Non-admins remain restricted to Finance heads.
+  if (!ctx.isAdmin && (!canAccessDepartment(ctx, 'Finance') || !isDepartmentHead(ctx))) {
+    return { error: jsonError('Forbidden: Finance department access required', 403) } as const;
+  }
   return { ctx } as const;
 }
 const validAmount = (v: unknown) => typeof v === 'number' && Number.isFinite(v) && v > 0;
