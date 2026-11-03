@@ -21,7 +21,7 @@ const validDate = (v: unknown) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/
 
 export async function GET() {
   const auth = await authorize(); if ('error' in auth) return auth.error;
-  if (!db) return jsonError('Accounting server key is missing. Configure SUPABASE_SECRET_KEY in Vercel for Production, Preview and Development.', 503);
+  if (!db) return jsonError('Accounting database access is not configured on this VPS. Add SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_SECRET_KEY) to the CRM server environment and restart the Next.js process.', 503);
   const [invoices, expenses, payments, accounts, journals, vendors] = await Promise.all([
     db.from('invoices').select('*,lead:leads(id,name,company)').order('due_date', { ascending: true }),
     db.from('accounting_expenses').select('*,vendor:accounting_vendors(id,name),category:accounting_accounts(id,code,name)').order('expense_date', { ascending: false }).limit(500),
@@ -44,7 +44,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const auth = await authorize(); if ('error' in auth) return auth.error;
-  if (!db) return jsonError('Accounting server key is missing. Configure SUPABASE_SECRET_KEY in Vercel for Production, Preview and Development.', 503);
+  if (!db) return jsonError('Accounting database access is not configured on this VPS. Add SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_SECRET_KEY) to the CRM server environment and restart the Next.js process.', 503);
   let body: Record<string, unknown>;
   try { body = await request.json(); } catch { return jsonError('Invalid JSON body'); }
   const action = body.action;
@@ -98,7 +98,7 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   const auth = await authorize(); if ('error' in auth) return auth.error;
-  if (!db) return jsonError('Accounting server key is missing. Configure SUPABASE_SECRET_KEY in Vercel for Production, Preview and Development.', 503);
+  if (!db) return jsonError('Accounting database access is not configured on this VPS. Add SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_SECRET_KEY) to the CRM server environment and restart the Next.js process.', 503);
   let body: Record<string, unknown>; try { body = await request.json(); } catch { return jsonError('Invalid JSON body'); }
   if (typeof body.invoiceId !== 'string' || !['Draft','Sent','Overdue','Cancelled'].includes(String(body.status))) return jsonError('Invoice and supported status are required');
   const { data, error } = await db.from('invoices').update({ status: body.status }).eq('id',body.invoiceId).select('*').single();
